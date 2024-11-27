@@ -34,6 +34,11 @@ class INEApiClient:
         """Valida la respuesta JSON de la API"""
         try:
             response.raise_for_status()
+            # Validar content-type
+            if not response.headers.get('content-type', '').startswith('application/json'):
+                logger.warning(f"Respuesta no es JSON. Content-Type: {response.headers.get('content-type')}")
+                logger.warning(f"Contenido: {response.text[:500]}...")
+            
             # Loguear respuesta raw para debugging
             logger.info(f"Respuesta raw de la API: {response.text[:1000]}...")
             
@@ -120,6 +125,11 @@ class INEApiClient:
             # Normalizar IDs y filtrar operaciones válidas y demográficas
             operaciones_procesadas = []
             for op in data:
+                # Validar ID
+                if not isinstance(op.get('Id'), (int, str)) and not isinstance(op.get('id'), (int, str)):
+                    logger.warning(f"Operación sin ID válido: {json.dumps(op, indent=2)}")
+                    continue
+                    
                 # Manejar ID
                 op['id'] = op.get('Id') or op.get('id')
                 # Loguear operación individual para debugging
@@ -163,6 +173,13 @@ class INEApiClient:
             logger.info(f"Consultando tablas para operación {operacion_id} en: {url}")
             
             response = session.get(url)
+            
+            # Verificar si la respuesta es texto plano (error)
+            if response.headers.get('content-type', '').startswith('text/plain'):
+                error_msg = f"Error: {response.text}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+                
             data = INEApiClient._validate_json_response(response)
             
             if not isinstance(data, list):
