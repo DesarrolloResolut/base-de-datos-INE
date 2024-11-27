@@ -62,20 +62,24 @@ class INEApiClient:
         logger.info(f"Validando operación: {json.dumps(operacion, indent=2)}")
         
         # Solo requerimos el nombre como campo obligatorio
-        if not operacion.get('Nombre'):
+        nombre = operacion.get('Nombre') or operacion.get('nombre')
+        if not nombre:
             logger.warning(f"Operación sin nombre válido: {json.dumps(operacion, indent=2)}")
             return False
             
+        # Normalizar el campo nombre
+        operacion['Nombre'] = nombre
+            
         # Agregar valores por defecto para campos faltantes
-        if 'Periodicidad' not in operacion:
+        if 'Periodicidad' not in operacion and 'periodicidad' not in operacion:
             operacion['Periodicidad'] = 'No especificada'
-            logger.info(f"Agregando periodicidad por defecto para operación: {operacion['Nombre']}")
+            logger.info(f"Agregando periodicidad por defecto para operación: {nombre}")
             
-        if 'Codigo' not in operacion:
+        if 'Codigo' not in operacion and 'codigo' not in operacion:
             operacion['Codigo'] = 'N/A'
-            logger.info(f"Agregando código por defecto para operación: {operacion['Nombre']}")
+            logger.info(f"Agregando código por defecto para operación: {nombre}")
             
-        logger.info(f"Operación válida encontrada: {operacion['Nombre']}")
+        logger.info(f"Operación válida encontrada: {nombre}")
         return True
 
     @staticmethod
@@ -87,10 +91,11 @@ class INEApiClient:
             'habitantes', 'residentes', 'demográfico', 'demográfica'
         ]
         
-        if not operacion.get('Nombre'):
+        nombre = operacion.get('Nombre') or operacion.get('nombre')
+        if not nombre:
             return False
             
-        nombre = operacion['Nombre'].lower()
+        nombre = nombre.lower()
         return any(palabra in nombre for palabra in palabras_clave)
 
     @staticmethod
@@ -112,13 +117,24 @@ class INEApiClient:
             # Loguear información de todas las operaciones
             logger.info(f"Total de operaciones recibidas: {len(data)}")
             
-            # Filtrar operaciones válidas y demográficas
-            operaciones_validas = [
-                op for op in data 
-                if INEApiClient._validar_operacion(op) and INEApiClient._es_operacion_demografica(op)
-            ]
+            # Normalizar IDs y filtrar operaciones válidas y demográficas
+            operaciones_procesadas = []
+            for op in data:
+                # Manejar ID
+                op['id'] = op.get('Id') or op.get('id')
+                # Loguear operación individual para debugging
+                logger.debug(f"Procesando operación: {json.dumps(op, indent=2)}")
+                
+                if INEApiClient._validar_operacion(op) and INEApiClient._es_operacion_demografica(op):
+                    operaciones_procesadas.append(op)
+                    logger.debug(f"Operación válida agregada: {op.get('Nombre') or op.get('nombre')}")
             
-            logger.info(f"Operaciones válidas encontradas: {len(operaciones_validas)}")
+            logger.info(f"Operaciones válidas encontradas: {len(operaciones_procesadas)}")
+            
+            if not operaciones_procesadas:
+                logger.warning("No se encontraron operaciones válidas después del filtrado")
+            
+            operaciones_validas = operaciones_procesadas
             
             if not operaciones_validas:
                 error_msg = "No se encontraron operaciones con datos válidos"

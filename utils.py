@@ -34,14 +34,14 @@ def format_nombre_operacion(operacion: Dict) -> str:
     
     try:
         # Validación de campos obligatorios
-        nombre = operacion.get('nombre')
+        nombre = operacion.get('Nombre') or operacion.get('nombre')
         if not nombre:
             return "Error: Nombre de operación no disponible"
         
         # Obtención de campos adicionales
-        cod = operacion.get('cod', '')
-        periodicidad = _format_periodicidad(operacion.get('periodicidad', ''))
-        ultima_actualizacion = _format_fecha(operacion.get('ultima_actualizacion', ''))
+        cod = operacion.get('Codigo') or operacion.get('codigo', '')
+        periodicidad = _format_periodicidad(operacion.get('Periodicidad') or operacion.get('periodicidad', ''))
+        ultima_actualizacion = _format_fecha(operacion.get('UltimaActualizacion') or operacion.get('ultima_actualizacion', ''))
         
         # Construcción del string formateado
         partes = [
