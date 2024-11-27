@@ -11,10 +11,35 @@ class DataProcessor:
         if not datos:
             return pd.DataFrame()
             
-        # Extraer datos principales
-        if 'Data' in datos:
-            df = pd.DataFrame(datos['Data'])
-        else:
+        try:
+            # Extraer datos principales
+            if isinstance(datos, list):
+                # Manejar el caso cuando la respuesta es una lista de objetos
+                all_data = []
+                for item in datos:
+                    if 'Data' in item:
+                        all_data.extend(item['Data'])
+                    elif isinstance(item, dict):
+                        all_data.append(item)
+                df = pd.DataFrame(all_data)
+            elif isinstance(datos, dict) and 'Data' in datos:
+                df = pd.DataFrame(datos['Data'])
+            else:
+                print("Formato de datos no reconocido:", type(datos))
+                return pd.DataFrame()
+            
+            # Convertir columnas numéricas
+            if 'Valor' in df.columns:
+                df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            # Convertir fechas
+            if 'Fecha' in df.columns:
+                df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
+                
+            return df
+            
+        except Exception as e:
+            print(f"Error al procesar los datos: {str(e)}")
             return pd.DataFrame()
             
         # Procesar metadatos si están disponibles

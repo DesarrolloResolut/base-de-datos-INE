@@ -26,7 +26,18 @@ def cargar_operaciones():
         return []
 
 def main():
-    st.title("📊 Explorador de Población Residente - INE")
+    st.title("📊 Explorador de Población Residente en España - INE")
+    
+    # Mensaje explicativo sobre los datos
+    st.markdown("""
+    Esta aplicación muestra los datos oficiales de población residente en España, proporcionados por el Instituto Nacional de Estadística (INE).
+    Los datos incluyen la distribución de la población por:
+    - Grupos de edad
+    - Sexo
+    - Periodo temporal
+    
+    Los datos se actualizan semestralmente y provienen de la tabla 9687 del INE.
+    """)
     
     # Sidebar para filtros
     with st.sidebar:
