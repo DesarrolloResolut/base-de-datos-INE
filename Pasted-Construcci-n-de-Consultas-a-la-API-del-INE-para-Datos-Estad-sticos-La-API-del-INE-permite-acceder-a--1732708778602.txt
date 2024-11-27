@@ -1,0 +1,81 @@
+Construcción de Consultas a la API del INE para Datos Estadísticos
+La API del INE permite acceder a los datos estadísticos disponibles en INEbase mediante peticiones estructuradas en formato URL. Este documento explica cómo construir dichas URLs de forma sistemática, incluyendo ejemplos concretos para casos de uso específicos, como la consulta de datos demográficos.
+
+Estructura de las URLs
+La estructura básica de una URL de la API es la siguiente:
+https://servicios.ine.es/wstempus/js/{idioma}/{función}/{input}[?parámetros]
+
+Elementos de la URL
+{idioma}: Define el idioma de la respuesta y puede tomar los valores:
+
+ES: español
+EN: inglés
+{función}: Especifica la acción o consulta que se desea realizar. Las funciones más relevantes para las consultas son:
+
+OPERACIONES_DISPONIBLES: Obtiene las operaciones estadísticas disponibles.
+TABLAS_OPERACION: Recupera las tablas de una operación estadística específica.
+DATOS_SERIE: Devuelve datos de una serie temporal.
+DATOS_TABLA: Permite consultar datos en formato de tabla.
+{input}: Representa los identificadores necesarios para la función utilizada. Por ejemplo:
+
+Para OPERACIONES_DISPONIBLES, no se necesita input.
+Para DATOS_SERIE, el input es el identificador de la serie.
+[?parámetros]: Opcionales, se añaden después de un signo ? y permiten afinar la consulta. Algunos parámetros comunes son:
+
+det: Nivel de detalle en la información devuelta (0, 1 o 2).
+geo: Define el ámbito geográfico:
+geo=1: Resultados por comunidades autónomas, provincias o municipios.
+geo=0: Resultados nacionales.
+page: Permite paginar los resultados (máximo 500 elementos por página).
+download: Especifica el nombre del archivo JSON a descargar.
+Ejemplos de Consultas y URLs
+1. Consultar Operaciones Disponibles
+Devuelve un listado de operaciones estadísticas:
+https://servicios.ine.es/wstempus/js/ES/OPERACIONES_DISPONIBLES
+
+Con mayor nivel de detalle (det=2):
+https://servicios.ine.es/wstempus/js/ES/OPERACIONES_DISPONIBLES?det=2
+
+Filtrando por desagregación geográfica (geo=1):
+https://servicios.ine.es/wstempus/js/ES/OPERACIONES_DISPONIBLES?geo=1
+
+2. Obtener Tablas de una Operación Específica
+Por ejemplo, tablas del IPC:
+https://servicios.ine.es/wstempus/js/ES/TABLAS_OPERACION/IPC
+
+Filtrando por resultados nacionales:
+https://servicios.ine.es/wstempus/js/ES/TABLAS_OPERACION/IPC?geo=0
+3. Recuperar Datos de una Serie Temporal
+Obtener los datos más recientes de la serie IPC206449:
+https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/IPC206449?nult=1
+
+Con mayor nivel de detalle:
+https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/IPC206449?nult=1&det=2
+
+Filtrar por rango de fechas:
+https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/IPC206449?date=20220101:20221231
+
+4. Consultar Datos en Formato de Tabla
+Por ejemplo, tabla de datos del CNO:
+https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/t22/p133/cno11/serie/l0/01003.px
+
+Descargar en archivo JSON:
+https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/t22/p133/cno11/serie/l0/01003.px?download=DatosCNO.json
+Optimización para Datos Demográficos
+Si la consulta se enfoca en datos demográficos, como población por comunidades autónomas o provincias, se recomienda usar las siguientes funciones y filtros:
+
+OPERACIONES_DISPONIBLES: Identificar operaciones demográficas disponibles, usando el filtro geo=1 para incluir desagregaciones geográficas.
+Ejemplo: https://servicios.ine.es/wstempus/js/ES/OPERACIONES_DISPONIBLES?geo=1
+
+TABLAS_OPERACION: Obtener tablas relacionadas con operaciones demográficas específicas.
+
+DATOS_SERIE: Filtrar series demográficas usando identificadores relevantes.
+
+Parámetros Adicionales
+date: Filtrar por fechas específicas o rangos.
+Ejemplo: https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/IPC206449?date=20220101:20221231
+
+nult: Recuperar los últimos datos disponibles.
+Ejemplo: https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/IPC206449?nult=10
+
+Con estas herramientas y ejemplos, se puede estructurar cualquier consulta necesaria para extraer datos específicos de la API del INE.

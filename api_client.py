@@ -20,15 +20,16 @@ class INEApiClient:
         """Configura una sesión de requests con retry más robusto"""
         session = requests.Session()
         retry = Retry(
-            total=5,  # Aumentado el número de intentos
-            backoff_factor=1,  # Mayor tiempo entre intentos
-            status_forcelist=[429, 500, 502, 503, 504],  # Agregado 429 (Too Many Requests)
-            allowed_methods=["HEAD", "GET", "OPTIONS"],  # Métodos permitidos para retry
-            respect_retry_after_header=True  # Respetar el header Retry-After
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "OPTIONS"],
+            respect_retry_after_header=True
         )
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
         session.mount('https://', adapter)
+        session.headers.update({'Accept': 'application/json'})
         return session
 
     @staticmethod
@@ -128,10 +129,11 @@ class INEApiClient:
         """Obtiene lista de operaciones estadísticas demográficas"""
         try:
             session = INEApiClient._get_session()
-            url = f"{INEApiClient.BASE_URL}/operaciones"
+            url = f"{INEApiClient.BASE_URL}/OPERACIONES_DISPONIBLES"
+            params = {'geo': '1', 'det': '2'}
             logger.info(f"Consultando operaciones en: {url}")
             
-            response = session.get(url)
+            response = session.get(url, params=params)
             data = INEApiClient._validate_json_response(response)
             
             if not isinstance(data, list):
@@ -177,7 +179,8 @@ class INEApiClient:
             session = INEApiClient._get_session()
             
             # Intentar primero con el endpoint operaciones_tabla
-            url = f"{INEApiClient.BASE_URL}/operaciones_tabla/{operacion_id}"
+            url = f"{INEApiClient.BASE_URL}/TABLAS_OPERACION/{operacion_id}"
+            params = {'geo': '1'}
             logger.info(f"Consultando tablas para operación {operacion_id} en: {url}")
             
             try:
@@ -234,8 +237,8 @@ class INEApiClient:
                 logger.error(error_msg)
                 raise ValueError(error_msg)
                 
-            endpoint = "valores" if modo == "datos" else "metadata"
-            url = f"{INEApiClient.BASE_URL}/{endpoint}/{tabla_id}"
+            url = f"{INEApiClient.BASE_URL}/DATOS_TABLA/{tabla_id}"
+            params = {'det': '2'} if modo != "datos" else {}
             logger.info(f"Consultando {modo} de tabla {tabla_id} en: {url}")
             
             session = INEApiClient._get_session()
