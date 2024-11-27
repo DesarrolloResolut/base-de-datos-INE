@@ -59,20 +59,23 @@ class INEApiClient:
     @staticmethod
     def _validar_operacion(operacion: Dict) -> bool:
         """Valida si una operación tiene los campos mínimos necesarios"""
+        logger.info(f"Validando operación: {json.dumps(operacion, indent=2)}")
+        
         # Solo requerimos el nombre como campo obligatorio
-        if not operacion.get('nombre'):
-            logger.warning(f"Operación sin nombre: {json.dumps(operacion, indent=2)}")
+        if not operacion.get('Nombre'):
+            logger.warning(f"Operación sin nombre válido: {json.dumps(operacion, indent=2)}")
             return False
             
         # Agregar valores por defecto para campos faltantes
-        if 'periodicidad' not in operacion:
-            operacion['periodicidad'] = 'No especificada'
-            logger.info(f"Agregando periodicidad por defecto para operación: {operacion['nombre']}")
+        if 'Periodicidad' not in operacion:
+            operacion['Periodicidad'] = 'No especificada'
+            logger.info(f"Agregando periodicidad por defecto para operación: {operacion['Nombre']}")
             
-        if 'cod' not in operacion:
-            operacion['cod'] = 'N/A'
-            logger.info(f"Agregando código por defecto para operación: {operacion['nombre']}")
+        if 'Codigo' not in operacion:
+            operacion['Codigo'] = 'N/A'
+            logger.info(f"Agregando código por defecto para operación: {operacion['Nombre']}")
             
+        logger.info(f"Operación válida encontrada: {operacion['Nombre']}")
         return True
 
     @staticmethod
@@ -108,7 +111,7 @@ class INEApiClient:
                 raise ValueError(error_msg)
             
             # Ordenar operaciones por nombre
-            return sorted(operaciones_validas, key=lambda x: x.get('nombre', '').lower())
+            return sorted(operaciones_validas, key=lambda x: x.get('Nombre', '').lower())
             
         except Exception as e:
             error_msg = f"Error al obtener operaciones del INE: {str(e)}"
