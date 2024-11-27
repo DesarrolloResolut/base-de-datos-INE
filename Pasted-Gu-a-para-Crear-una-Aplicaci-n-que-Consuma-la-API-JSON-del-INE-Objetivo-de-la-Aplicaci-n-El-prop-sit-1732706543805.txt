@@ -1,0 +1,82 @@
+Guía para Crear una Aplicación que Consuma la API JSON del INE
+Objetivo de la Aplicación
+El propósito de esta aplicación es permitir a los usuarios acceder, procesar y visualizar los datos estadísticos publicados por el Instituto Nacional de Estadística (INE) a través de su API JSON. La herramienta ofrecerá una interfaz sencilla para explorar operaciones estadísticas, descargar datos y visualizarlos en tablas y gráficos interactivos.
+
+1. Comprensión del API JSON del INE
+El INE proporciona acceso a sus datos mediante una API basada en peticiones HTTP que devuelve información en formato JSON. Esta API permite consultar:
+
+Operaciones estadísticas: Conjuntos temáticos de datos agrupados por periodicidad o temática.
+Tablas estadísticas: Colecciones de series temporales organizadas por variables como comunidades autónomas, sexo o tipo de dato.
+Variables y valores: Categorías y opciones que definen el contexto de las tablas.
+Datos específicos de las tablas: Resultados concretos derivados del cruce de variables en una tabla.
+El punto de entrada principal de la API es:
+https://servicios.ine.es/wstempus/js/ES
+
+2. Funcionalidades de la Aplicación
+La aplicación debe permitir realizar las siguientes tareas:
+
+Explorar operaciones disponibles:
+
+Mostrar una lista de todas las operaciones estadísticas disponibles.
+Ofrecer una breve descripción de cada operación.
+Seleccionar tablas asociadas a una operación:
+
+Permitir al usuario elegir una operación y listar las tablas relacionadas.
+Mostrar información como el nombre de la tabla, identificador y periodicidad.
+Descargar datos de una tabla:
+
+Recuperar y procesar datos de una tabla seleccionada.
+Incluir opciones para elegir entre datos amigables (valores descriptivos) o metadatos.
+Visualizar datos:
+
+Mostrar los datos descargados en formato tabular.
+Generar gráficos interactivos que faciliten la interpretación de los resultados.
+Exportar datos:
+
+Ofrecer la posibilidad de descargar los datos procesados en formatos como CSV o Excel.
+3. Arquitectura de la Aplicación
+La aplicación estará compuesta por los siguientes módulos:
+
+Módulo de consulta a la API:
+
+Gestionará las peticiones HTTP para obtener operaciones, tablas y datos.
+Procesará la información recibida en formato JSON.
+Módulo de procesamiento de datos:
+
+Convertirá los datos en estructuras tabulares para su fácil manipulación.
+Permitirá filtrar y organizar los datos según las necesidades del usuario.
+Módulo de visualización:
+
+Generará gráficos dinámicos como líneas de tiempo, mapas y diagramas de barras.
+Proporcionará resúmenes estadísticos básicos.
+Interfaz gráfica:
+
+Ofrecerá una navegación intuitiva para seleccionar operaciones, tablas y opciones de visualización.
+Permitirá al usuario interactuar con los datos y los gráficos.
+4. Flujo de Trabajo de la Aplicación
+Inicio:
+
+Cargar una lista de operaciones disponibles desde el INE.
+Permitir al usuario buscar y filtrar operaciones por palabras clave.
+Selección de operación:
+
+Una vez elegida una operación, listar todas las tablas asociadas.
+Mostrar metadatos básicos de cada tabla (e.g., periodicidad, variables incluidas).
+Descarga de datos:
+
+Solicitar al usuario que seleccione una tabla y las opciones de descarga (e.g., amigable o con metadatos).
+Descargar y procesar los datos seleccionados.
+Visualización y análisis:
+
+Mostrar los datos descargados en una tabla interactiva.
+Generar gráficos basados en las variables seleccionadas por el usuario.
+Exportación:
+
+Ofrecer opciones para guardar los datos en formato CSV o Excel.
+5. Consideraciones Técnicas
+Acceso a la API: Utilizar una biblioteca que permita realizar peticiones HTTP de manera eficiente, como requests en Python.
+Procesamiento de datos: Manejar los datos JSON y transformarlos en estructuras tabulares con una biblioteca como pandas.
+Visualización: Generar gráficos interactivos utilizando herramientas como Plotly o Matplotlib.
+Interfaz de usuario: Implementar la interfaz gráfica con una herramienta como Streamlit para ofrecer una experiencia de usuario moderna y fluida.
+6. Resultado Final
+La aplicación será una herramienta versátil para investigadores, analistas y ciudadanos interesados en explorar los datos estadísticos del INE. Gracias a su diseño interactivo, permitirá consultar, analizar y exportar información de manera sencilla, reduciendo el tiempo y la complejidad asociados al manejo de grandes volúmenes de datos estadísticos.
