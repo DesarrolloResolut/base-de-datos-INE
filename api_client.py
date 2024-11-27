@@ -225,31 +225,22 @@ class INEApiClient:
             raise ValueError(error_msg)
     
     @staticmethod
-    def get_datos_tabla(tabla_id: str, modo: str = "datos") -> Dict:
-        """Obtiene datos de una tabla específica
+    def get_datos_tabla(tabla_id: str = "9687") -> Dict:
+        """Obtiene datos de población residente
         Args:
-            tabla_id: ID de la tabla
-            modo: 'datos' para datos amigables, 'metadatos' para metadatos
+            tabla_id: ID de la tabla (por defecto '9687' para población residente)
         """
         try:
-            if not tabla_id:
-                error_msg = "No se proporcionó el ID de la tabla"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-                
-            url = f"{INEApiClient.BASE_URL}/DATOS_TABLA/{tabla_id}"
-            params = {'det': '2'} if modo != "datos" else {}
-            logger.info(f"Consultando {modo} de tabla {tabla_id} en: {url}")
+            url = "https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/9687"
+            params = {'nult': '2', 'tip': 'AM'}
+            logger.info(f"Consultando datos de población residente en: {url}")
             
             session = INEApiClient._get_session()
             try:
-                response = session.get(url)
+                response = session.get(url, params=params)
                 
-                # Si es texto plano, verificar si es un mensaje de error
                 if response.headers.get('content-type', '').startswith('text/plain'):
                     error_msg = response.text.strip()
-                    if "no existe" in error_msg.lower():
-                        raise ValueError(f"La tabla {tabla_id} no existe")
                     raise ValueError(error_msg)
                     
             except requests.exceptions.RequestException as e:
@@ -259,14 +250,14 @@ class INEApiClient:
             data = INEApiClient._validate_json_response(response)
             
             if not data:
-                error_msg = f"No se encontraron {modo} para la tabla {tabla_id}"
+                error_msg = "No se encontraron datos de población residente"
                 logger.warning(error_msg)
                 raise ValueError(error_msg)
                 
-            logger.info(f"Datos obtenidos correctamente para tabla {tabla_id}")
+            logger.info("Datos de población residente obtenidos correctamente")
             return data
             
         except Exception as e:
-            error_msg = f"Error al obtener {modo} de la tabla {tabla_id}: {str(e)}"
+            error_msg = f"Error al obtener datos de población residente: {str(e)}"
             logger.error(error_msg)
             raise ValueError(error_msg)

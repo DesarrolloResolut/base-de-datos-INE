@@ -26,89 +26,62 @@ def cargar_operaciones():
         return []
 
 def main():
-    st.title("📊 Explorador de Datos Demográficos INE")
+    st.title("📊 Explorador de Población Residente - INE")
     
-    # Sidebar para selección
+    # Sidebar para filtros
     with st.sidebar:
+        st.header("Filtros")
+        
         try:
-            # Obtener y mostrar operaciones demográficas
-            operaciones = cargar_operaciones()
-            
-            if not operaciones:
-                st.error("No se pudieron cargar las operaciones demográficas. Por favor, intente más tarde.")
-                return
-            
-            # Categorizar operaciones
-            categorias = {
-                "Población": ["población", "padrón", "habitantes", "residentes"],
-                "Nacimientos y Defunciones": ["nacimientos", "defunciones", "natalidad", "mortalidad"],
-                "Matrimonios": ["matrimonios", "nupcialidad"],
-                "Migraciones": ["migraciones", "migratoria", "extranjeros"]
-            }
-            
-            categoria_seleccionada = st.selectbox(
-                "Seleccione una categoría:",
-                options=list(categorias.keys())
-            )
-            
-            # Filtrar operaciones por categoría
-            palabras_clave = categorias[categoria_seleccionada]
-            operaciones_categoria = [
-                op for op in operaciones
-                if any(palabra in op.get('Nombre', '').lower() for palabra in palabras_clave)
-            ]
-            
-            operacion_seleccionada = st.selectbox(
-                "Seleccione una operación:",
-                options=operaciones_categoria,
-                format_func=format_nombre_operacion
-            )
-            
-            if operacion_seleccionada:
-                # Obtener y mostrar tablas
-                try:
-                    id_operacion = operacion_seleccionada.get('id')
-                    if not id_operacion:
-                        st.error("Error: ID de operación no disponible")
-                        return
-                        
-                    tablas = INEApiClient.get_tablas_operacion(id_operacion)
+            # Cargar datos de población
+            with st.spinner("Cargando datos de población..."):
+                datos = INEApiClient.get_datos_tabla()
+                if not datos:
+                    st.error("No se pudieron obtener los datos de población.")
+                    return
                     
-                    if not tablas:
-                        st.warning("No se encontraron tablas para esta operación.")
-                        return
-                        
-                    tabla_seleccionada = st.selectbox(
-                        "Seleccione una tabla:",
-                        options=tablas,
-                        format_func=format_nombre_tabla
-                    )
-                    
-                    # Opciones de descarga
-                    modo_datos = st.radio(
-                        "Tipo de datos:",
-                        ["datos", "metadatos"],
-                        format_func=lambda x: "Datos" if x == "datos" else "Metadatos"
-                    )
-                    
-                    if st.button("Cargar datos"):
-                        with st.spinner("Cargando datos..."):
-                            id_tabla = tabla_seleccionada.get('id')
-                            if not id_tabla:
-                                st.error("Error: ID de tabla no disponible")
-                                return
-                                
-                            datos = INEApiClient.get_datos_tabla(id_tabla, modo_datos)
-                            if not datos:
-                                st.error("No se pudieron obtener los datos.")
-                                return
-                                
-                            st.session_state.datos_actuales = DataProcessor.json_to_dataframe(datos)
-                            
-                except Exception as e:
-                    st.error(f"Error al cargar los datos: {str(e)}")
+                df = DataProcessor.json_to_dataframe(datos)
+                if df.empty:
+                    st.error("No hay datos disponibles para mostrar.")
+                    return
+                
+                # Filtros específicos
+                # Filtro de fecha
+                fechas = sorted(df['Periodo'].unique())
+                fecha_seleccionada = st.selectbox(
+                    "Fecha:",
+                    options=fechas,
+                    index=len(fechas)-1 if fechas else 0
+                )
+                
+                # Filtro de sexo
+                sexos = sorted(df['Sexo_desc'].unique())
+                sexo_seleccionado = st.multiselect(
+                    "Sexo:",
+                    options=sexos,
+                    default=sexos
+                )
+                
+                # Filtro de edad
+                edades = sorted(df['Edad_desc'].unique())
+                edad_seleccionada = st.multiselect(
+                    "Grupo de edad:",
+                    options=edades,
+                    default=edades[:5]  # Primeros 5 grupos por defecto
+                )
+                
+                # Aplicar filtros
+                filtros = {
+                    'Periodo': fecha_seleccionada,
+                    'Sexo_desc': sexo_seleccionado,
+                    'Edad_desc': edad_seleccionada
+                }
+                
+                df_filtrado = DataProcessor.filtrar_datos(df, filtros)
+                st.session_state.datos_actuales = df_filtrado
+                
         except Exception as e:
-            st.error(f"Error inesperado: {str(e)}")
+            st.error(f"Error al cargar los datos: {str(e)}")
     
     # Área principal
     if st.session_state.datos_actuales is not None:
