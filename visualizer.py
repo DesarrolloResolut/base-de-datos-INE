@@ -63,3 +63,41 @@ class DataVisualizer:
             geo_scope='europe'
         )
         return fig
+        
+    @staticmethod
+    def crear_piramide_poblacion(df: pd.DataFrame,
+                               col_edad: str,
+                               col_hombres: str,
+                               col_mujeres: str,
+                               titulo: str = "Pirámide de Población") -> go.Figure:
+        """Crea una pirámide de población"""
+        fig = go.Figure()
+        
+        # Hombres (valores negativos para mostrar a la izquierda)
+        fig.add_trace(go.Bar(
+            y=df[col_edad],
+            x=-df[col_hombres],
+            name='Hombres',
+            orientation='h',
+            marker_color='blue'
+        ))
+        
+        # Mujeres (valores positivos para mostrar a la derecha)
+        fig.add_trace(go.Bar(
+            y=df[col_edad],
+            x=df[col_mujeres],
+            name='Mujeres',
+            orientation='h',
+            marker_color='red'
+        ))
+        
+        fig.update_layout(
+            title=titulo,
+            template='plotly_white',
+            barmode='relative',
+            bargap=0.1,
+            xaxis=dict(title='Población'),
+            yaxis=dict(title='Grupo de edad')
+        )
+        
+        return fig

@@ -79,8 +79,23 @@ class INEApiClient:
         return True
 
     @staticmethod
+    def _es_operacion_demografica(operacion: Dict) -> bool:
+        """Determina si una operación está relacionada con datos demográficos"""
+        palabras_clave = [
+            'población', 'demografía', 'censo', 'nacimientos',
+            'defunciones', 'matrimonios', 'migraciones', 'padrón',
+            'habitantes', 'residentes', 'demográfico', 'demográfica'
+        ]
+        
+        if not operacion.get('Nombre'):
+            return False
+            
+        nombre = operacion['Nombre'].lower()
+        return any(palabra in nombre for palabra in palabras_clave)
+
+    @staticmethod
     def get_operaciones() -> List[Dict]:
-        """Obtiene lista de operaciones estadísticas"""
+        """Obtiene lista de operaciones estadísticas demográficas"""
         try:
             session = INEApiClient._get_session()
             url = f"{INEApiClient.BASE_URL}/operaciones"
@@ -97,10 +112,10 @@ class INEApiClient:
             # Loguear información de todas las operaciones
             logger.info(f"Total de operaciones recibidas: {len(data)}")
             
-            # Filtrar operaciones válidas
+            # Filtrar operaciones válidas y demográficas
             operaciones_validas = [
                 op for op in data 
-                if INEApiClient._validar_operacion(op)
+                if INEApiClient._validar_operacion(op) and INEApiClient._es_operacion_demografica(op)
             ]
             
             logger.info(f"Operaciones válidas encontradas: {len(operaciones_validas)}")

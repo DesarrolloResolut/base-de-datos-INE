@@ -61,3 +61,17 @@ class DataProcessor:
             'max': df[columna_valores].max()
         }
         return stats
+        
+    @staticmethod
+    def calcular_tasa_natalidad(df: pd.DataFrame, col_nacimientos: str, col_poblacion: str) -> float:
+        """Calcula la tasa de natalidad por cada 1000 habitantes"""
+        if col_nacimientos not in df.columns or col_poblacion not in df.columns:
+            return 0.0
+        return (df[col_nacimientos].sum() / df[col_poblacion].sum()) * 1000
+        
+    @staticmethod
+    def calcular_tasa_mortalidad(df: pd.DataFrame, col_defunciones: str, col_poblacion: str) -> float:
+        """Calcula la tasa de mortalidad por cada 1000 habitantes"""
+        if col_defunciones not in df.columns or col_poblacion not in df.columns:
+            return 0.0
+        return (df[col_defunciones].sum() / df[col_poblacion].sum()) * 1000

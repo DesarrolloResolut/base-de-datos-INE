@@ -26,21 +26,41 @@ def cargar_operaciones():
         return []
 
 def main():
-    st.title("📊 Explorador de Datos INE")
+    st.title("📊 Explorador de Datos Demográficos INE")
     
     # Sidebar para selección
     with st.sidebar:
         try:
-            # Obtener y mostrar operaciones
+            # Obtener y mostrar operaciones demográficas
             operaciones = cargar_operaciones()
             
             if not operaciones:
-                st.error("No se pudieron cargar las operaciones. Por favor, intente más tarde.")
+                st.error("No se pudieron cargar las operaciones demográficas. Por favor, intente más tarde.")
                 return
-                
+            
+            # Categorizar operaciones
+            categorias = {
+                "Población": ["población", "padrón", "habitantes", "residentes"],
+                "Nacimientos y Defunciones": ["nacimientos", "defunciones", "natalidad", "mortalidad"],
+                "Matrimonios": ["matrimonios", "nupcialidad"],
+                "Migraciones": ["migraciones", "migratoria", "extranjeros"]
+            }
+            
+            categoria_seleccionada = st.selectbox(
+                "Seleccione una categoría:",
+                options=list(categorias.keys())
+            )
+            
+            # Filtrar operaciones por categoría
+            palabras_clave = categorias[categoria_seleccionada]
+            operaciones_categoria = [
+                op for op in operaciones
+                if any(palabra in op.get('Nombre', '').lower() for palabra in palabras_clave)
+            ]
+            
             operacion_seleccionada = st.selectbox(
                 "Seleccione una operación:",
-                options=operaciones,
+                options=operaciones_categoria,
                 format_func=format_nombre_operacion
             )
             
