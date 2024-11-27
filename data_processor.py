@@ -28,6 +28,14 @@ class DataProcessor:
                 print("Formato de datos no reconocido:", type(datos))
                 return pd.DataFrame()
             
+            # Debug logging
+            print("Columnas disponibles:", df.columns.tolist())
+            print("Primeras filas:", df.head())
+
+            # Mapear nombres de columnas
+            if 'T3_Periodo' in df.columns:
+                df['Periodo'] = df['T3_Periodo']
+
             # Convertir columnas numéricas
             if 'Valor' in df.columns:
                 df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
@@ -35,6 +43,13 @@ class DataProcessor:
             # Convertir fechas
             if 'Fecha' in df.columns:
                 df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
+
+            # Asegurar que tenemos las columnas necesarias
+            columnas_requeridas = ['Fecha', 'Periodo', 'Valor']
+            for col in columnas_requeridas:
+                if col not in df.columns:
+                    print(f"Columna {col} no encontrada en los datos")
+                    return pd.DataFrame()
                 
             return df
             
