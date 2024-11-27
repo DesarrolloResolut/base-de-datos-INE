@@ -4,6 +4,11 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import json
 from datetime import datetime
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class INEApiClient:
     """Cliente para la API del INE"""
@@ -29,33 +34,65 @@ class INEApiClient:
         """Valida la respuesta JSON de la API"""
         try:
             response.raise_for_status()
+            # Loguear respuesta raw para debugging
+            logger.info(f"Respuesta raw de la API: {response.text[:1000]}...")
+            
             data = response.json()
             if not isinstance(data, (list, dict)):
-                raise ValueError("La respuesta no tiene un formato JSON válido")
+                error_msg = "La respuesta no tiene un formato JSON válido"
+                logger.error(f"{error_msg}. Contenido: {response.text[:500]}...")
+                raise ValueError(error_msg)
             return data
-        except requests.exceptions.JSONDecodeError:
-            raise ValueError("La respuesta no es un JSON válido")
+        except requests.exceptions.JSONDecodeError as e:
+            error_msg = f"Error al decodificar JSON: {str(e)}"
+            logger.error(f"{error_msg}. Contenido: {response.text[:500]}...")
+            raise ValueError(error_msg)
         except requests.exceptions.HTTPError as e:
-            raise ValueError(f"Error en la solicitud HTTP: {e}")
+            error_msg = f"Error en la solicitud HTTP: {response.status_code} - {str(e)}"
+            logger.error(f"{error_msg}. Contenido: {response.text[:500]}...")
+            raise ValueError(error_msg)
         except Exception as e:
-            raise ValueError(f"Error al procesar la respuesta: {str(e)}")
+            error_msg = f"Error inesperado al procesar la respuesta: {str(e)}"
+            logger.error(f"{error_msg}. Contenido: {response.text[:500]}...")
+            raise ValueError(error_msg)
     
     @staticmethod
     def _validar_operacion(operacion: Dict) -> bool:
         """Valida si una operación tiene los campos mínimos necesarios"""
-        campos_requeridos = ['nombre', 'periodicidad']
-        return all(operacion.get(campo) for campo in campos_requeridos)
+        # Solo requerimos el nombre como campo obligatorio
+        if not operacion.get('nombre'):
+            logger.warning(f"Operación sin nombre: {json.dumps(operacion, indent=2)}")
+            return False
+            
+        # Agregar valores por defecto para campos faltantes
+        if 'periodicidad' not in operacion:
+            operacion['periodicidad'] = 'No especificada'
+            logger.info(f"Agregando periodicidad por defecto para operación: {operacion['nombre']}")
+            
+        if 'cod' not in operacion:
+            operacion['cod'] = 'N/A'
+            logger.info(f"Agregando código por defecto para operación: {operacion['nombre']}")
+            
+        return True
 
     @staticmethod
     def get_operaciones() -> List[Dict]:
         """Obtiene lista de operaciones estadísticas"""
         try:
             session = INEApiClient._get_session()
-            response = session.get(f"{INEApiClient.BASE_URL}/operaciones")
+            url = f"{INEApiClient.BASE_URL}/operaciones"
+            logger.info(f"Consultando operaciones en: {url}")
+            
+            response = session.get(url)
             data = INEApiClient._validate_json_response(response)
             
             if not isinstance(data, list):
-                raise ValueError("La respuesta no contiene una lista de operaciones")
+                error_msg = "La respuesta no contiene una lista de operaciones"
+                logger.error(f"{error_msg}. Contenido recibido: {type(data)}")
+                raise ValueError(error_msg)
+            
+            # Loguear información de todas las operaciones
+            logger.info(f"Total de operaciones recibidas: {len(data)}")
             
             # Filtrar operaciones válidas
             operaciones_validas = [
@@ -63,36 +100,55 @@ class INEApiClient:
                 if INEApiClient._validar_operacion(op)
             ]
             
+            logger.info(f"Operaciones válidas encontradas: {len(operaciones_validas)}")
+            
             if not operaciones_validas:
-                raise ValueError("No se encontraron operaciones con datos válidos")
+                error_msg = "No se encontraron operaciones con datos válidos"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             
             # Ordenar operaciones por nombre
             return sorted(operaciones_validas, key=lambda x: x.get('nombre', '').lower())
             
         except Exception as e:
-            raise ValueError(f"Error al obtener operaciones: {str(e)}")
+            error_msg = f"Error al obtener operaciones del INE: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
     
     @staticmethod
     def get_tablas_operacion(operacion_id: str) -> List[Dict]:
         """Obtiene tablas de una operación específica"""
         try:
             if not operacion_id:
-                raise ValueError("No se proporcionó el ID de la operación")
+                error_msg = "No se proporcionó el ID de la operación"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
                 
             session = INEApiClient._get_session()
-            response = session.get(f"{INEApiClient.BASE_URL}/tabla/{operacion_id}")
+            url = f"{INEApiClient.BASE_URL}/tabla/{operacion_id}"
+            logger.info(f"Consultando tablas para operación {operacion_id} en: {url}")
+            
+            response = session.get(url)
             data = INEApiClient._validate_json_response(response)
             
             if not isinstance(data, list):
-                raise ValueError("La respuesta no contiene una lista de tablas válida")
+                error_msg = "La respuesta no contiene una lista de tablas válida"
+                logger.error(f"{error_msg}. Tipo de dato recibido: {type(data)}")
+                raise ValueError(error_msg)
+            
+            logger.info(f"Tablas encontradas para operación {operacion_id}: {len(data)}")
             
             if not data:
-                raise ValueError("No se encontraron tablas para esta operación")
+                error_msg = f"No se encontraron tablas para la operación {operacion_id}"
+                logger.warning(error_msg)
+                raise ValueError(error_msg)
             
             return sorted(data, key=lambda x: x.get('nombre', '').lower())
             
         except Exception as e:
-            raise ValueError(f"Error al obtener tablas: {str(e)}")
+            error_msg = f"Error al obtener tablas de la operación {operacion_id}: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
     
     @staticmethod
     def get_datos_tabla(tabla_id: str, modo: str = "datos") -> Dict:
@@ -103,17 +159,27 @@ class INEApiClient:
         """
         try:
             if not tabla_id:
-                raise ValueError("No se proporcionó el ID de la tabla")
+                error_msg = "No se proporcionó el ID de la tabla"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
                 
             endpoint = "valores" if modo == "datos" else "metadata"
+            url = f"{INEApiClient.BASE_URL}/{endpoint}/{tabla_id}"
+            logger.info(f"Consultando {modo} de tabla {tabla_id} en: {url}")
+            
             session = INEApiClient._get_session()
-            response = session.get(f"{INEApiClient.BASE_URL}/{endpoint}/{tabla_id}")
+            response = session.get(url)
             data = INEApiClient._validate_json_response(response)
             
             if not data:
-                raise ValueError("No se encontraron datos para esta tabla")
+                error_msg = f"No se encontraron {modo} para la tabla {tabla_id}"
+                logger.warning(error_msg)
+                raise ValueError(error_msg)
                 
+            logger.info(f"Datos obtenidos correctamente para tabla {tabla_id}")
             return data
             
         except Exception as e:
-            raise ValueError(f"Error al obtener datos de la tabla: {str(e)}")
+            error_msg = f"Error al obtener {modo} de la tabla {tabla_id}: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
