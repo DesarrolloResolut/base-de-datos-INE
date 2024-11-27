@@ -16,23 +16,26 @@ st.set_page_config(
 if 'datos_actuales' not in st.session_state:
     st.session_state.datos_actuales = None
 
+@st.cache_data(ttl=3600)
+def cargar_operaciones():
+    """Carga y cachea las operaciones del INE"""
+    try:
+        return INEApiClient.get_operaciones()
+    except Exception as e:
+        st.error(f"Error al cargar operaciones: {str(e)}")
+        return []
+
 def main():
     st.title("📊 Explorador de Datos INE")
     
-    # Sidebar para búsqueda y filtros
+    # Sidebar para selección
     with st.sidebar:
-        st.header("Búsqueda")
-        busqueda = st.text_input("Buscar operaciones:", "")
-        
         try:
             # Obtener y mostrar operaciones
-            if busqueda:
-                operaciones = INEApiClient.buscar_operaciones(busqueda)
-            else:
-                operaciones = INEApiClient.get_operaciones()
+            operaciones = cargar_operaciones()
             
             if not operaciones:
-                st.warning("No se encontraron operaciones.")
+                st.error("No se pudieron cargar las operaciones. Por favor, intente más tarde.")
                 return
                 
             operacion_seleccionada = st.selectbox(
@@ -85,7 +88,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error al cargar los datos: {str(e)}")
         except Exception as e:
-            st.error(f"Error al cargar las operaciones: {str(e)}")
+            st.error(f"Error inesperado: {str(e)}")
     
     # Área principal
     if st.session_state.datos_actuales is not None:

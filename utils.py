@@ -9,9 +9,13 @@ def format_nombre_operacion(operacion: Dict) -> str:
     try:
         nombre = operacion.get('nombre', 'Sin nombre')
         id_op = operacion.get('id')
+        cod = operacion.get('cod', 'N/A')
+        periodicidad = operacion.get('periodicidad', 'No especificada')
+        
         if id_op is None:
-            return f"{nombre} (ID no disponible)"
-        return f"{nombre} (ID: {id_op})"
+            return f"{nombre} - Periodicidad: {periodicidad} (Código: {cod})"
+            
+        return f"{nombre} - Periodicidad: {periodicidad} (ID: {id_op}, Código: {cod})"
     except Exception as e:
         return "Error al formatear operación"
 
