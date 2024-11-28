@@ -1,0 +1,333 @@
+{
+    "COD": "DPOP160",
+    "Nombre": "Albacete. Total. Total habitantes. Personas. ",
+    "Unidad": {
+      "Id": 3,
+      "Nombre": "Personas",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Escala": {
+      "Id": 1,
+      "Nombre": " ",
+      "Factor": "1E0",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Data": [
+      {
+        "Fecha": 1672527600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2023,
+        "NombrePeriodo": "2023",
+        "CodigoPeriodo": "2023",
+        "Valor": 387174,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1640991600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2022,
+        "NombrePeriodo": "2022",
+        "CodigoPeriodo": "2022",
+        "Valor": 385727,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1609455600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2021,
+        "NombrePeriodo": "2021",
+        "CodigoPeriodo": "2021",
+        "Valor": 386464,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1577833200000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2020,
+        "NombrePeriodo": "2020",
+        "CodigoPeriodo": "2020",
+        "Valor": 388270,
+        "Secreto": false
+      }
+    ]
+  },
+  {
+    "COD": "DPOP161",
+    "Nombre": "Albacete. Hombres. Total habitantes. Personas. ",
+    "Unidad": {
+      "Id": 3,
+      "Nombre": "Personas",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Escala": {
+      "Id": 1,
+      "Nombre": " ",
+      "Factor": "1E0",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Data": [
+      {
+        "Fecha": 1672527600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2023,
+        "NombrePeriodo": "2023",
+        "CodigoPeriodo": "2023",
+        "Valor": 193676,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1640991600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2022,
+        "NombrePeriodo": "2022",
+        "CodigoPeriodo": "2022",
+        "Valor": 192963,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1609455600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2021,
+        "NombrePeriodo": "2021",
+        "CodigoPeriodo": "2021",
+        "Valor": 193205,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1577833200000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2020,
+        "NombrePeriodo": "2020",
+        "CodigoPeriodo": "2020",
+        "Valor": 194081,
+        "Secreto": false
+      }
+    ]
+  },
+  {
+    "COD": "DPOP162",
+    "Nombre": "Albacete. Mujeres. Total habitantes. Personas. ",
+    "Unidad": {
+      "Id": 3,
+      "Nombre": "Personas",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Escala": {
+      "Id": 1,
+      "Nombre": " ",
+      "Factor": "1E0",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Data": [
+      {
+        "Fecha": 1672527600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2023,
+        "NombrePeriodo": "2023",
+        "CodigoPeriodo": "2023",
+        "Valor": 193498,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1640991600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2022,
+        "NombrePeriodo": "2022",
+        "CodigoPeriodo": "2022",
+        "Valor": 192764,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1609455600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2021,
+        "NombrePeriodo": "2021",
+        "CodigoPeriodo": "2021",
+        "Valor": 193259,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1577833200000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 28,
+          "Valor": 1,
+          "FK_Periodicidad": 12,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "01",
+          "Nombre": "A",
+          "Nombre_largo": "Año"
+        },
+        "Anyo": 2020,
+        "NombrePeriodo": "2020",
+        "CodigoPeriodo": "2020",
+        "Valor": 194189,
+        "Secreto": false
+      }
+    ]
+  },

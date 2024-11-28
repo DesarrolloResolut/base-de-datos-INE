@@ -93,10 +93,11 @@ def main():
                     
                     # Filtro de municipios
                     municipios = DataProcessor.obtener_municipios(df)
+                    municipios = ['Total'] + [m for m in municipios if m != 'Total']  # Asegurar que Total está al principio
                     municipio_seleccionado = st.selectbox(
                         "Municipio:",
                         options=municipios,
-                        index=0 if 'Albacete' in municipios else 0
+                        index=0  # Total será el valor por defecto
                     )
                     
                     # Filtro de período

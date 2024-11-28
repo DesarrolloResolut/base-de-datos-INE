@@ -33,9 +33,12 @@ class DataProcessor:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 
-                # Extraer municipio y género
-                partes = nombre.split('.')
-                municipio = partes[0].strip() if len(partes) > 1 else 'Albacete'
+                # Determinar si es dato total o por municipio
+                if 'Total' in nombre and '.' not in nombre:
+                    municipio = 'Total'
+                else:
+                    partes = nombre.split('.')
+                    municipio = partes[0].strip() if len(partes) > 1 else nombre.split(',')[0].strip()
                 
                 if 'Hombres' in nombre:
                     genero = 'HOMBRE'
