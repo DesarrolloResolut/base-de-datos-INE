@@ -23,6 +23,8 @@ class ReportGenerator:
                 return ReportGenerator._generar_informe_excel(df, filename, municipio)
             elif formato == 'csv':
                 return ReportGenerator._generar_informe_csv(df, filename, municipio)
+            elif formato == 'pdf':
+                return ReportGenerator._generar_informe_pdf(df, filename, municipio)
             else:
                 raise ValueError(f"Formato de informe no soportado: {formato}")
                 
@@ -114,4 +116,67 @@ class ReportGenerator:
             
         except Exception as e:
             print(f"Error al generar informe CSV: {str(e)}")
+
+    @staticmethod
+    def _generar_informe_pdf(df: pd.DataFrame, filename: str, municipio: str) -> str:
+        try:
+            from fpdf import FPDF
+            
+            # Crear PDF
+            pdf = FPDF()
+            pdf.add_page()
+            
+            # Título
+            pdf.set_font('Arial', 'B', 16)
+            pdf.cell(0, 10, f'Informe Demográfico: {municipio}', ln=True, align='C')
+            
+            # Población total y por género
+            pdf.set_font('Arial', 'B', 12)
+            pdf.cell(0, 10, 'Datos de Población', ln=True)
+            pdf.set_font('Arial', '', 12)
+            
+            ultimo_periodo = df['Periodo'].max()
+            datos_recientes = df[df['Periodo'] == ultimo_periodo]
+            
+            for _, row in datos_recientes.iterrows():
+                pdf.cell(0, 10, f"{row['Genero']}: {row['Valor']:,.0f} habitantes", ln=True)
+            
+            # Estadísticas
+            pdf.set_font('Arial', 'B', 12)
+            pdf.cell(0, 10, 'Estadísticas Básicas', ln=True)
+            pdf.set_font('Arial', '', 12)
+            
+            stats = DataProcessor.calcular_estadisticas(df, 'Valor')
+            for key, value in stats.items():
+                pdf.cell(0, 10, f"{key.capitalize()}: {value:,.2f}", ln=True)
+            
+            # Tendencias
+            pdf.set_font('Arial', 'B', 12)
+            pdf.cell(0, 10, 'Análisis de Tendencias', ln=True)
+            pdf.set_font('Arial', '', 12)
+            
+            resultados_series = DataProcessor.analisis_series_temporales(df, 'Periodo', 'Valor')
+            if resultados_series:
+                tendencia = resultados_series['tendencia']
+                pdf.cell(0, 10, f"Coeficiente de tendencia: {tendencia['coeficiente']:.3f}", ln=True)
+                pdf.cell(0, 10, f"Significancia (p-valor): {tendencia['p_valor']:.4f}", ln=True)
+            
+            # Crecimiento
+            pdf.set_font('Arial', 'B', 12)
+            pdf.cell(0, 10, 'Crecimiento Poblacional', ln=True)
+            pdf.set_font('Arial', '', 12)
+            
+            df_growth = DataProcessor.calcular_crecimiento_poblacional(df)
+            if not df_growth.empty:
+                ultimo_crecimiento = df_growth['Crecimiento'].iloc[-1]
+                pdf.cell(0, 10, f"Último crecimiento registrado: {ultimo_crecimiento:.2f}%", ln=True)
+            
+            # Guardar PDF
+            pdf_file = f"{filename}.pdf"
+            pdf.output(pdf_file)
+            return pdf_file
+            
+        except Exception as e:
+            print(f"Error al generar informe PDF: {str(e)}")
+            return ""
             return ""

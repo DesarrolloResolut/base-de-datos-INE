@@ -265,7 +265,7 @@ def main():
         # Opciones de exportación
         tipo_informe = st.radio(
             "Tipo de informe",
-            ["Informe completo (Excel)", "Informe básico (CSV)"]
+            ["Informe completo (Excel)", "Informe detallado (PDF)", "Informe básico (CSV)"]
         )
         
         if st.button("Generar Informe"):
@@ -273,19 +273,20 @@ def main():
                 df_export = st.session_state.datos_actuales.copy()
                 
                 if tipo_informe == "Informe completo (Excel)":
-                    nombre_archivo = ReportGenerator.generar_informe_completo(
-                        df_export,
-                        municipio_seleccionado,
-                        formato='excel'
-                    )
+                    formato = 'excel'
                     mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                elif tipo_informe == "Informe detallado (PDF)":
+                    formato = 'pdf'
+                    mime_type = "application/pdf"
                 else:
-                    nombre_archivo = ReportGenerator.generar_informe_completo(
-                        df_export,
-                        municipio_seleccionado,
-                        formato='csv'
-                    )
+                    formato = 'csv'
                     mime_type = "text/csv"
+                
+                nombre_archivo = ReportGenerator.generar_informe_completo(
+                    df_export,
+                    municipio_seleccionado,
+                    formato=formato
+                )
                 
                 if nombre_archivo:
                     st.success("Informe generado correctamente")
