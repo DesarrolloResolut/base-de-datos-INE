@@ -73,21 +73,29 @@ class DataProcessor:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 
-                # Extraer tipo de indicador
-                tipo = 'Total'
-                if 'MUJERES' in nombre.upper():
-                    tipo = 'Mujeres'
-                elif 'PORCENTAJE' in nombre.upper():
-                    tipo = 'Porcentaje'
-                    
-                # Procesar valores
-                for valor in valores:
-                    registros.append({
-                        'Indicador': nombre,
-                        'Tipo': tipo,
-                        'Periodo': valor.get('Anyo', ''),
-                        'Valor': valor.get('Valor', 0)
-                    })
+                # Extraer sector del nombre (ejemplo: "B. Sectores manufactureros de alta tecnología")
+                sector = nombre.split(',')[0].strip()
+                
+                # Identificar tipo de indicador
+                tipo = None
+                if "Número de ocupados. Total" in nombre:
+                    tipo = "Total ocupados"
+                elif "Número de ocupados / Total de ocupados (%)" in nombre:
+                    tipo = "Porcentaje total"
+                elif "Número de ocupados. Mujeres" in nombre:
+                    tipo = "Mujeres ocupadas"
+                elif "% Mujeres del número de ocupados" in nombre:
+                    tipo = "Porcentaje mujeres"
+                
+                if tipo:
+                    # Procesar valores
+                    for valor in valores:
+                        registros.append({
+                            'Sector': sector,
+                            'Tipo': tipo,
+                            'Periodo': valor.get('Anyo', ''),
+                            'Valor': valor.get('Valor', 0)
+                        })
             
             # Crear DataFrame
             df = pd.DataFrame(registros)
@@ -187,11 +195,11 @@ class DataProcessor:
             # Ordenar datos por período
             df_sorted = df.sort_values(columna_periodo).copy()
             
-            # Crear índice temporal usando date_range
+            # Crear índice temporal usando date_range con frecuencia anual
             df_sorted.index = pd.date_range(
                 start=str(df_sorted[columna_periodo].min()),
                 periods=len(df_sorted),
-                freq='A'
+                freq='YE'  # Usar YE en lugar de A para año fiscal
             )
             
             # Realizar descomposición
