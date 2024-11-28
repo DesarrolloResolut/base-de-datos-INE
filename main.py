@@ -74,7 +74,7 @@ def main():
                 )
                 
                 # Filtro de género
-                generos = ['Total', 'Hombres', 'Mujeres']
+                generos = ['Total', 'HOMBRE', 'MUJER']
                 genero_seleccionado = st.multiselect(
                     "Género:",
                     options=generos,

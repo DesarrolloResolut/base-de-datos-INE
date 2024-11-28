@@ -18,13 +18,16 @@ class DataProcessor:
                 nombre_completo = item.get('Nombre', '').split('.')
                 municipio = nombre_completo[0].strip() if nombre_completo else 'No especificado'
                 
-                # Determinar género (Total, Hombres, Mujeres)
-                genero = 'Total'
-                if len(nombre_completo) > 2:
-                    if 'hombres' in nombre_completo[2].lower():
-                        genero = 'Hombres'
-                    elif 'mujeres' in nombre_completo[2].lower():
-                        genero = 'Mujeres'
+                # Determinar género (HOMBRE/MUJER)
+                genero = None
+                if len(nombre_completo) > 1:
+                    nombre_genero = nombre_completo[1].lower().strip()
+                    if 'hombres' in nombre_genero:
+                        genero = 'HOMBRE'
+                    elif 'mujeres' in nombre_genero:
+                        genero = 'MUJER'
+                    else:
+                        genero = 'Total'
                 
                 # Procesar datos temporales
                 for dato in item.get('Data', []):
