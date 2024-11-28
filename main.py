@@ -238,26 +238,48 @@ def main():
                 st.plotly_chart(fig_barras, use_container_width=True)
                 
             else:  # demografía
-                # Gráfico de evolución temporal
-                st.subheader("Evolución temporal")
-                fig_evolucion = DataVisualizer.crear_grafico_lineas(
-                    df,
-                    x='Periodo',
-                    y='Valor',
-                    color='Genero',
-                    titulo=f"Evolución temporal - {categoria_seleccionada}"
-                )
-                st.plotly_chart(fig_evolucion, use_container_width=True)
-                
-                # Gráfico comparativo por género
-                st.subheader("Comparativa por género")
-                fig_comparativa = DataVisualizer.crear_grafico_barras(
-                    df[df['Periodo'] == df['Periodo'].max()],
-                    x='Genero',
-                    y='Valor',
-                    titulo=f"Distribución por Género - {municipio_seleccionado} ({df['Periodo'].max()})"
-                )
-                st.plotly_chart(fig_comparativa, use_container_width=True)
+                if categoria_seleccionada == "demografia_provincia":
+                    # Gráfico de evolución temporal
+                    st.subheader("Evolución temporal")
+                    fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                        df,
+                        x='Periodo',
+                        y='Valor',
+                        color='Genero',
+                        titulo="Evolución temporal - Población por género"
+                    )
+                    st.plotly_chart(fig_evolucion, use_container_width=True)
+                    
+                    # Gráfico comparativo por género
+                    st.subheader("Comparativa por género")
+                    fig_comparativa = DataVisualizer.crear_grafico_barras(
+                        df[df['Periodo'] == df['Periodo'].max()],
+                        x='Genero',
+                        y='Valor',
+                        titulo=f"Distribución por Género - {municipio_seleccionado} ({df['Periodo'].max()})"
+                    )
+                    st.plotly_chart(fig_comparativa, use_container_width=True)
+                    
+                elif categoria_seleccionada == "demografia_municipios":
+                    # Gráfico de barras para distribución de municipios
+                    st.subheader("Distribución de Municipios por Tamaño")
+                    fig_barras = DataVisualizer.crear_grafico_barras(
+                        df[df['Periodo'] == df['Periodo'].max()],
+                        x='Rango',
+                        y='Valor',
+                        titulo=f"Municipios por Rango de Población ({df['Periodo'].max()})"
+                    )
+                    st.plotly_chart(fig_barras, use_container_width=True)
+                    
+                    # Gráfico de pastel para distribución porcentual
+                    st.subheader("Distribución Porcentual de Municipios")
+                    fig_pie = DataVisualizer.crear_grafico_pastel(
+                        df[df['Periodo'] == df['Periodo'].max()],
+                        names='Rango',
+                        values='Valor',
+                        titulo=f"Distribución Porcentual de Municipios ({df['Periodo'].max()})"
+                    )
+                    st.plotly_chart(fig_pie, use_container_width=True)
             
         except Exception as e:
             st.error(f"Error al crear los gráficos: {str(e)}")
