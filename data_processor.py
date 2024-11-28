@@ -1,166 +1,109 @@
 import pandas as pd
-from typing import Dict, List
-import logging
-
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import numpy as np
+from typing import Dict, List, Optional
+from datetime import datetime
 
 class DataProcessor:
-    """Procesamiento de datos del INE"""
+    """Procesador de datos del INE"""
     
     @staticmethod
-    def json_to_dataframe(data: Dict) -> pd.DataFrame:
+    def json_to_dataframe(datos: Dict) -> pd.DataFrame:
+        """Convierte datos JSON a DataFrame"""
         try:
+            # Extraer datos relevantes
             registros = []
-            for item in data:
-                # Extraer información del nombre
-                nombre_completo = item.get('Nombre', '').split('.')
-                municipio = nombre_completo[0].strip() if nombre_completo else 'No especificado'
+            for dato in datos:
+                nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
                 
-                # Determinar género (HOMBRE/MUJER)
-                genero = None
-                if len(nombre_completo) > 1:
-                    nombre_genero = nombre_completo[1].lower().strip()
-                    if 'hombres' in nombre_genero:
-                        genero = 'HOMBRE'
-                    elif 'mujeres' in nombre_genero:
-                        genero = 'MUJER'
-                    else:
-                        genero = 'Total'
+                # Determinar género
+                if 'HOMBRES' in nombre.upper():
+                    genero = 'HOMBRE'
+                elif 'MUJERES' in nombre.upper():
+                    genero = 'MUJER'
+                else:
+                    genero = 'Total'
                 
-                # Procesar datos temporales
-                for dato in item.get('Data', []):
-                    registro = {
+                # Extraer municipio
+                municipio = nombre.split('.')[0].strip()
+                
+                # Procesar valores
+                for valor in valores:
+                    registros.append({
                         'Municipio': municipio,
                         'Genero': genero,
-                        'Periodo': str(dato.get('Anyo', '')),
-                        'Valor': dato.get('Valor', 0)
-                    }
-                    registros.append(registro)
+                        'Periodo': valor.get('Anyo', ''),
+                        'Valor': valor.get('Valor', 0)
+                    })
             
+            # Crear DataFrame
             df = pd.DataFrame(registros)
-            print(f"DataFrame creado con {len(df)} registros")
-            print("Columnas:", df.columns.tolist())
-            print("Primeras filas:", df.head())
+            
+            # Convertir tipos de datos
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
             return df
             
         except Exception as e:
-            print(f"Error al procesar JSON: {str(e)}")
-            print(f"Estructura de datos recibida: {data[0] if data else 'Sin datos'}")
+            print(f"Error al procesar datos JSON: {str(e)}")
             return pd.DataFrame()
-        except Exception as e:
-            print(f"Error al procesar JSON: {e}")
-            print(f"Columnas disponibles: {list(data[0].keys()) if data else []}")
-            return pd.DataFrame()
-
+    
     @staticmethod
     def filtrar_datos(df: pd.DataFrame, filtros: Dict) -> pd.DataFrame:
-        """Filtra el DataFrame según los criterios especificados"""
-        df_filtrado = df.copy()
-        
-        for columna, valores in filtros.items():
-            if valores and columna in df_filtrado.columns:
-                if isinstance(valores, (list, tuple)):
-                    df_filtrado = df_filtrado[df_filtrado[columna].isin(valores)]
-                else:
-                    df_filtrado = df_filtrado[df_filtrado[columna] == valores]
-                    
-        return df_filtrado
-
-    @staticmethod
-    def agrupar_por_municipio_genero(df: pd.DataFrame) -> pd.DataFrame:
-        """Agrupa los datos por municipio y género"""
-        return df.pivot_table(
-            values='Valor',
-            index=['Municipio', 'Periodo'],
-            columns='Genero',
-            aggfunc='first'
-        ).reset_index()
-
+        """Aplica filtros al DataFrame"""
+        try:
+            df_filtrado = df.copy()
+            
+            # Aplicar filtros si existen
+            if filtros.get('Municipio'):
+                df_filtrado = df_filtrado[df_filtrado['Municipio'] == filtros['Municipio']]
+                
+            if filtros.get('Periodo'):
+                df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(filtros['Periodo'])]
+                
+            if filtros.get('Genero'):
+                df_filtrado = df_filtrado[df_filtrado['Genero'].isin(filtros['Genero'])]
+            
+            return df_filtrado
+            
+        except Exception as e:
+            print(f"Error al filtrar datos: {str(e)}")
+            return pd.DataFrame()
+    
     @staticmethod
     def obtener_municipios(df: pd.DataFrame) -> List[str]:
-        """Obtiene la lista de municipios disponibles"""
-        return sorted(df['Municipio'].unique().tolist())
-
+        """Obtiene lista de municipios únicos"""
+        try:
+            return sorted(df['Municipio'].unique())
+        except Exception as e:
+            print(f"Error al obtener municipios: {str(e)}")
+            return []
+    
     @staticmethod
-    def obtener_periodos(df: pd.DataFrame) -> List[str]:
-        """Obtiene la lista de períodos disponibles"""
-        return sorted(df['Periodo'].unique().tolist())
-
+    def obtener_periodos(df: pd.DataFrame) -> List[int]:
+        """Obtiene lista de períodos únicos"""
+        try:
+            return sorted(df['Periodo'].unique())
+        except Exception as e:
+            print(f"Error al obtener períodos: {str(e)}")
+            return []
+    
     @staticmethod
-    def calcular_estadisticas(df: pd.DataFrame, columna_valores: str) -> Dict:
+    def calcular_estadisticas(df: pd.DataFrame, columna: str) -> Dict:
         """Calcula estadísticas básicas de una columna"""
-        if columna_valores not in df.columns:
+        try:
+            return {
+                'media': df[columna].mean(),
+                'mediana': df[columna].median(),
+                'desv_std': df[columna].std(),
+                'min': df[columna].min(),
+                'max': df[columna].max()
+            }
+        except Exception as e:
+            print(f"Error al calcular estadísticas: {str(e)}")
             return {}
-            
-        stats = {
-            'media': df[columna_valores].mean(),
-            'mediana': df[columna_valores].median(),
-            'desv_std': df[columna_valores].std(),
-            'min': df[columna_valores].min(),
-            'max': df[columna_valores].max()
-        }
-        return stats
-        
-    @staticmethod
-    def calcular_tasa_natalidad(df: pd.DataFrame, col_nacimientos: str, col_poblacion: str) -> float:
-        """Calcula la tasa de natalidad por cada 1000 habitantes"""
-        if col_nacimientos not in df.columns or col_poblacion not in df.columns:
-            return 0.0
-        return (df[col_nacimientos].sum() / df[col_poblacion].sum()) * 1000
-        
-    @staticmethod
-    def calcular_tasa_mortalidad(df: pd.DataFrame, col_defunciones: str, col_poblacion: str) -> float:
-        """Calcula la tasa de mortalidad por cada 1000 habitantes"""
-        if col_defunciones not in df.columns or col_poblacion not in df.columns:
-            return 0.0
-        return (df[col_defunciones].sum() / df[col_poblacion].sum()) * 1000
-
-    @staticmethod
-    def calcular_crecimiento_poblacional(df: pd.DataFrame, columna_valor: str = 'Valor', columna_periodo: str = 'Periodo') -> pd.DataFrame:
-        """Calcula la tasa de crecimiento poblacional entre períodos consecutivos"""
-        if columna_valor not in df.columns or columna_periodo not in df.columns:
-            return pd.DataFrame()
-            
-        # Ordenar por período
-        df_sorted = df.sort_values(columna_periodo)
-        
-        # Calcular el crecimiento porcentual
-        df_sorted['Crecimiento'] = df_sorted[columna_valor].pct_change() * 100
-        
-        return df_sorted
-
-    @staticmethod
-    def analizar_tendencias(df: pd.DataFrame, columna_valor: str = 'Valor', columna_periodo: str = 'Periodo') -> Dict:
-        """Realiza análisis de tendencias usando regresión lineal simple"""
-        from sklearn.linear_model import LinearRegression
-        import numpy as np
-        
-        if columna_valor not in df.columns or columna_periodo not in df.columns:
-            return {}
-            
-        # Convertir períodos a números
-        df_sorted = df.sort_values(columna_periodo)
-        X = np.arange(len(df_sorted)).reshape(-1, 1)
-        y = df_sorted[columna_valor].values
-        
-        # Ajustar regresión lineal
-        model = LinearRegression()
-        model.fit(X, y)
-        
-        # Calcular predicciones y R²
-        y_pred = model.predict(X)
-        r2 = model.score(X, y)
-        
-        return {
-            'pendiente': model.coef_[0],
-            'intercepto': model.intercept_,
-            'r2': r2,
-            'predicciones': y_pred.tolist(),
-            'periodos': df_sorted[columna_periodo].tolist()
-        }
-
+    
     @staticmethod
     def calcular_correlaciones(df: pd.DataFrame, variables: List[str] = None) -> Dict:
         """Calcula la matriz de correlaciones y p-values entre las variables numéricas especificadas"""
@@ -168,6 +111,27 @@ class DataProcessor:
         import numpy as np
         
         if variables is None:
+            variables = df.select_dtypes(include=[np.number]).columns.tolist()
+        
+        n = len(variables)
+        corr_matrix = pd.DataFrame(np.zeros((n, n)), columns=variables, index=variables)
+        p_matrix = pd.DataFrame(np.zeros((n, n)), columns=variables, index=variables)
+        
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    corr, p_value = stats.pearsonr(df[variables[i]], df[variables[j]])
+                    corr_matrix.iloc[i, j] = corr
+                    p_matrix.iloc[i, j] = p_value
+                else:
+                    corr_matrix.iloc[i, j] = 1.0
+                    p_matrix.iloc[i, j] = 0.0
+        
+        return {
+            'correlaciones': corr_matrix,
+            'p_values': p_matrix
+        }
+
     @staticmethod
     def analisis_regresion_multiple(df: pd.DataFrame, variable_dependiente: str, variables_independientes: List[str]) -> Dict:
         """Realiza análisis de regresión múltiple"""
@@ -214,14 +178,14 @@ class DataProcessor:
         
         # Convertir a serie temporal
         df_ts = df.copy()
-        df_ts[columna_fecha] = pd.to_datetime(df_ts[columna_fecha])
+        df_ts[columna_fecha] = pd.to_datetime(df_ts[columna_fecha], format='%Y')
         df_ts = df_ts.set_index(columna_fecha)
         
         # Descomposición de la serie temporal
         descomposicion = seasonal_decompose(df_ts[columna_valor], period=12, extrapolate_trend='freq')
         
         # Prueba de tendencia Mann-Kendall
-        tendencia, p_valor = stats.kendalltau(df_ts.index.values, df_ts[columna_valor])
+        tendencia, p_valor = stats.kendalltau(df_ts.index.values.astype(np.int64), df_ts[columna_valor])
         
         # Calcular tasas de cambio
         tasas_cambio = df_ts[columna_valor].pct_change().dropna()
@@ -243,23 +207,93 @@ class DataProcessor:
                 'desv_std': tasas_cambio.std()
             }
         }
-            variables = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    @staticmethod
+    def calcular_crecimiento_poblacional(df: pd.DataFrame) -> pd.DataFrame:
+        """Calcula las tasas de crecimiento poblacional"""
+        try:
+            df_growth = df.copy()
+            df_growth['Crecimiento'] = df_growth.groupby('Genero')['Valor'].pct_change() * 100
+            return df_growth.dropna()
+        except Exception as e:
+            print(f"Error al calcular crecimiento poblacional: {str(e)}")
+            return pd.DataFrame()
+
+    @staticmethod
+    def calcular_tasa_natalidad(df: pd.DataFrame, col_nacimientos: str, col_poblacion: str) -> float:
+        """Calcula la tasa de natalidad por cada 1000 habitantes"""
+        if col_nacimientos not in df.columns or col_poblacion not in df.columns:
+            return 0.0
+        return (df[col_nacimientos].sum() / df[col_poblacion].sum()) * 1000
         
-        n = len(variables)
-        corr_matrix = pd.DataFrame(np.zeros((n, n)), columns=variables, index=variables)
-        p_matrix = pd.DataFrame(np.zeros((n, n)), columns=variables, index=variables)
+    @staticmethod
+    def calcular_tasa_mortalidad(df: pd.DataFrame, col_defunciones: str, col_poblacion: str) -> float:
+        """Calcula la tasa de mortalidad por cada 1000 habitantes"""
+        if col_defunciones not in df.columns or col_poblacion not in df.columns:
+            return 0.0
+        return (df[col_defunciones].sum() / df[col_poblacion].sum()) * 1000
+    
+    @staticmethod
+    def agrupar_por_municipio_genero(df: pd.DataFrame) -> pd.DataFrame:
+        """Agrupa los datos por municipio y género"""
+        return df.pivot_table(
+            values='Valor',
+            index=['Municipio', 'Periodo'],
+            columns='Genero',
+            aggfunc='first'
+        ).reset_index()
+
+    @staticmethod
+    def obtener_municipios(df: pd.DataFrame) -> List[str]:
+        """Obtiene la lista de municipios disponibles"""
+        return sorted(df['Municipio'].unique().tolist())
+
+    @staticmethod
+    def obtener_periodos(df: pd.DataFrame) -> List[str]:
+        """Obtiene la lista de períodos disponibles"""
+        return sorted(df['Periodo'].unique().tolist())
+
+    @staticmethod
+    def calcular_estadisticas(df: pd.DataFrame, columna_valores: str) -> Dict:
+        """Calcula estadísticas básicas de una columna"""
+        if columna_valores not in df.columns:
+            return {}
+            
+        stats = {
+            'media': df[columna_valores].mean(),
+            'mediana': df[columna_valores].median(),
+            'desv_std': df[columna_valores].std(),
+            'min': df[columna_valores].min(),
+            'max': df[columna_valores].max()
+        }
+        return stats
         
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    corr, p_value = stats.pearsonr(df[variables[i]], df[variables[j]])
-                    corr_matrix.iloc[i, j] = corr
-                    p_matrix.iloc[i, j] = p_value
-                else:
-                    corr_matrix.iloc[i, j] = 1.0
-                    p_matrix.iloc[i, j] = 0.0
+    @staticmethod
+    def analizar_tendencias(df: pd.DataFrame, columna_valor: str = 'Valor', columna_periodo: str = 'Periodo') -> Dict:
+        """Realiza análisis de tendencias usando regresión lineal simple"""
+        from sklearn.linear_model import LinearRegression
+        import numpy as np
+        
+        if columna_valor not in df.columns or columna_periodo not in df.columns:
+            return {}
+            
+        # Convertir períodos a números
+        df_sorted = df.sort_values(columna_periodo)
+        X = np.arange(len(df_sorted)).reshape(-1, 1)
+        y = df_sorted[columna_valor].values
+        
+        # Ajustar regresión lineal
+        model = LinearRegression()
+        model.fit(X, y)
+        
+        # Calcular predicciones y R²
+        y_pred = model.predict(X)
+        r2 = model.score(X, y)
         
         return {
-            'correlaciones': corr_matrix,
-            'p_values': p_matrix
+            'pendiente': model.coef_[0],
+            'intercepto': model.intercept_,
+            'r2': r2,
+            'predicciones': y_pred.tolist(),
+            'periodos': df_sorted[columna_periodo].tolist()
         }
