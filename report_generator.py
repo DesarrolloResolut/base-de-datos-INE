@@ -125,42 +125,56 @@ class ReportGenerator:
     def _generar_informe_pdf_sectores(df: pd.DataFrame, filename: str) -> str:
         """Genera informe PDF para datos de sectores manufactureros"""
         try:
-            # Crear PDF
-            pdf = FPDF()
+            # Crear PDF con orientación horizontal para gráficos
+            pdf = FPDF(orientation='L')
             pdf.add_page()
             
             # Título
             pdf.set_font('Arial', 'B', 16)
             pdf.cell(0, 10, 'Informe de Sectores Manufactureros', ln=True, align='C')
             
-            # Datos por sector y tipo
-            pdf.set_font('Arial', 'B', 12)
-            pdf.cell(0, 10, 'Datos por Sector', ln=True)
-            pdf.set_font('Arial', '', 12)
+            # Resumen de indicadores por sector
+            pdf.set_font('Arial', 'B', 14)
+            pdf.cell(0, 10, 'Resumen por Sector', ln=True)
             
             ultimo_periodo = df['Periodo'].max()
             datos_recientes = df[df['Periodo'] == ultimo_periodo]
             
             for sector in datos_recientes['Sector'].unique():
+                pdf.set_font('Arial', 'B', 12)
                 pdf.cell(0, 10, f"\n{sector}", ln=True)
+                
                 sector_data = datos_recientes[datos_recientes['Sector'] == sector]
+                pdf.set_font('Arial', '', 11)
                 
                 for _, row in sector_data.iterrows():
-                    pdf.cell(0, 10, f"{row['Tipo']}: {row['Valor']:,.2f}", ln=True)
+                    # Formatear valor según el tipo de indicador
+                    valor = row['Valor']
+                    if 'porcentaje' in row['Tipo'].lower() or '%' in row['Tipo']:
+                        valor_str = f"{valor:.1f}%"
+                    else:
+                        valor_str = f"{valor:,.1f}"
+                    
+                    pdf.cell(0, 8, f"{row['Tipo']}: {valor_str}", ln=True)
             
-            # Estadísticas básicas por tipo de indicador
+            # Estadísticas y análisis
             pdf.add_page()
-            pdf.set_font('Arial', 'B', 12)
+            pdf.set_font('Arial', 'B', 14)
             pdf.cell(0, 10, 'Estadísticas por Tipo de Indicador', ln=True)
-            pdf.set_font('Arial', '', 12)
             
             for tipo in df['Tipo'].unique():
-                pdf.cell(0, 10, f"\n{tipo}:", ln=True)
                 datos_tipo = df[df['Tipo'] == tipo]
                 stats = DataProcessor.calcular_estadisticas(datos_tipo, 'Valor')
                 
+                pdf.set_font('Arial', 'B', 12)
+                pdf.cell(0, 10, f"\n{tipo}:", ln=True)
+                pdf.set_font('Arial', '', 11)
+                
                 for key, value in stats.items():
-                    pdf.cell(0, 10, f"{key.capitalize()}: {value:,.2f}", ln=True)
+                    if 'porcentaje' in tipo.lower() or '%' in tipo:
+                        pdf.cell(0, 8, f"{key.capitalize()}: {value:.1f}%", ln=True)
+                    else:
+                        pdf.cell(0, 8, f"{key.capitalize()}: {value:,.1f}", ln=True)
             
             # Guardar PDF
             pdf_file = f"{filename}.pdf"
