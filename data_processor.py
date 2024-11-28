@@ -12,25 +12,40 @@ class DataProcessor:
     @staticmethod
     def json_to_dataframe(data: Dict) -> pd.DataFrame:
         try:
-            # Extraer datos de la estructura JSON
             registros = []
             for item in data:
-                nombre = item.get('Nombre', '').split('.')
-                # Procesar el nombre para extraer municipio y género
-                municipio = nombre[0].strip() if len(nombre) > 0 else 'No especificado'
-                genero = nombre[2].strip() if len(nombre) > 2 else 'Total'
+                # Extraer información del nombre
+                nombre_completo = item.get('Nombre', '').split('.')
+                municipio = nombre_completo[0].strip() if nombre_completo else 'No especificado'
                 
-                # Procesar los datos
+                # Determinar género (Total, Hombres, Mujeres)
+                genero = 'Total'
+                if len(nombre_completo) > 2:
+                    if 'hombres' in nombre_completo[2].lower():
+                        genero = 'Hombres'
+                    elif 'mujeres' in nombre_completo[2].lower():
+                        genero = 'Mujeres'
+                
+                # Procesar datos temporales
                 for dato in item.get('Data', []):
                     registro = {
                         'Municipio': municipio,
                         'Genero': genero,
-                        'Periodo': dato.get('Anyo'),
+                        'Periodo': str(dato.get('Anyo', '')),
                         'Valor': dato.get('Valor', 0)
                     }
                     registros.append(registro)
             
-            return pd.DataFrame(registros)
+            df = pd.DataFrame(registros)
+            print(f"DataFrame creado con {len(df)} registros")
+            print("Columnas:", df.columns.tolist())
+            print("Primeras filas:", df.head())
+            return df
+            
+        except Exception as e:
+            print(f"Error al procesar JSON: {str(e)}")
+            print(f"Estructura de datos recibida: {data[0] if data else 'Sin datos'}")
+            return pd.DataFrame()
         except Exception as e:
             print(f"Error al procesar JSON: {e}")
             print(f"Columnas disponibles: {list(data[0].keys()) if data else []}")
