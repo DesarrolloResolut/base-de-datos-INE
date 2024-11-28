@@ -88,23 +88,31 @@ class DataProcessor:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 
-                # Solo procesar datos de Albacete (código 02)
-                if not nombre.startswith('02 Albacete'):
+                # Ignorar datos nacionales
+                if nombre.startswith('Total Nacional'):
                     continue
-                
-                # Extraer rango de habitantes
-                rango = nombre.split(',')[1].strip() if ',' in nombre else nombre.split('.')[-1].strip()
+                    
+                # Extraer provincia y rango
+                partes = nombre.split(',')
+                if len(partes) < 2:
+                    continue
+                    
+                codigo_provincia = partes[0].strip().split()[0]
+                nombre_provincia = ' '.join(partes[0].strip().split()[1:])
+                rango = partes[1].strip()
                 
                 # Procesar valores usando NombrePeriodo como año
                 for valor in valores:
                     registros.append({
+                        'Provincia': nombre_provincia,
+                        'Codigo': codigo_provincia,
                         'Rango': rango,
                         'Periodo': valor.get('NombrePeriodo', ''),
                         'Valor': valor.get('Valor', 0)
                     })
             
             if not registros:
-                raise ValueError("No se encontraron datos de municipios para Albacete")
+                raise ValueError("No se encontraron datos de municipios")
                 
             # Crear DataFrame
             df = pd.DataFrame(registros)

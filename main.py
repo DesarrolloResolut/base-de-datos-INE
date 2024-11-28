@@ -117,6 +117,14 @@ def main():
                     )
 
                 elif categoria_seleccionada == "municipios_habitantes":
+                    # Filtro de provincia
+                    provincias = sorted(df['Provincia'].unique().tolist())
+                    provincia_seleccionada = st.selectbox(
+                        "Provincia:",
+                        options=provincias,
+                        index=provincias.index('Albacete') if 'Albacete' in provincias else 0
+                    )
+                    
                     # Filtro de período
                     periodos = DataProcessor.obtener_periodos(df)
                     periodo_seleccionado = st.multiselect(
@@ -156,6 +164,7 @@ def main():
                 }
             elif categoria_seleccionada == "municipios_habitantes":
                 filtros = {
+                    'Provincia': provincia_seleccionada,
                     'Periodo': periodo_seleccionado,
                     'Rango': [rango_seleccionado] if rango_seleccionado != 'Total' else df['Rango'].unique().tolist()
                 }
