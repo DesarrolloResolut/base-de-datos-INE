@@ -137,15 +137,17 @@ def main():
         # Estadísticas básicas
         if st.checkbox("Mostrar estadísticas básicas"):
             try:
-                stats = DataProcessor.calcular_estadisticas(df, col_y)
+                st.subheader("Estadísticas de población")
+                stats = DataProcessor.calcular_estadisticas(df, 'Valor')
                 if stats:
-                    st.write({
-                        "Media": stats['media'],
-                        "Mediana": stats['mediana'],
-                        "Desviación estándar": stats['desv_std'],
-                        "Mínimo": stats['min'],
-                        "Máximo": stats['max']
-                    })
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Población media", f"{stats['media']:.0f}")
+                        st.metric("Población mediana", f"{stats['mediana']:.0f}")
+                        st.metric("Desviación estándar", f"{stats['desv_std']:.0f}")
+                    with col2:
+                        st.metric("Población mínima", f"{stats['min']:.0f}")
+                        st.metric("Población máxima", f"{stats['max']:.0f}")
             except Exception as e:
                 st.error(f"Error al calcular estadísticas: {str(e)}")
         
