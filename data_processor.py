@@ -32,20 +32,28 @@ class DataProcessor:
             for dato in datos:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
+                cod = dato.get('COD', '')
                 
-                # Determinar si es dato total o por municipio
-                if 'Total' in nombre and '.' not in nombre:
+                # Procesar datos según el código
+                if cod == 'DPOP160':  # Total
+                    genero = 'Total'
+                    municipio = 'Total'
+                elif cod == 'DPOP161':  # Hombres
+                    genero = 'HOMBRE'
+                    municipio = 'Total'
+                elif cod == 'DPOP162':  # Mujeres
+                    genero = 'MUJER'
                     municipio = 'Total'
                 else:
+                    # Procesar otros datos municipales
                     partes = nombre.split('.')
                     municipio = partes[0].strip() if len(partes) > 1 else nombre.split(',')[0].strip()
-                
-                if 'Hombres' in nombre:
-                    genero = 'HOMBRE'
-                elif 'Mujeres' in nombre:
-                    genero = 'MUJER'
-                else:
-                    genero = 'Total'
+                    if 'Hombres' in nombre:
+                        genero = 'HOMBRE'
+                    elif 'Mujeres' in nombre:
+                        genero = 'MUJER'
+                    else:
+                        genero = 'Total'
                 
                 # Procesar valores
                 for valor in valores:
@@ -66,8 +74,6 @@ class DataProcessor:
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             
-            # Ordenar por municipio, período y género
-            df = df.sort_values(['Municipio', 'Periodo', 'Genero'])
             return df
             
         except Exception as e:
