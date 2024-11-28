@@ -422,19 +422,39 @@ def main():
 
         elif tipo_analisis == "Crecimiento":
             try:
-                if categoria_seleccionada == "demografia":
+                if categoria_seleccionada == "provincias":
                     df_crecimiento = DataProcessor.calcular_crecimiento_poblacional(df)
                     if not df_crecimiento.empty:
-                        st.subheader("Análisis de Crecimiento")
+                        st.subheader("Análisis de Crecimiento Poblacional")
+                        
+                        # Mostrar métricas de crecimiento
+                        ultimo_periodo = df_crecimiento['Periodo'].max()
+                        crecimiento_actual = df_crecimiento[df_crecimiento['Periodo'] == ultimo_periodo]['Crecimiento'].iloc[0]
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric(
+                                "Crecimiento último año",
+                                f"{crecimiento_actual:+.2f}%",
+                                help="Porcentaje de cambio respecto al año anterior"
+                            )
+                        
+                        # Gráfico de crecimiento
                         fig_crecimiento = DataVisualizer.crear_grafico_lineas(
                             df_crecimiento,
                             x='Periodo',
                             y='Crecimiento',
-                            titulo="Tasa de Crecimiento"
+                            titulo="Tasa de Crecimiento Poblacional Anual (%)"
                         )
                         st.plotly_chart(fig_crecimiento, use_container_width=True)
+                        
+                        # Tabla de crecimiento
+                        st.subheader("Tasas de Crecimiento por Año")
+                        df_tabla = df_crecimiento[['Periodo', 'Valor', 'Crecimiento']].copy()
+                        df_tabla.columns = ['Año', 'Población', 'Crecimiento (%)']
+                        st.dataframe(df_tabla.sort_values('Año', ascending=False))
                 else:
-                    st.info("El análisis de crecimiento no está disponible para datos de sectores manufactureros")
+                    st.info("El análisis de crecimiento no está disponible para esta categoría")
 
             except Exception as e:
                 st.error(f"Error en el análisis de crecimiento: {str(e)}")
