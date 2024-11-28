@@ -428,15 +428,32 @@ def main():
                         st.subheader("Análisis de Crecimiento Poblacional")
                         
                         # Mostrar métricas de crecimiento
-                        ultimo_periodo = df_crecimiento['Periodo'].max()
-                        crecimiento_actual = df_crecimiento[df_crecimiento['Periodo'] == ultimo_periodo]['Crecimiento'].iloc[0]
+                        df_ultimo_periodo = df_crecimiento[df_crecimiento['Periodo'] == df_crecimiento['Periodo'].max()]
+                        crecimiento_actual = df_ultimo_periodo['Crecimiento'].iloc[0]
                         
+                        # Métricas de crecimiento
                         col1, col2 = st.columns(2)
                         with col1:
                             st.metric(
                                 "Crecimiento último año",
                                 f"{crecimiento_actual:+.2f}%",
                                 help="Porcentaje de cambio respecto al año anterior"
+                            )
+                            st.metric(
+                                "Crecimiento promedio",
+                                f"{df_crecimiento['Crecimiento'].mean():+.2f}%",
+                                help="Media del crecimiento anual"
+                            )
+                        with col2:
+                            st.metric(
+                                "Crecimiento máximo",
+                                f"{df_crecimiento['Crecimiento'].max():+.2f}%",
+                                help="Mayor crecimiento anual registrado"
+                            )
+                            st.metric(
+                                "Crecimiento mínimo",
+                                f"{df_crecimiento['Crecimiento'].min():+.2f}%",
+                                help="Menor crecimiento anual registrado"
                             )
                         
                         # Gráfico de crecimiento

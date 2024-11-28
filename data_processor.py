@@ -255,12 +255,12 @@ class DataProcessor:
     def calcular_crecimiento_poblacional(df: pd.DataFrame) -> pd.DataFrame:
         """Calcula tasas de crecimiento poblacional"""
         try:
-            # Filtrar datos totales
+            # Filtrar datos totales y ordenar por período
             df_total = df[df['Genero'] == 'Total'].copy()
             df_total = df_total.sort_values('Periodo')
             
-            # Calcular crecimiento
-            df_total['Crecimiento'] = df_total['Valor'].pct_change() * 100
+            # Calcular crecimiento anual por municipio
+            df_total['Crecimiento'] = df_total.groupby('Municipio')['Valor'].pct_change() * 100
             
             return df_total
         except Exception as e:
