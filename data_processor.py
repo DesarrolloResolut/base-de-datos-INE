@@ -35,7 +35,10 @@ class DataProcessor:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 
-                # Extraer género
+                # Extraer municipio y género
+                partes = nombre.split('.')
+                municipio = partes[0].strip() if len(partes) > 1 else 'Albacete'
+                
                 if 'Hombres' in nombre:
                     genero = 'HOMBRE'
                 elif 'Mujeres' in nombre:
@@ -46,6 +49,7 @@ class DataProcessor:
                 # Procesar valores
                 for valor in valores:
                     registros.append({
+                        'Municipio': municipio,
                         'Periodo': valor.get('Anyo', ''),
                         'Valor': valor.get('Valor', 0),
                         'Genero': genero
@@ -61,8 +65,8 @@ class DataProcessor:
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             
-            # Ordenar por período y género
-            df = df.sort_values(['Periodo', 'Genero'])
+            # Ordenar por municipio, período y género
+            df = df.sort_values(['Municipio', 'Periodo', 'Genero'])
             return df
             
         except Exception as e:

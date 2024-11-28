@@ -86,7 +86,14 @@ def main():
             with st.sidebar:
                 # Filtros específicos según la categoría
                 if categoria_seleccionada == "demografia_provincia":
-                    # Remover filtro de municipio ya que solo tenemos datos de la provincia
+                    # Filtro de municipios
+                    municipios = DataProcessor.obtener_municipios(df)
+                    municipio_seleccionado = st.selectbox(
+                        "Municipio:",
+                        options=municipios,
+                        index=0 if 'Albacete' in municipios else 0
+                    )
+                    
                     # Filtro de período
                     periodos = DataProcessor.obtener_periodos(df)
                     periodo_seleccionado = st.multiselect(
@@ -147,6 +154,7 @@ def main():
             # Aplicar filtros según la categoría
             if categoria_seleccionada == "demografia_provincia":
                 filtros = {
+                    'Municipio': municipio_seleccionado,
                     'Periodo': periodo_seleccionado,
                     'Genero': genero_seleccionado
                 }
