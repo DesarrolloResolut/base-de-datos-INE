@@ -213,27 +213,41 @@ def main():
                 st.plotly_chart(fig_barras, use_container_width=True)
                 
             else:  # demografía
-                if categoria_seleccionada == "demografia_provincia":
-                    # Gráfico de evolución temporal
+                if categoria_seleccionada == "provincias":
+                    # Gráfico de evolución temporal por municipio
                     st.subheader("Evolución temporal")
                     fig_evolucion = DataVisualizer.crear_grafico_lineas(
                         df,
                         x='Periodo',
                         y='Valor',
                         color='Genero',
-                        titulo="Evolución temporal - Población por género"
+                        titulo=f"Evolución temporal - {municipio_seleccionado}"
                     )
                     st.plotly_chart(fig_evolucion, use_container_width=True)
                     
-                    # Gráfico comparativo por género
+                    # Gráfico comparativo por género y municipio
                     st.subheader("Comparativa por género")
+                    df_actual = df[df['Periodo'] == df['Periodo'].max()]
                     fig_comparativa = DataVisualizer.crear_grafico_barras(
-                        df[df['Periodo'] == df['Periodo'].max()],
+                        df_actual,
                         x='Genero',
                         y='Valor',
-                        titulo=f"Distribución por Género - Provincia Albacete ({df['Periodo'].max()})"
+                        titulo=f"Distribución por Género - {municipio_seleccionado} ({df['Periodo'].max()})"
                     )
                     st.plotly_chart(fig_comparativa, use_container_width=True)
+                    
+                    # Comparativa entre municipios si hay más de uno seleccionado
+                    if len(municipios) > 1:
+                        st.subheader("Comparativa entre municipios")
+                        df_municipios = df[df['Genero'] == 'Total']
+                        fig_municipios = DataVisualizer.crear_grafico_lineas(
+                            df_municipios,
+                            x='Periodo',
+                            y='Valor',
+                            color='Municipio',
+                            titulo="Comparativa de población entre municipios"
+                        )
+                        st.plotly_chart(fig_municipios, use_container_width=True)
                     
                 elif categoria_seleccionada == "demografia_municipios":
                     # Gráfico de barras para distribución de municipios
