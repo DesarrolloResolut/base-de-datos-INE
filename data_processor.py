@@ -74,32 +74,44 @@ class DataProcessor:
                 valores = dato.get('Data', [])
                 
                 # Extraer sector del nombre
-                sector = nombre.split(',')[0].strip()
+                partes_nombre = nombre.split('.')
+                sector = partes_nombre[0].strip()
                 
-                # Identificar tipo de indicador
-                if "Número de ocupados. Total" in nombre:
+                # Identificar tipo de indicador de forma más precisa
+                if "Total" in nombre and "ocupados" in nombre.lower() and "%" not in nombre:
                     tipo = "Total ocupados"
-                elif "Número de ocupados / Total de ocupados (%)" in nombre:
-                    tipo = "Porcentaje total"
-                elif "Número de ocupados. Mujeres" in nombre:
+                elif "ocupados" in nombre.lower() and "%" in nombre and "mujeres" not in nombre.lower():
+                    tipo = "Porcentaje sector"
+                elif "Mujeres" in nombre and "%" not in nombre:
                     tipo = "Mujeres ocupadas"
-                elif "% Mujeres del número de ocupados" in nombre:
+                elif "Mujeres" in nombre and "%" in nombre:
                     tipo = "Porcentaje mujeres"
                 else:
                     continue
                 
-                # Procesar valores con año por defecto 2024
+                # Procesar valores
                 for valor in valores:
+                    # Validar y procesar el valor
+                    valor_numerico = valor.get('Valor', 0)
+                    if valor_numerico is None:
+                        continue
+                        
                     registros.append({
                         'Sector': sector,
                         'Tipo': tipo,
                         'Periodo': valor.get('Anyo', 2024),
-                        'Valor': valor.get('Valor', 0)
+                        'Valor': valor_numerico
                     })
             
+            if not registros:
+                raise ValueError("No se encontraron datos válidos para procesar")
+                
             df = pd.DataFrame(registros)
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            # Ordenar por sector y período
+            df = df.sort_values(['Sector', 'Periodo', 'Tipo'])
             return df
         except Exception as e:
             raise ValueError(f"Error al procesar datos de sectores: {str(e)}")

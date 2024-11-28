@@ -1,0 +1,94 @@
+Plan de Implementación Actualizado: Modificaciones en la Categoría Demografía
+La categoría Demografía será reestructurada para incluir dos subcategorías específicas, relacionadas únicamente con la provincia de Albacete. Esto unificará y mejorará la organización de los datos.
+
+1. Cambios en la Estructura
+1.1. Subcategorías de Demografía
+La categoría Demografía contendrá las siguientes opciones:
+
+Provincia Albacete:
+Incluye datos generales de la población de la provincia de Albacete.
+Los datos se obtendrán de la URL: https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855?nult=4&det=2.
+Mantiene la funcionalidad existente de la aplicación.
+Municipios por número de habitantes (Albacete):
+Muestra la distribución de municipios de la provincia de Albacete según rangos de población.
+Los datos se obtendrán de la URL: https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/61399?nult=4&det=2.
+2. Modificaciones al Backend
+2.1. Datos de la Subcategoría "Provincia Albacete"
+Funcionalidad actual:
+Realiza una consulta a la API y organiza los datos demográficos generales de la provincia.
+No se requieren cambios en la lógica ya implementada.
+2.2. Datos de la Subcategoría "Municipios por número de habitantes (Albacete)"
+Petición a la API:
+
+Consumir la URL: https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/61399?nult=4&det=2.
+Filtrar los datos donde "Nombre" comience con "02 Albacete".
+Procesar Datos:
+
+Extraer los valores clasificados por los rangos de población.
+Formato procesado:
+{
+  "provincia": "Albacete",
+  "municipios": [
+    {
+      "rango": "Menos de 101 habitantes",
+      "datos": [
+        { "anyo": 2023, "valor": 3 },
+        { "anyo": 2022, "valor": 3 },
+        { "anyo": 2021, "valor": 3 }
+      ]
+    },
+    {
+      "rango": "De 101 a 500",
+      "datos": [
+        { "anyo": 2023, "valor": 23 },
+        { "anyo": 2022, "valor": 23 },
+        { "anyo": 2021, "valor": 23 }
+      ]
+    }
+    // Otros rangos...
+  ]
+}
+Endpoints del Backend:
+
+Añadir un endpoint dedicado para la subcategoría:
+Ruta: /api/demografia/municipios-albacete.
+Lógica:
+Consultar la API.
+Filtrar y procesar los datos relevantes.
+Devolver los datos procesados al frontend.
+3. Modificaciones al Frontend
+3.1. Navegación
+En la sección Demografía, añadir dos botones o pestañas para las subcategorías:
+Provincia Albacete (funcionalidad actual).
+Municipios por número de habitantes (Albacete).
+3.2. Visualización de "Municipios por número de habitantes"
+Gráficos:
+
+Barras: Comparación del número de municipios por rangos de población y año.
+Pastel: Porcentaje de municipios en cada rango para un año específico.
+Tabla:
+
+Mostrar los rangos de población y el número de municipios por año.
+Ejemplo:
+Rango de Habitantes	2023	2022	2021
+Menos de 101	3	3	3
+De 101 a 500	23	23	23
+De 501 a 1.000	18	17	17
+3.3. Conexión con el Backend
+Al seleccionar la subcategoría Municipios por número de habitantes, realizar una solicitud al nuevo endpoint /api/demografia/municipios-albacete para obtener los datos procesados.
+4. Pruebas
+4.1. Subcategoría "Provincia Albacete"
+Confirmar que la funcionalidad actual sigue operativa y muestra correctamente los datos generales de la población.
+4.2. Subcategoría "Municipios por número de habitantes"
+Verificar que:
+Solo se muestran datos de Albacete.
+Los gráficos y tablas se generan correctamente.
+Los datos corresponden a los rangos y años proporcionados por la API.
+Resumen del Flujo
+El usuario selecciona Demografía.
+Se presentan dos subcategorías:
+Provincia Albacete: Muestra datos generales de población.
+Municipios por número de habitantes: Muestra distribución de municipios por tamaño.
+Al seleccionar una subcategoría, el frontend solicita los datos correspondientes al backend.
+El backend obtiene los datos de la API, los procesa y los devuelve al frontend.
+El frontend presenta los datos mediante gráficos y tablas.
