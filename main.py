@@ -4,24 +4,6 @@ import numpy as np
 from api_client import INEApiClient
 from data_processor import DataProcessor
 from visualizer import DataVisualizer
-import streamlit as st
-import pandas as pd
-import numpy as np
-from api_client import INEApiClient
-from data_processor import DataProcessor
-from visualizer import DataVisualizer
-import streamlit as st
-import pandas as pd
-import numpy as np
-from api_client import INEApiClient
-from data_processor import DataProcessor
-from visualizer import DataVisualizer
-import streamlit as st
-import pandas as pd
-import numpy as np
-from api_client import INEApiClient
-from data_processor import DataProcessor
-from visualizer import DataVisualizer
 from utils import (format_nombre_operacion, format_nombre_tabla, 
                   exportar_a_excel, exportar_a_csv)
 from report_generator import ReportGenerator
@@ -91,69 +73,70 @@ def main():
             if df.empty:
                 st.error("No hay datos disponibles para mostrar.")
                 return
-                
-                with st.sidebar:
-                    # Filtros específicos según la categoría
-                    if categoria_seleccionada == "demografia":
-                        # Filtro de municipio
-                        municipios = DataProcessor.obtener_municipios(df)
-                        municipio_seleccionado = st.selectbox(
-                            "Municipio:",
-                            options=municipios,
-                            index=0 if 'Albacete' in municipios else 0
-                        )
-                        
-                        # Filtro de período
-                        periodos = DataProcessor.obtener_periodos(df)
-                        periodo_seleccionado = st.multiselect(
-                            "Años:",
-                            options=periodos,
-                            default=periodos[-4:] if len(periodos) > 4 else periodos
-                        )
-                        
-                        # Filtro de género
-                        generos = ['Total', 'HOMBRE', 'MUJER']
-                        genero_seleccionado = st.multiselect(
-                            "Género:",
-                            options=generos,
-                            default=generos
-                        )
-                    
-                    elif categoria_seleccionada == "sectores_manufactureros":
-                        # Filtro de período
-                        periodos = DataProcessor.obtener_periodos(df)
-                        periodo_seleccionado = st.multiselect(
-                            "Años:",
-                            options=periodos,
-                            default=periodos[-4:] if len(periodos) > 4 else periodos
-                        )
-                        
-                        # Filtro de tipo de indicador
-                        tipos = df['Tipo'].unique().tolist()
-                        tipo_seleccionado = st.multiselect(
-                            "Tipo de indicador:",
-                            options=tipos,
-                            default=tipos
-                        )
-                
-                # Aplicar filtros según la categoría
+            
+            with st.sidebar:
+                # Filtros específicos según la categoría
                 if categoria_seleccionada == "demografia":
-                    filtros = {
-                        'Municipio': municipio_seleccionado,
-                        'Periodo': periodo_seleccionado,
-                        'Genero': genero_seleccionado
-                    }
+                    # Filtro de municipio
+                    municipios = DataProcessor.obtener_municipios(df)
+                    municipio_seleccionado = st.selectbox(
+                        "Municipio:",
+                        options=municipios,
+                        index=0 if 'Albacete' in municipios else 0
+                    )
+                    
+                    # Filtro de período
+                    periodos = DataProcessor.obtener_periodos(df)
+                    periodo_seleccionado = st.multiselect(
+                        "Años:",
+                        options=periodos,
+                        default=periodos[-4:] if len(periodos) > 4 else periodos
+                    )
+                    
+                    # Filtro de género
+                    generos = ['Total', 'HOMBRE', 'MUJER']
+                    genero_seleccionado = st.multiselect(
+                        "Género:",
+                        options=generos,
+                        default=generos
+                    )
+                
                 elif categoria_seleccionada == "sectores_manufactureros":
-                    filtros = {
-                        'Periodo': periodo_seleccionado,
-                        'Tipo': tipo_seleccionado
-                    }
-                
-                df_filtrado = DataProcessor.filtrar_datos(df, filtros)
-                st.session_state.datos_actuales = df_filtrado
-                
-        except Exception as e:
-            st.error(f"Error al cargar los datos: {str(e)}")
+                    # Filtro de período
+                    periodos = DataProcessor.obtener_periodos(df)
+                    periodo_seleccionado = st.multiselect(
+                        "Años:",
+                        options=periodos,
+                        default=periodos[-4:] if len(periodos) > 4 else periodos
+                    )
+                    
+                    # Filtro de tipo de indicador
+                    tipos = df['Tipo'].unique().tolist()
+                    tipo_seleccionado = st.multiselect(
+                        "Tipo de indicador:",
+                        options=tipos,
+                        default=tipos
+                    )
+            
+            # Aplicar filtros según la categoría
+            if categoria_seleccionada == "demografia":
+                filtros = {
+                    'Municipio': municipio_seleccionado,
+                    'Periodo': periodo_seleccionado,
+                    'Genero': genero_seleccionado
+                }
+            elif categoria_seleccionada == "sectores_manufactureros":
+                filtros = {
+                    'Periodo': periodo_seleccionado,
+                    'Tipo': tipo_seleccionado
+                }
+            
+            df_filtrado = DataProcessor.filtrar_datos(df, filtros)
+            st.session_state.datos_actuales = df_filtrado
+            
+    except Exception as e:
+        st.error(f"Error al cargar los datos: {str(e)}")
+        return
     
     # Área principal
     if st.session_state.datos_actuales is not None:
@@ -172,25 +155,34 @@ def main():
         
         try:
             # Gráfico de evolución temporal
-            st.subheader("Evolución temporal de la población")
+            st.subheader("Evolución temporal")
             fig_evolucion = DataVisualizer.crear_grafico_lineas(
                 df,
                 x='Periodo',
                 y='Valor',
-                color='Genero',
-                titulo=f"Evolución de la Población en {municipio_seleccionado}"
+                color='Genero' if categoria_seleccionada == "demografia" else 'Tipo',
+                titulo=f"Evolución temporal - {categoria_seleccionada}"
             )
             st.plotly_chart(fig_evolucion, use_container_width=True)
             
-            # Gráfico de comparativa por género
-            st.subheader("Comparativa por género")
-            fig_genero = DataVisualizer.crear_grafico_barras(
-                df[df['Periodo'] == df['Periodo'].max()],
-                x='Genero',
-                y='Valor',
-                titulo=f"Distribución por Género en {municipio_seleccionado} ({df['Periodo'].max()})"
-            )
-            st.plotly_chart(fig_genero, use_container_width=True)
+            # Gráfico comparativo
+            if categoria_seleccionada == "demografia":
+                st.subheader("Comparativa por género")
+                fig_comparativa = DataVisualizer.crear_grafico_barras(
+                    df[df['Periodo'] == df['Periodo'].max()],
+                    x='Genero',
+                    y='Valor',
+                    titulo=f"Distribución por Género - {municipio_seleccionado} ({df['Periodo'].max()})"
+                )
+            else:
+                st.subheader("Comparativa por tipo")
+                fig_comparativa = DataVisualizer.crear_grafico_barras(
+                    df[df['Periodo'] == df['Periodo'].max()],
+                    x='Tipo',
+                    y='Valor',
+                    titulo=f"Distribución por Tipo ({df['Periodo'].max()})"
+                )
+            st.plotly_chart(fig_comparativa, use_container_width=True)
             
         except Exception as e:
             st.error(f"Error al crear los gráficos: {str(e)}")
@@ -198,17 +190,17 @@ def main():
         # Estadísticas básicas
         if st.checkbox("Mostrar estadísticas básicas"):
             try:
-                st.subheader("Estadísticas de población")
+                st.subheader("Estadísticas")
                 stats = DataProcessor.calcular_estadisticas(df, 'Valor')
                 if stats:
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.metric("Población media", f"{stats['media']:.0f}")
-                        st.metric("Población mediana", f"{stats['mediana']:.0f}")
-                        st.metric("Desviación estándar", f"{stats['desv_std']:.0f}")
+                        st.metric("Media", f"{stats['media']:.2f}")
+                        st.metric("Mediana", f"{stats['mediana']:.2f}")
+                        st.metric("Desviación estándar", f"{stats['desv_std']:.2f}")
                     with col2:
-                        st.metric("Población mínima", f"{stats['min']:.0f}")
-                        st.metric("Población máxima", f"{stats['max']:.0f}")
+                        st.metric("Mínimo", f"{stats['min']:.2f}")
+                        st.metric("Máximo", f"{stats['max']:.2f}")
             except Exception as e:
                 st.error(f"Error al calcular estadísticas: {str(e)}")
         
@@ -216,57 +208,39 @@ def main():
         st.header("Análisis Avanzado")
         tipo_analisis = st.selectbox(
             "Tipo de análisis",
-            ["Tendencias y Proyecciones", "Correlaciones", "Crecimiento Poblacional"]
+            ["Tendencias y Proyecciones", "Correlaciones", "Crecimiento"]
         )
 
         if tipo_analisis == "Tendencias y Proyecciones":
             try:
-                # Análisis de series temporales avanzado
                 resultados_series = DataProcessor.analisis_series_temporales(df, 'Periodo', 'Valor')
-                
-                st.subheader("Análisis Avanzado de Series Temporales")
-                
-                # Mostrar resultados de la prueba de tendencia
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Coeficiente de tendencia", 
-                            f"{resultados_series['tendencia']['coeficiente']:.3f}")
-                    st.metric("Significancia estadística (p-valor)", 
-                            f"{resultados_series['tendencia']['p_valor']:.4f}")
-                with col2:
-                    st.metric("Tasa de cambio media", 
-                            f"{resultados_series['tasas_cambio']['media']*100:.2f}%")
-                    st.metric("Volatilidad (Desv. Est.)", 
-                            f"{resultados_series['tasas_cambio']['desv_std']*100:.2f}%")
-                
-                # Gráfico de descomposición temporal
-                fig_series = DataVisualizer.crear_grafico_series_temporales(
-                    resultados_series,
-                    df['Valor'],
-                    titulo=f"Descomposición Temporal - {municipio_seleccionado}"
-                )
-                st.plotly_chart(fig_series, use_container_width=True)
-                
-                # Interpretación de resultados
-                st.subheader("Interpretación del Análisis")
-                if resultados_series['tendencia']['significativa']:
-                    st.success("Se ha detectado una tendencia estadísticamente significativa en los datos.")
-                else:
-                    st.info("No se ha detectado una tendencia estadísticamente significativa.")
-                
-                st.write("""
-                - La descomposición temporal muestra la separación de la serie en sus componentes de tendencia,
-                  estacionalidad y residuos.
-                - El componente de tendencia indica la dirección general de los cambios a largo plazo.
-                - El componente estacional muestra patrones que se repiten en intervalos regulares.
-                """)
-
+                if resultados_series:
+                    st.subheader("Análisis de Series Temporales")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Coeficiente de tendencia", 
+                                f"{resultados_series['tendencia']['coeficiente']:.3f}")
+                        st.metric("P-valor", 
+                                f"{resultados_series['tendencia']['p_valor']:.4f}")
+                    with col2:
+                        st.metric("Tasa de cambio media", 
+                                f"{resultados_series['tasas_cambio']['media']*100:.2f}%")
+                        st.metric("Volatilidad", 
+                                f"{resultados_series['tasas_cambio']['desv_std']*100:.2f}%")
+                    
+                    fig_series = DataVisualizer.crear_grafico_series_temporales(
+                        resultados_series,
+                        df['Valor'],
+                        titulo="Descomposición Temporal"
+                    )
+                    st.plotly_chart(fig_series, use_container_width=True)
+                    
             except Exception as e:
                 st.error(f"Error en el análisis de tendencias: {str(e)}")
 
         elif tipo_analisis == "Correlaciones":
             try:
-                # Análisis de correlaciones avanzado
                 variables_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
                 if len(variables_numericas) > 1:
                     resultados_corr = DataProcessor.calcular_correlaciones(df, variables_numericas)
@@ -275,43 +249,25 @@ def main():
                     fig_corr = DataVisualizer.crear_heatmap_correlacion(
                         df,
                         variables_numericas,
-                        titulo=f"Correlaciones - {municipio_seleccionado}"
+                        titulo="Correlaciones"
                     )
                     st.plotly_chart(fig_corr, use_container_width=True)
-                    
-                    # Mostrar correlaciones significativas
-                    st.subheader("Correlaciones Significativas")
-                    correlaciones_sig = []
-                    for i in range(len(variables_numericas)):
-                        for j in range(i+1, len(variables_numericas)):
-                            if resultados_corr['p_values'].iloc[i,j] < 0.05:
-                                correlaciones_sig.append({
-                                    'Variables': f"{variables_numericas[i]} - {variables_numericas[j]}",
-                                    'Correlación': resultados_corr['correlaciones'].iloc[i,j],
-                                    'P-valor': resultados_corr['p_values'].iloc[i,j]
-                                })
-                    
-                    if correlaciones_sig:
-                        st.table(pd.DataFrame(correlaciones_sig))
-                    else:
-                        st.info("No se encontraron correlaciones estadísticamente significativas.")
                 else:
                     st.warning("No hay suficientes variables numéricas para análisis de correlación")
 
             except Exception as e:
                 st.error(f"Error en el análisis de correlaciones: {str(e)}")
 
-        elif tipo_analisis == "Crecimiento Poblacional":
+        elif tipo_analisis == "Crecimiento":
             try:
-                # Análisis de crecimiento poblacional
                 df_crecimiento = DataProcessor.calcular_crecimiento_poblacional(df)
                 if not df_crecimiento.empty:
-                    st.subheader("Análisis de Crecimiento Poblacional")
+                    st.subheader("Análisis de Crecimiento")
                     fig_crecimiento = DataVisualizer.crear_grafico_lineas(
                         df_crecimiento,
                         x='Periodo',
                         y='Crecimiento',
-                        titulo=f"Tasa de Crecimiento Poblacional - {municipio_seleccionado}"
+                        titulo="Tasa de Crecimiento"
                     )
                     st.plotly_chart(fig_crecimiento, use_container_width=True)
 
@@ -321,7 +277,6 @@ def main():
         # Exportación de informes
         st.header("Exportar Informes")
         
-        # Opciones de exportación
         tipo_informe = st.radio(
             "Tipo de informe",
             ["Informe completo (Excel)", "Informe detallado (PDF)"]
@@ -340,7 +295,7 @@ def main():
                 
                 nombre_archivo = ReportGenerator.generar_informe_completo(
                     df_export,
-                    municipio_seleccionado,
+                    "Todos" if categoria_seleccionada == "sectores_manufactureros" else municipio_seleccionado,
                     formato=formato
                 )
                 
