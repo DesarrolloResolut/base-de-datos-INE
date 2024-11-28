@@ -156,13 +156,14 @@ def main():
             if st.button("Exportar a Excel"):
                 try:
                     df_export = st.session_state.datos_actuales.copy()
-                    mensaje = exportar_a_excel(df_export, "datos_poblacion_albacete.xlsx")
+                    nombre_archivo = f"datos_poblacion_{municipio_seleccionado.lower()}.xlsx"
+                    mensaje = exportar_a_excel(df_export, nombre_archivo)
                     st.success(mensaje)
-                    with open("datos_poblacion_albacete.xlsx", "rb") as f:
+                    with open(nombre_archivo, "rb") as f:
                         st.download_button(
                             label="Descargar Excel",
                             data=f,
-                            file_name="datos_poblacion_albacete.xlsx",
+                            file_name=nombre_archivo,
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                 except Exception as e:
@@ -172,13 +173,14 @@ def main():
             if st.button("Exportar a CSV"):
                 try:
                     df_export = st.session_state.datos_actuales.copy()
-                    mensaje = exportar_a_csv(df_export, "datos_poblacion_albacete.csv")
+                    nombre_archivo = f"datos_poblacion_{municipio_seleccionado.lower()}.csv"
+                    mensaje = exportar_a_csv(df_export, nombre_archivo)
                     st.success(mensaje)
-                    with open("datos_poblacion_albacete.csv", "rb") as f:
+                    with open(nombre_archivo, "rb") as f:
                         st.download_button(
                             label="Descargar CSV",
                             data=f,
-                            file_name="datos_poblacion_albacete.csv",
+                            file_name=nombre_archivo,
                             mime="text/csv"
                         )
                 except Exception as e:
