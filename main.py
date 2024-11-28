@@ -276,21 +276,23 @@ def main():
         # Estadísticas básicas
         if st.checkbox("Mostrar estadísticas básicas"):
             try:
-                st.subheader("Estadísticas")
-                if categoria_seleccionada == "sectores_manufactureros":
-                    for tipo in df['Tipo'].unique():
-                        st.write(f"#### {tipo}")
-                        df_tipo = df[df['Tipo'] == tipo]
-                        stats = DataProcessor.calcular_estadisticas(df_tipo, 'Valor')
-                        if stats:
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.metric("Media", f"{stats['media']:.2f}")
-                                st.metric("Mediana", f"{stats['mediana']:.2f}")
-                                st.metric("Desviación estándar", f"{stats['desv_std']:.2f}")
-                            with col2:
-                                st.metric("Mínimo", f"{stats['min']:.2f}")
-                                st.metric("Máximo", f"{stats['max']:.2f}")
+                st.subheader("Estadísticas Básicas")
+                if categoria_seleccionada == "provincias":
+                    ultimo_periodo = df['Periodo'].max()
+                    datos_recientes = df[df['Periodo'] == ultimo_periodo]
+                    
+                    total = datos_recientes[datos_recientes['Genero'] == 'Total']['Valor'].iloc[0]
+                    hombres = datos_recientes[datos_recientes['Genero'] == 'HOMBRE']['Valor'].iloc[0]
+                    mujeres = datos_recientes[datos_recientes['Genero'] == 'MUJER']['Valor'].iloc[0]
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Total población", f"{total:,.0f}")
+                        st.metric("Hombres", f"{hombres:,.0f}")
+                    with col2:
+                        st.metric("Mujeres", f"{mujeres:,.0f}")
+                        st.metric("% Hombres", f"{(hombres/total)*100:.1f}%")
+                        st.metric("% Mujeres", f"{(mujeres/total)*100:.1f}%")
                 else:
                     stats = DataProcessor.calcular_estadisticas(df, 'Valor')
                     if stats:
