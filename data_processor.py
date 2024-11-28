@@ -73,11 +73,10 @@ class DataProcessor:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 
-                # Extraer sector del nombre (ejemplo: "B. Sectores manufactureros de alta tecnología")
+                # Extraer sector del nombre
                 sector = nombre.split(',')[0].strip()
                 
                 # Identificar tipo de indicador
-                tipo = None
                 if "Número de ocupados. Total" in nombre:
                     tipo = "Total ocupados"
                 elif "Número de ocupados / Total de ocupados (%)" in nombre:
@@ -86,24 +85,21 @@ class DataProcessor:
                     tipo = "Mujeres ocupadas"
                 elif "% Mujeres del número de ocupados" in nombre:
                     tipo = "Porcentaje mujeres"
+                else:
+                    continue
                 
-                if tipo:
-                    # Procesar valores
-                    for valor in valores:
-                        registros.append({
-                            'Sector': sector,
-                            'Tipo': tipo,
-                            'Periodo': valor.get('Anyo', ''),
-                            'Valor': valor.get('Valor', 0)
-                        })
+                # Procesar valores con año por defecto 2024
+                for valor in valores:
+                    registros.append({
+                        'Sector': sector,
+                        'Tipo': tipo,
+                        'Periodo': valor.get('Anyo', 2024),
+                        'Valor': valor.get('Valor', 0)
+                    })
             
-            # Crear DataFrame
             df = pd.DataFrame(registros)
-            
-            # Convertir tipos de datos
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-            
             return df
         except Exception as e:
             raise ValueError(f"Error al procesar datos de sectores: {str(e)}")

@@ -211,35 +211,52 @@ def main():
             ["Tendencias y Proyecciones", "Correlaciones", "Crecimiento"]
         )
 
-        if tipo_analisis == "Tendencias y Proyecciones":
-            try:
-                resultados_series = DataProcessor.analisis_series_temporales(df, 'Periodo', 'Valor')
-                if resultados_series:
-                    st.subheader("Análisis de Series Temporales")
+        if categoria_seleccionada == "sectores_manufactureros":
+            if tipo_analisis == "Tendencias y Proyecciones":
+                st.info("El análisis de tendencias no está disponible para datos de sectores manufactureros.")
+                
+                # Mostrar resumen actual
+                st.subheader("Resumen de Indicadores")
+                ultimo_periodo = df['Periodo'].max()
+                df_actual = df[df['Periodo'] == ultimo_periodo]
+                
+                for sector in df_actual['Sector'].unique():
+                    st.write(f"### {sector}")
+                    df_sector = df_actual[df_actual['Sector'] == sector]
                     
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Coeficiente de tendencia", 
-                                f"{resultados_series['tendencia']['coeficiente']:.3f}")
-                        st.metric("P-valor", 
-                                f"{resultados_series['tendencia']['p_valor']:.4f}")
-                    with col2:
-                        st.metric("Tasa de cambio media", 
-                                f"{resultados_series['tasas_cambio']['media']*100:.2f}%")
-                        st.metric("Volatilidad", 
-                                f"{resultados_series['tasas_cambio']['desv_std']*100:.2f}%")
-                    
-                    fig_series = DataVisualizer.crear_grafico_series_temporales(
-                        resultados_series,
-                        df['Valor'],
-                        titulo="Descomposición Temporal"
-                    )
-                    st.plotly_chart(fig_series, use_container_width=True)
-                    
-            except Exception as e:
-                st.error(f"Error en el análisis de tendencias: {str(e)}")
+                    cols = st.columns(4)
+                    for i, (tipo, valor) in enumerate(df_sector.groupby('Tipo')['Valor'].first().items()):
+                        cols[i].metric(tipo, f"{valor:.1f}")
+        else:
+            if tipo_analisis == "Tendencias y Proyecciones":
+                try:
+                    resultados_series = DataProcessor.analisis_series_temporales(df, 'Periodo', 'Valor')
+                    if resultados_series:
+                        st.subheader("Análisis de Series Temporales")
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Coeficiente de tendencia", 
+                                    f"{resultados_series['tendencia']['coeficiente']:.3f}")
+                            st.metric("P-valor", 
+                                    f"{resultados_series['tendencia']['p_valor']:.4f}")
+                        with col2:
+                            st.metric("Tasa de cambio media", 
+                                    f"{resultados_series['tasas_cambio']['media']*100:.2f}%")
+                            st.metric("Volatilidad", 
+                                    f"{resultados_series['tasas_cambio']['desv_std']*100:.2f}%")
+                        
+                        fig_series = DataVisualizer.crear_grafico_series_temporales(
+                            resultados_series,
+                            df['Valor'],
+                            titulo="Descomposición Temporal"
+                        )
+                        st.plotly_chart(fig_series, use_container_width=True)
+                        
+                except Exception as e:
+                    st.error(f"Error en el análisis de tendencias: {str(e)}")
 
-        elif tipo_analisis == "Correlaciones":
+        if tipo_analisis == "Correlaciones":
             try:
                 variables_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
                 if len(variables_numericas) > 1:
