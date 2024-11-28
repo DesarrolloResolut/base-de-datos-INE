@@ -39,9 +39,14 @@ class INEApiClient:
     BASE_URL = "https://servicios.ine.es/wstempus/js/ES"
     
     CATEGORIES = {
-        'demografia': {
-            'name': 'Demografía',
+        'demografia_provincia': {
+            'name': 'Demografía - Provincia Albacete',
             'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855',
+            'default_params': {'nult': '4', 'det': '2'}
+        },
+        'demografia_municipios': {
+            'name': 'Demografía - Municipios por habitantes',
+            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/61399',
             'default_params': {'nult': '4', 'det': '2'}
         },
         'sectores_manufactureros': {
