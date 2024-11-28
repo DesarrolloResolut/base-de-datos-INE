@@ -129,8 +129,15 @@ def main():
                     rangos = df['Rango'].unique().tolist()
                     # Remover 'Total' si existe y ordenar el resto numéricamente
                     rangos = [r for r in rangos if r != 'Total']
+                    
+                    # Función para extraer el primer número del rango
+                    def extraer_primer_numero(rango):
+                        # Extraer el primer número del rango
+                        numeros = ''.join(c if c.isdigit() or c == '.' else ' ' for c in rango).split()
+                        return float(numeros[0]) if numeros else 0
+                    
                     # Ordenar los rangos numéricamente
-                    rangos_ordenados = sorted(rangos, key=lambda x: int(x.split()[1]) if 'a' in x else int(x.split()[-2]))
+                    rangos_ordenados = sorted(rangos, key=extraer_primer_numero)
                     # Añadir 'Total' al principio
                     rangos_ordenados = ['Total'] + rangos_ordenados
 
