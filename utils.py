@@ -81,17 +81,58 @@ def format_nombre_tabla(tabla: Dict) -> str:
         return f"Error al formatear tabla: {str(e)}"
 
 def exportar_a_excel(df: pd.DataFrame, filename: str) -> str:
-    """Exporta DataFrame a Excel"""
+    """Exporta DataFrame a Excel con manejo robusto de errores"""
     try:
-        df.to_excel(filename, index=False, engine='openpyxl')
+        # Verificar columnas requeridas
+        columnas_requeridas = ['Municipio', 'Genero', 'Valor']
+        columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
+        if columnas_faltantes:
+            raise ValueError(f"Faltan las columnas requeridas: {', '.join(columnas_faltantes)}")
+        
+        # Crear una copia del DataFrame y limpiar datos
+        df_export = df.copy()
+        df_export = df_export.fillna('')  # Manejar valores nulos
+        
+        # Exportar a Excel
+        df_export.to_excel(
+            filename,
+            index=False,
+            engine='openpyxl',
+            encoding='utf-8'
+        )
         return "Datos exportados exitosamente a Excel"
+    except ValueError as ve:
+        return f"Error de validación: {str(ve)}"
+    except PermissionError:
+        return "Error: No se tiene permiso para escribir el archivo"
     except Exception as e:
-        return f"Error al exportar a Excel: {str(e)}"
+        return f"Error inesperado al exportar a Excel: {str(e)}"
 
 def exportar_a_csv(df: pd.DataFrame, filename: str) -> str:
-    """Exporta DataFrame a CSV"""
+    """Exporta DataFrame a CSV con manejo robusto de errores"""
     try:
-        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        # Verificar columnas requeridas
+        columnas_requeridas = ['Municipio', 'Genero', 'Valor']
+        columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
+        if columnas_faltantes:
+            raise ValueError(f"Faltan las columnas requeridas: {', '.join(columnas_faltantes)}")
+        
+        # Crear una copia del DataFrame y limpiar datos
+        df_export = df.copy()
+        df_export = df_export.fillna('')  # Manejar valores nulos
+        
+        # Exportar a CSV
+        df_export.to_csv(
+            filename,
+            index=False,
+            encoding='utf-8-sig',  # UTF-8 con BOM para mejor compatibilidad
+            sep=',',
+            quoting=1  # QUOTE_ALL para mejor manejo de campos especiales
+        )
         return "Datos exportados exitosamente a CSV"
+    except ValueError as ve:
+        return f"Error de validación: {str(ve)}"
+    except PermissionError:
+        return "Error: No se tiene permiso para escribir el archivo"
     except Exception as e:
-        return f"Error al exportar a CSV: {str(e)}"
+        return f"Error inesperado al exportar a CSV: {str(e)}"

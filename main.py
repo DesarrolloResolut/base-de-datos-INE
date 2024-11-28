@@ -154,12 +154,35 @@ def main():
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Exportar a Excel"):
-                mensaje = exportar_a_excel(df, "datos_ine.xlsx")
-                st.success(mensaje)
+                try:
+                    df_export = st.session_state.datos_actuales.copy()
+                    mensaje = exportar_a_excel(df_export, "datos_poblacion_albacete.xlsx")
+                    st.success(mensaje)
+                    with open("datos_poblacion_albacete.xlsx", "rb") as f:
+                        st.download_button(
+                            label="Descargar Excel",
+                            data=f,
+                            file_name="datos_poblacion_albacete.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                except Exception as e:
+                    st.error(f"Error al exportar a Excel: {str(e)}")
+                
         with col2:
             if st.button("Exportar a CSV"):
-                mensaje = exportar_a_csv(df, "datos_ine.csv")
-                st.success(mensaje)
+                try:
+                    df_export = st.session_state.datos_actuales.copy()
+                    mensaje = exportar_a_csv(df_export, "datos_poblacion_albacete.csv")
+                    st.success(mensaje)
+                    with open("datos_poblacion_albacete.csv", "rb") as f:
+                        st.download_button(
+                            label="Descargar CSV",
+                            data=f,
+                            file_name="datos_poblacion_albacete.csv",
+                            mime="text/csv"
+                        )
+                except Exception as e:
+                    st.error(f"Error al exportar a CSV: {str(e)}")
 
 if __name__ == "__main__":
     main()
