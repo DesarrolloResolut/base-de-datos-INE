@@ -32,7 +32,6 @@ class ReportGenerator:
 
     @staticmethod
     def _generar_informe_excel(df: pd.DataFrame, filename: str, municipio: str) -> str:
-        """Genera informe en formato Excel con múltiples hojas"""
         try:
             # Crear archivo Excel
             excel_file = f"{filename}.xlsx"
@@ -59,19 +58,23 @@ class ReportGenerator:
                     })
                     df_series.to_excel(writer, sheet_name='Análisis Temporal', index=False)
                 
-                # Generar y guardar gráficos
-                fig_evolucion = DataVisualizer.crear_grafico_lineas(
-                    df, 'Periodo', 'Valor', 'Genero',
-                    f"Evolución de la Población en {municipio}"
-                )
-                fig_evolucion.write_image(f"temp_evolucion.png")
-                
-                fig_genero = DataVisualizer.crear_grafico_barras(
-                    df[df['Periodo'] == df['Periodo'].max()],
-                    'Genero', 'Valor',
-                    f"Distribución por Género en {municipio} ({df['Periodo'].max()})"
-                )
-                fig_genero.write_image(f"temp_genero.png")
+                try:
+                    # Intentar generar y guardar gráficos
+                    fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                        df, 'Periodo', 'Valor', 'Genero',
+                        f"Evolución de la Población en {municipio}"
+                    )
+                    fig_evolucion.write_image(f"temp_evolucion.png")
+                    
+                    fig_genero = DataVisualizer.crear_grafico_barras(
+                        df[df['Periodo'] == df['Periodo'].max()],
+                        'Genero', 'Valor',
+                        f"Distribución por Género en {municipio} ({df['Periodo'].max()})"
+                    )
+                    fig_genero.write_image(f"temp_genero.png")
+                except Exception as e:
+                    print(f"Advertencia: No se pudieron generar los gráficos: {str(e)}")
+                    # Continuar con el informe sin gráficos
 
             return excel_file
             
