@@ -152,11 +152,16 @@ def main():
                     )
             
             # Aplicar filtros según la categoría
-            if categoria_seleccionada == "demografia":
+            if categoria_seleccionada == "demografia_provincia":
                 filtros = {
                     'Municipio': municipio_seleccionado,
                     'Periodo': periodo_seleccionado,
                     'Genero': genero_seleccionado
+                }
+            elif categoria_seleccionada == "demografia_municipios":
+                filtros = {
+                    'Periodo': periodo_seleccionado,
+                    'Rango': rango_seleccionado
                 }
             elif categoria_seleccionada == "sectores_manufactureros":
                 filtros = {
