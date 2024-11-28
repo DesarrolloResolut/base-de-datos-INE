@@ -8,19 +8,17 @@ class DataProcessor:
     """Procesador de datos del INE"""
     
     @staticmethod
-    def json_to_dataframe(datos: Dict, categoria: str = "demografia_provincia") -> pd.DataFrame:
+    def json_to_dataframe(datos: Dict, categoria: str = "provincias") -> pd.DataFrame:
         """Convierte datos JSON a DataFrame según la categoría
         Args:
             datos: Datos en formato JSON
-            categoria: Categoría de datos ('demografia_provincia', 'demografia_municipios' o 'sectores_manufactureros')
+            categoria: Categoría de datos ('provincias' o 'municipios_habitantes')
         """
         try:
-            if categoria == "demografia_provincia":
+            if categoria == "provincias":
                 return DataProcessor._procesar_datos_demografia(datos)
-            elif categoria == "demografia_municipios":
+            elif categoria == "municipios_habitantes":
                 return DataProcessor._procesar_datos_municipios(datos)
-            elif categoria == "sectores_manufactureros":
-                return DataProcessor._procesar_datos_sectores(datos)
             else:
                 raise ValueError(f"Categoría no válida: {categoria}")
         except Exception as e:

@@ -131,29 +131,6 @@ def main():
                         options=rangos,
                         default=rangos
                     )
-                    # Filtro de sector
-                    sectores = sorted(df['Sector'].unique().tolist())
-                    sector_seleccionado = st.multiselect(
-                        "Sector:",
-                        options=sectores,
-                        default=sectores
-                    )
-                    
-                    # Filtro de período
-                    periodos = DataProcessor.obtener_periodos(df)
-                    periodo_seleccionado = st.multiselect(
-                        "Años:",
-                        options=periodos,
-                        default=periodos[-4:] if len(periodos) > 4 else periodos
-                    )
-                    
-                    # Filtro de tipo de indicador
-                    tipos = sorted(df['Tipo'].unique().tolist())
-                    tipo_seleccionado = st.multiselect(
-                        "Tipo de indicador:",
-                        options=tipos,
-                        default=tipos
-                    )
             
             # Aplicar filtros según la categoría
             if categoria_seleccionada == "provincias":
@@ -166,11 +143,6 @@ def main():
                 filtros = {
                     'Periodo': periodo_seleccionado,
                     'Rango': rango_seleccionado
-                }
-                filtros = {
-                    'Sector': sector_seleccionado,
-                    'Periodo': periodo_seleccionado,
-                    'Tipo': tipo_seleccionado
                 }
             
             df_filtrado = DataProcessor.filtrar_datos(df, filtros)
