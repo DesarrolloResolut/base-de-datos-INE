@@ -20,24 +20,36 @@ import logging
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+import requests
+from typing import Dict, List, Optional
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+import json
+from datetime import datetime
+import logging
 
-# Definición de categorías y sus URLs
-CATEGORIES = {
-    'demografia': {
-        'name': 'Demografía',
-        'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855',
-        'default_params': {'nult': '4', 'det': '2'}
-    },
-    'sectores_manufactureros': {
-        'name': 'Sectores manufactureros',
-        'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/59271',
-        'default_params': {'nult': '4', 'det': '2'}
-    }
-}
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Importar dependencias necesarias
 class INEApiClient:
     """Cliente para la API del INE"""
     
     BASE_URL = "https://servicios.ine.es/wstempus/js/ES"
+    
+    CATEGORIES = {
+        'demografia': {
+            'name': 'Demografía',
+            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855',
+            'default_params': {'nult': '4', 'det': '2'}
+        },
+        'sectores_manufactureros': {
+            'name': 'Sectores manufactureros',
+            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/59271',
+            'default_params': {'nult': '4', 'det': '2'}
+        }
+    }
     
     @staticmethod
     def _get_session():
