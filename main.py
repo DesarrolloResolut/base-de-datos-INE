@@ -343,6 +343,64 @@ def main():
                         except Exception as e:
                             st.warning(f"No se pudo realizar el análisis de tendencias para {tipo}: {str(e)}")
                             
+        elif categoria_seleccionada == "provincias":
+            if tipo_analisis == "Tendencias y Proyecciones":
+                st.subheader("Análisis de Tendencias Demográficas")
+                
+                # Análisis por género
+                for genero in ['Total', 'HOMBRE', 'MUJER']:
+                    df_genero = df[df['Genero'] == genero]
+                    if not df_genero.empty:
+                        st.write(f"### {genero}")
+                        
+                        try:
+                            resultados_series = DataProcessor.analisis_series_temporales(
+                                df_genero, 'Periodo', 'Valor'
+                            )
+                            
+                            if resultados_series:
+                                # Mostrar métricas de tendencia
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    tendencia = resultados_series['tendencia']['coeficiente']
+                                    direccion = "Crecimiento" if tendencia > 0 else "Decrecimiento"
+                                    st.metric(
+                                        "Tendencia", 
+                                        f"{direccion}",
+                                        f"{abs(tendencia):.0f} personas/año"
+                                    )
+                                    st.metric(
+                                        "Significancia estadística", 
+                                        "Significativo" if resultados_series['tendencia']['p_valor'] < 0.05 else "No significativo",
+                                        f"p={resultados_series['tendencia']['p_valor']:.4f}"
+                                    )
+                                
+                                with col2:
+                                    st.metric(
+                                        "Tasa de cambio anual media", 
+                                        f"{resultados_series['tasas_cambio']['media']*100:.2f}%"
+                                    )
+                                    st.metric(
+                                        "Volatilidad", 
+                                        f"{resultados_series['tasas_cambio']['desv_std']*100:.2f}%"
+                                    )
+                                
+                                # Gráfico de tendencia
+                                serie_temporal = pd.Series(
+                                    df_genero['Valor'].values,
+                                    index=df_genero['Periodo']
+                                )
+                                
+                                fig_tendencia = DataVisualizer.crear_grafico_series_temporales(
+                                    resultados_series,
+                                    serie_temporal,
+                                    titulo=f"Análisis de Tendencia - {genero}"
+                                )
+                                st.plotly_chart(fig_tendencia, use_container_width=True)
+                                
+                        except Exception as e:
+                            st.warning(f"No se pudo realizar el análisis de tendencias para {genero}: {str(e)}")
+                            
         elif tipo_analisis == "Correlaciones":
             try:
                 variables_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
