@@ -248,7 +248,7 @@ def main():
                         df[df['Periodo'] == df['Periodo'].max()],
                         x='Genero',
                         y='Valor',
-                        titulo=f"Distribución por Género - {municipio_seleccionado} ({df['Periodo'].max()})"
+                        titulo=f"Distribución por Género - Provincia Albacete ({df['Periodo'].max()})"
                     )
                     st.plotly_chart(fig_comparativa, use_container_width=True)
                     
@@ -403,7 +403,7 @@ def main():
                 
                 nombre_archivo = ReportGenerator.generar_informe_completo(
                     df_export,
-                    "Todos" if categoria_seleccionada == "sectores_manufactureros" else municipio_seleccionado,
+                    "Todos" if categoria_seleccionada == "sectores_manufactureros" else "provincia_albacete",
                     formato=formato,
                     categoria=categoria_seleccionada
                 )
