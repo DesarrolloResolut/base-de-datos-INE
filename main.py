@@ -126,10 +126,17 @@ def main():
                     )
                     
                     # Filtro de rangos
-                    rangos = ['Total'] + sorted(df['Rango'].unique().tolist())
+                    rangos = df['Rango'].unique().tolist()
+                    # Remover 'Total' si existe y ordenar el resto numéricamente
+                    rangos = [r for r in rangos if r != 'Total']
+                    # Ordenar los rangos numéricamente
+                    rangos_ordenados = sorted(rangos, key=lambda x: int(x.split()[1]) if 'a' in x else int(x.split()[-2]))
+                    # Añadir 'Total' al principio
+                    rangos_ordenados = ['Total'] + rangos_ordenados
+
                     rango_seleccionado = st.selectbox(
                         "Rangos de población:",
-                        options=rangos,
+                        options=rangos_ordenados,
                         index=0  # Total será el valor por defecto
                     )
             
