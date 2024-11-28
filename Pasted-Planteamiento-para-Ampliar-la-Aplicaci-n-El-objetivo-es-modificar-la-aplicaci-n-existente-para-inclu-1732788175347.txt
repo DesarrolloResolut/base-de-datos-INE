@@ -1,0 +1,133 @@
+Planteamiento para Ampliar la Aplicación
+El objetivo es modificar la aplicación existente para incluir un nuevo filtro que permita al usuario seleccionar entre diferentes conjuntos de datos. Los datos estarán organizados por "categorías" (campos de análisis), y cada una tendrá su propia lógica de extracción, visualización, y análisis estadístico. Las categorías estarán identificadas por las URLs de sus respectivas APIs. En este caso, se añade "Sectores manufactureros de alta y media-alta tecnología (B+C)" como una nueva categoría, con datos extraídos de la API correspondiente.
+
+Modificaciones a la Estructura de la Aplicación
+1. Diseño General
+Añadir un filtro de categorías (menú desplegable o barra de navegación) que permita elegir entre:
+Demografía (población por municipios y género).
+Sectores manufactureros de alta y media-alta tecnología.
+Cada selección ajustará dinámicamente:
+Las provincias o ámbitos disponibles.
+Los gráficos y datos mostrados.
+2. Backend
+El backend procesará múltiples URLs, una por categoría, manteniendo la lógica de consumo y transformación de datos para cada caso.
+
+2.1. Nuevas Funciones
+Gestión de Categorías:
+
+Definir las categorías disponibles y sus URLs.
+json
+Copiar código
+[
+  { "nombre": "Demografía", "url": "https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855?nult=4&det=2" },
+  { "nombre": "Sectores manufactureros", "url": "https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/59271?nult=4&det=2" }
+]
+Estas categorías serán consumidas por el frontend para generar el filtro dinámico.
+
+Estructura de Datos Procesados por Categoría:
+
+Demografía:
+json
+Copiar código
+{
+  "provincias": [
+    {
+      "nombre": "Albacete",
+      "datos": {
+        "total": [...],
+        "hombres": [...],
+        "mujeres": [...]
+      }
+    }
+  ]
+}
+Sectores manufactureros:
+json
+Copiar código
+{
+  "sectores": [
+    {
+      "nombre": "Número de ocupados (miles de personas)",
+      "datos": [...],
+      "tipo": "Total"
+    },
+    {
+      "nombre": "Total ocupados en sectores (%)",
+      "datos": [...],
+      "tipo": "Porcentaje"
+    },
+    {
+      "nombre": "Número de ocupados (miles de personas)",
+      "datos": [...],
+      "tipo": "Mujeres"
+    }
+  ]
+}
+2.2. Endpoint Dinámico
+Crear un endpoint que acepte el nombre de la categoría para devolver datos procesados:
+
+plaintext
+Copiar código
+GET /datos/{categoria}
+Ejemplo:
+
+/datos/demografia: Devuelve datos demográficos.
+/datos/sectores: Devuelve datos sobre sectores manufactureros.
+3. Frontend
+3.1. Filtro Dinámico de Categorías
+Añadir un menú en la parte superior o lateral que muestre las categorías disponibles (provenientes del backend).
+Ejemplo:
+javascript
+Copiar código
+const categorias = ['Demografía', 'Sectores manufactureros'];
+3.2. Navegación entre Categorías
+Al seleccionar una categoría, el frontend realizará una solicitud al backend para obtener los datos y actualizará:
+Las opciones de ámbito (provincias, sectores, etc.).
+Los gráficos y tablas.
+3.3. Visualización de Datos
+Cada categoría tendrá su propio diseño de visualización, adaptado al tipo de datos:
+
+Demografía:
+Tabla de población por provincia y género.
+Gráfico de línea para tendencias demográficas.
+Sectores Manufactureros:
+Tabla con los indicadores:
+Número de ocupados (miles de personas).
+Total ocupados en sectores (%).
+Mujeres ocupadas.
+Porcentaje de mujeres.
+Gráfico de barras o radar para comparar indicadores.
+3.4. Ejemplo de Configuración para Chart.js
+Para Sectores Manufactureros, el gráfico podría mostrar ocupación total y por género:
+
+javascript
+Copiar código
+const data = {
+  labels: ['2020', '2021', '2022', '2023'],
+  datasets: [
+    {
+      label: 'Ocupados Totales (miles)',
+      data: [800, 810, 820, 830],
+      backgroundColor: 'blue',
+    },
+    {
+      label: 'Ocupadas Mujeres (miles)',
+      data: [200, 210, 215, 220],
+      backgroundColor: 'pink',
+    },
+  ],
+};
+4. Navegación y Experiencia de Usuario
+Página inicial: Mostrar el filtro de categorías y una vista general del primer conjunto de datos.
+Cambio dinámico: Al seleccionar una nueva categoría, el contenido se actualiza sin recargar la página (usando React Hooks, Vue Data Binding, o Angular Services).
+Acceso directo: URL que refleje la selección, como /sectores o /demografia.
+5. Análisis Estadístico
+Incluir:
+
+Promedios: Calcular promedios anuales por tipo.
+Comparaciones: Mostrar tendencias entre diferentes indicadores.
+Destacados: Resaltar aumentos o disminuciones significativas.
+Despliegue
+Backend: Implementar cambios en el servidor actual.
+Frontend: Actualizar el despliegue para permitir navegación dinámica.
+Pruebas: Validar que las diferentes categorías se manejan correctamente.

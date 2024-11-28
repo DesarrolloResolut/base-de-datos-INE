@@ -7,25 +7,38 @@ class DataProcessor:
     """Procesador de datos del INE"""
     
     @staticmethod
-    def json_to_dataframe(datos: Dict) -> pd.DataFrame:
-        """Convierte datos JSON a DataFrame"""
+    def json_to_dataframe(datos: Dict, categoria: str = "demografia") -> pd.DataFrame:
+        """Convierte datos JSON a DataFrame según la categoría
+        Args:
+            datos: Datos en formato JSON
+            categoria: Categoría de datos ('demografia' o 'sectores_manufactureros')
+        """
         try:
-            # Extraer datos relevantes
-            registros = []
-            for dato in datos:
-                nombre = dato.get('Nombre', '')
-                valores = dato.get('Data', [])
+            if categoria == "demografia":
+                return DataProcessor._procesar_datos_demografia(datos)
+            elif categoria == "sectores_manufactureros":
+                return DataProcessor._procesar_datos_sectores(datos)
+            else:
+                raise ValueError(f"Categoría no soportada: {categoria}")
                 
-                # Determinar género
-                if 'HOMBRES' in nombre.upper():
-                    genero = 'HOMBRE'
-                elif 'MUJERES' in nombre.upper():
-                    genero = 'MUJER'
-                else:
-                    genero = 'Total'
-                
-                # Extraer municipio
-                municipio = nombre.split('.')[0].strip()
+    @staticmethod
+    def _procesar_datos_demografia(datos: Dict) -> pd.DataFrame:
+        """Procesa datos demográficos"""
+        registros = []
+        for dato in datos:
+            nombre = dato.get('Nombre', '')
+            valores = dato.get('Data', [])
+            
+            # Determinar género
+            if 'HOMBRES' in nombre.upper():
+                genero = 'HOMBRE'
+            elif 'MUJERES' in nombre.upper():
+                genero = 'MUJER'
+            else:
+                genero = 'Total'
+            
+            # Extraer municipio
+            municipio = nombre.split('.')[0].strip()
                 
                 # Procesar valores
                 for valor in valores:
@@ -312,6 +325,38 @@ class DataProcessor:
         
         # Ajustar regresión lineal
         model = LinearRegression()
+    @staticmethod
+    def _procesar_datos_sectores(datos: Dict) -> pd.DataFrame:
+        """Procesa datos de sectores manufactureros"""
+        registros = []
+        for dato in datos:
+            nombre = dato.get('Nombre', '')
+            valores = dato.get('Data', [])
+            
+            # Extraer tipo de indicador
+            tipo = 'Total'
+            if 'MUJERES' in nombre.upper():
+                tipo = 'Mujeres'
+            elif 'PORCENTAJE' in nombre.upper():
+                tipo = 'Porcentaje'
+                
+            # Procesar valores
+            for valor in valores:
+                registros.append({
+                    'Indicador': nombre,
+                    'Tipo': tipo,
+                    'Periodo': valor.get('Anyo', ''),
+                    'Valor': valor.get('Valor', 0)
+                })
+        
+        # Crear DataFrame
+        df = pd.DataFrame(registros)
+        
+        # Convertir tipos de datos
+        df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+        df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+        
+        return df
         model.fit(X, y)
         
         # Calcular predicciones y R²

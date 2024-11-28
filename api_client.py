@@ -9,7 +9,31 @@ import logging
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+import requests
+from typing import Dict, List, Optional
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+import json
+from datetime import datetime
+import logging
 
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Definición de categorías y sus URLs
+CATEGORIES = {
+    'demografia': {
+        'name': 'Demografía',
+        'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855',
+        'default_params': {'nult': '4', 'det': '2'}
+    },
+    'sectores_manufactureros': {
+        'name': 'Sectores manufactureros',
+        'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/59271',
+        'default_params': {'nult': '4', 'det': '2'}
+    }
+}
 class INEApiClient:
     """Cliente para la API del INE"""
     
@@ -225,15 +249,19 @@ class INEApiClient:
             raise ValueError(error_msg)
     
     @staticmethod
-    def get_datos_tabla(tabla_id: str = "2855") -> Dict:
-        """Obtiene datos de población de Albacete y sus municipios
+    def get_datos_tabla(categoria: str = "demografia") -> Dict:
+        """Obtiene datos según la categoría especificada
         Args:
-            tabla_id: ID de la tabla (por defecto '2855' para población de Albacete)
+            categoria: Nombre de la categoría (por defecto 'demografia')
         """
         try:
-            url = f"https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/{tabla_id}"
-            params = {'nult': '4', 'det': '2'}
-            logger.info(f"Consultando datos de población de Albacete en: {url}")
+            if categoria not in CATEGORIES:
+                raise ValueError(f"Categoría no válida: {categoria}")
+                
+            category_info = CATEGORIES[categoria]
+            url = category_info['url']
+            params = category_info['default_params']
+            logger.info(f"Consultando datos de {category_info['name']} en: {url}")
             
             session = INEApiClient._get_session()
             try:
