@@ -127,7 +127,6 @@ class DataProcessor:
 
     @staticmethod
     def _procesar_datos_municipios(datos: Dict) -> pd.DataFrame:
-        """Procesa datos de municipios por rango de habitantes"""
         try:
             registros = []
             for dato in datos:
@@ -142,14 +141,14 @@ class DataProcessor:
                 # Extraer rango de habitantes
                 rango = nombre.split(',')[1].strip() if ',' in nombre else nombre.split('.')[-1].strip()
                 
-                # Procesar valores
+                # Procesar valores usando NombrePeriodo
                 for valor in valores:
                     registros.append({
                         'Rango': rango,
-                        'Periodo': valor.get('Anyo', 2024),
+                        'Periodo': int(valor.get('NombrePeriodo', '')),  # Usar NombrePeriodo
                         'Valor': valor.get('Valor', 0)
                     })
-            
+        
             if not registros:
                 raise ValueError("No se encontraron datos de municipios para Albacete")
                 
