@@ -187,10 +187,12 @@ class DataProcessor:
             # Ordenar datos por período
             df_sorted = df.sort_values(columna_periodo).copy()
             
-            # Crear índice temporal
-            df_sorted.index = pd.DatetimeIndex(freq='A', 
-                                             start=str(df_sorted[columna_periodo].min()),
-                                             periods=len(df_sorted))
+            # Crear índice temporal usando date_range
+            df_sorted.index = pd.date_range(
+                start=str(df_sorted[columna_periodo].min()),
+                periods=len(df_sorted),
+                freq='A'
+            )
             
             # Realizar descomposición
             series = df_sorted[columna_valor]
