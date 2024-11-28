@@ -4,6 +4,24 @@ import numpy as np
 from api_client import INEApiClient
 from data_processor import DataProcessor
 from visualizer import DataVisualizer
+import streamlit as st
+import pandas as pd
+import numpy as np
+from api_client import INEApiClient
+from data_processor import DataProcessor
+from visualizer import DataVisualizer
+import streamlit as st
+import pandas as pd
+import numpy as np
+from api_client import INEApiClient
+from data_processor import DataProcessor
+from visualizer import DataVisualizer
+import streamlit as st
+import pandas as pd
+import numpy as np
+from api_client import INEApiClient
+from data_processor import DataProcessor
+from visualizer import DataVisualizer
 from utils import (format_nombre_operacion, format_nombre_tabla, 
                   exportar_a_excel, exportar_a_csv)
 from report_generator import ReportGenerator
@@ -28,67 +46,108 @@ def cargar_operaciones():
         return []
 
 def main():
-    st.title("📊 Explorador de Población de Albacete - INE")
-    
-    # Mensaje explicativo sobre los datos
-    st.markdown("""
-    Esta aplicación muestra los datos oficiales de población de Albacete y sus municipios, proporcionados por el Instituto Nacional de Estadística (INE).
-    Los datos incluyen:
-    - Población por municipio
-    - Distribución por género
-    - Evolución temporal
-    
-    Los datos se actualizan anualmente y provienen de la tabla 2855 del INE.
-    """)
-    
-    # Sidebar para filtros
+    # En la sección de sidebar
     with st.sidebar:
         st.header("Filtros")
         
-        try:
-            # Cargar datos de población
-            with st.spinner("Cargando datos de población..."):
-                datos = INEApiClient.get_datos_tabla()
-                if not datos:
-                    st.error("No se pudieron obtener los datos de población.")
-                    return
+        # Selector de categorías
+        categoria_seleccionada = st.selectbox(
+            "Categoría:",
+            options=list(INEApiClient.CATEGORIES.keys()),
+            format_func=lambda x: INEApiClient.CATEGORIES[x]['name']
+        )
+
+    # Título dinámico según la categoría
+    st.title(f"📊 {INEApiClient.CATEGORIES[categoria_seleccionada]['name']} - INE")
+    
+    # Mensaje explicativo según la categoría
+    if categoria_seleccionada == "demografia":
+        st.markdown("""
+        Esta aplicación muestra los datos oficiales de población de Albacete y sus municipios, proporcionados por el Instituto Nacional de Estadística (INE).
+        Los datos incluyen:
+        - Población por municipio
+        - Distribución por género
+        - Evolución temporal
+        """)
+    elif categoria_seleccionada == "sectores_manufactureros":
+        st.markdown("""
+        Esta aplicación muestra los datos oficiales de sectores manufactureros de alta y media-alta tecnología, proporcionados por el Instituto Nacional de Estadística (INE).
+        Los datos incluyen:
+        - Número de ocupados
+        - Porcentaje sobre el total
+        - Distribución por género
+        """)
+    
+    # Sidebar para filtros
+    try:
+        # Cargar datos según la categoría seleccionada
+        with st.spinner(f"Cargando datos de {INEApiClient.CATEGORIES[categoria_seleccionada]['name']}..."):
+            datos = INEApiClient.get_datos_tabla(categoria=categoria_seleccionada)
+            if not datos:
+                st.error(f"No se pudieron obtener los datos de {INEApiClient.CATEGORIES[categoria_seleccionada]['name']}.")
+                return
+                
+            df = DataProcessor.json_to_dataframe(datos, categoria=categoria_seleccionada)
+            if df.empty:
+                st.error("No hay datos disponibles para mostrar.")
+                return
+                
+                with st.sidebar:
+                    # Filtros específicos según la categoría
+                    if categoria_seleccionada == "demografia":
+                        # Filtro de municipio
+                        municipios = DataProcessor.obtener_municipios(df)
+                        municipio_seleccionado = st.selectbox(
+                            "Municipio:",
+                            options=municipios,
+                            index=0 if 'Albacete' in municipios else 0
+                        )
+                        
+                        # Filtro de período
+                        periodos = DataProcessor.obtener_periodos(df)
+                        periodo_seleccionado = st.multiselect(
+                            "Años:",
+                            options=periodos,
+                            default=periodos[-4:] if len(periodos) > 4 else periodos
+                        )
+                        
+                        # Filtro de género
+                        generos = ['Total', 'HOMBRE', 'MUJER']
+                        genero_seleccionado = st.multiselect(
+                            "Género:",
+                            options=generos,
+                            default=generos
+                        )
                     
-                df = DataProcessor.json_to_dataframe(datos)
-                if df.empty:
-                    st.error("No hay datos disponibles para mostrar.")
-                    return
+                    elif categoria_seleccionada == "sectores_manufactureros":
+                        # Filtro de período
+                        periodos = DataProcessor.obtener_periodos(df)
+                        periodo_seleccionado = st.multiselect(
+                            "Años:",
+                            options=periodos,
+                            default=periodos[-4:] if len(periodos) > 4 else periodos
+                        )
+                        
+                        # Filtro de tipo de indicador
+                        tipos = df['Tipo'].unique().tolist()
+                        tipo_seleccionado = st.multiselect(
+                            "Tipo de indicador:",
+                            options=tipos,
+                            default=tipos
+                        )
                 
-                # Filtros específicos
-                # Filtro de municipio
-                municipios = DataProcessor.obtener_municipios(df)
-                municipio_seleccionado = st.selectbox(
-                    "Municipio:",
-                    options=municipios,
-                    index=0 if 'Albacete' in municipios else 0
-                )
-                
-                # Filtro de período
-                periodos = DataProcessor.obtener_periodos(df)
-                periodo_seleccionado = st.multiselect(
-                    "Años:",
-                    options=periodos,
-                    default=periodos[-4:] if len(periodos) > 4 else periodos
-                )
-                
-                # Filtro de género
-                generos = ['Total', 'HOMBRE', 'MUJER']
-                genero_seleccionado = st.multiselect(
-                    "Género:",
-                    options=generos,
-                    default=generos
-                )
-                
-                # Aplicar filtros
-                filtros = {
-                    'Municipio': municipio_seleccionado,
-                    'Periodo': periodo_seleccionado,
-                    'Genero': genero_seleccionado
-                }
+                # Aplicar filtros según la categoría
+                if categoria_seleccionada == "demografia":
+                    filtros = {
+                        'Municipio': municipio_seleccionado,
+                        'Periodo': periodo_seleccionado,
+                        'Genero': genero_seleccionado
+                    }
+                elif categoria_seleccionada == "sectores_manufactureros":
+                    filtros = {
+                        'Periodo': periodo_seleccionado,
+                        'Tipo': tipo_seleccionado
+                    }
                 
                 df_filtrado = DataProcessor.filtrar_datos(df, filtros)
                 st.session_state.datos_actuales = df_filtrado
