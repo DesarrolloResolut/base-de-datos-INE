@@ -32,35 +32,33 @@ def main():
     with st.sidebar:
         st.header("Filtros")
         
-        # Selector de categorías
+        # Selector de categorías principal
         categoria_seleccionada = st.selectbox(
             "Categoría:",
             options=list(INEApiClient.CATEGORIES.keys()),
-            format_func=lambda x: INEApiClient.CATEGORIES[x]['name'],
-            help="Seleccione la categoría de datos a visualizar"
+            format_func=lambda x: INEApiClient.CATEGORIES[x]['name']
         )
 
     # Título dinámico según la categoría
     st.title(f"📊 {INEApiClient.CATEGORIES[categoria_seleccionada]['name']} - INE")
     
     # Mensaje explicativo según la categoría
-    if categoria_seleccionada == "demografia_provincia":
+    if categoria_seleccionada == "provincias":
         st.markdown("""
-        Esta aplicación muestra los datos oficiales de población de la provincia de Albacete, proporcionados por el Instituto Nacional de Estadística (INE).
+        Esta aplicación muestra los datos oficiales de población por provincia, proporcionados por el Instituto Nacional de Estadística (INE).
         Los datos incluyen:
-        - Población total de la provincia
+        - Población total por provincia
         - Distribución por género
         - Evolución temporal
         """)
-    elif categoria_seleccionada == "demografia_municipios":
+    elif categoria_seleccionada == "municipios_habitantes":
         st.markdown("""
-        Esta aplicación muestra la distribución de municipios de Albacete según su población, proporcionados por el Instituto Nacional de Estadística (INE).
+        Esta aplicación muestra la distribución de municipios según su población, proporcionados por el Instituto Nacional de Estadística (INE).
         Los datos incluyen:
         - Número de municipios por rango de habitantes
         - Evolución temporal de la distribución
         - Análisis comparativo por rangos
         """)
-    elif categoria_seleccionada == "sectores_manufactureros":
         st.markdown("""
         Esta aplicación muestra los datos oficiales de sectores manufactureros de alta y media-alta tecnología, proporcionados por el Instituto Nacional de Estadística (INE).
         Los datos incluyen:
@@ -85,7 +83,14 @@ def main():
             
             with st.sidebar:
                 # Filtros específicos según la categoría
-                if categoria_seleccionada == "demografia_provincia":
+                if categoria_seleccionada == "provincias":
+                    # Filtro de provincia (por ahora solo Albacete)
+                    provincia_seleccionada = st.selectbox(
+                        "Provincia:",
+                        options=['Albacete'],
+                        index=0
+                    )
+                    
                     # Filtro de municipios
                     municipios = DataProcessor.obtener_municipios(df)
                     municipio_seleccionado = st.selectbox(
@@ -109,7 +114,8 @@ def main():
                         options=generos,
                         default=generos
                     )
-                elif categoria_seleccionada == "demografia_municipios":
+
+                elif categoria_seleccionada == "municipios_habitantes":
                     # Filtro de período
                     periodos = DataProcessor.obtener_periodos(df)
                     periodo_seleccionado = st.multiselect(
@@ -125,8 +131,6 @@ def main():
                         options=rangos,
                         default=rangos
                     )
-                
-                elif categoria_seleccionada == "sectores_manufactureros":
                     # Filtro de sector
                     sectores = sorted(df['Sector'].unique().tolist())
                     sector_seleccionado = st.multiselect(
@@ -152,18 +156,17 @@ def main():
                     )
             
             # Aplicar filtros según la categoría
-            if categoria_seleccionada == "demografia_provincia":
+            if categoria_seleccionada == "provincias":
                 filtros = {
                     'Municipio': municipio_seleccionado,
                     'Periodo': periodo_seleccionado,
                     'Genero': genero_seleccionado
                 }
-            elif categoria_seleccionada == "demografia_municipios":
+            elif categoria_seleccionada == "municipios_habitantes":
                 filtros = {
                     'Periodo': periodo_seleccionado,
                     'Rango': rango_seleccionado
                 }
-            elif categoria_seleccionada == "sectores_manufactureros":
                 filtros = {
                     'Sector': sector_seleccionado,
                     'Periodo': periodo_seleccionado,
