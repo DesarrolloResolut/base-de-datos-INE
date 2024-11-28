@@ -179,12 +179,24 @@ class DataProcessor:
 
     @staticmethod
     def analisis_series_temporales(df: pd.DataFrame, columna_periodo: str, columna_valor: str) -> Dict:
-        """Realiza análisis de series temporales"""
+        """Realiza análisis de series temporales con descomposición"""
         try:
-            # Ordenar datos por período
-            df_sorted = df.sort_values(columna_periodo)
+            # Importar statsmodels
+            from statsmodels.tsa.seasonal import seasonal_decompose
             
-            # Calcular tendencia lineal
+            # Ordenar datos por período
+            df_sorted = df.sort_values(columna_periodo).copy()
+            
+            # Crear índice temporal
+            df_sorted.index = pd.DatetimeIndex(freq='A', 
+                                             start=str(df_sorted[columna_periodo].min()),
+                                             periods=len(df_sorted))
+            
+            # Realizar descomposición
+            series = df_sorted[columna_valor]
+            decomposition = seasonal_decompose(series, period=1, model='additive')
+            
+            # Calcular tendencia lineal para comparación
             X = df_sorted[columna_periodo].values.reshape(-1, 1)
             y = df_sorted[columna_valor].values
             
@@ -196,11 +208,11 @@ class DataProcessor:
             y_pred = model.predict(X)
             r2 = model.score(X, y)
             
-            # Calcular tasas de cambio
-            tasas_cambio = np.diff(y) / y[:-1]
-            
             # Realizar prueba de tendencia (Mann-Kendall)
             trend, p_value = stats.kendalltau(X.flatten(), y)
+            
+            # Calcular tasas de cambio
+            tasas_cambio = np.diff(y) / y[:-1]
             
             return {
                 'tendencia': {
@@ -215,7 +227,12 @@ class DataProcessor:
                     'desv_std': float(np.std(tasas_cambio))
                 },
                 'predicciones': y_pred.tolist(),
-                'periodos': df_sorted[columna_periodo].tolist()
+                'periodos': df_sorted[columna_periodo].tolist(),
+                'descomposicion': {
+                    'tendencia': decomposition.trend.fillna(method='bfill').fillna(method='ffill').values.tolist(),
+                    'estacional': decomposition.seasonal.fillna(0).values.tolist(),
+                    'residual': decomposition.resid.fillna(0).values.tolist()
+                }
             }
         except Exception as e:
             raise ValueError(f"Error en análisis de series temporales: {str(e)}")
