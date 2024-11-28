@@ -267,10 +267,10 @@ class INEApiClient:
             categoria: Nombre de la categoría (por defecto 'demografia')
         """
         try:
-            if categoria not in CATEGORIES:
+            if categoria not in INEApiClient.CATEGORIES:
                 raise ValueError(f"Categoría no válida: {categoria}")
                 
-            category_info = CATEGORIES[categoria]
+            category_info = INEApiClient.CATEGORIES[categoria]
             url = category_info['url']
             params = category_info['default_params']
             logger.info(f"Consultando datos de {category_info['name']} en: {url}")
