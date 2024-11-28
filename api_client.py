@@ -231,8 +231,8 @@ class INEApiClient:
             tabla_id: ID de la tabla (por defecto '9687' para población residente)
         """
         try:
-            url = "http://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/9687"
-            params = {'nult': '2', 'tip': 'AM'}
+            url = "https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855"
+            params = {'nult': '4', 'det': '2'}
             logger.info(f"Consultando datos de población residente en: {url}")
             
             session = INEApiClient._get_session()

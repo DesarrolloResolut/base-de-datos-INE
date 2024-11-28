@@ -26,17 +26,17 @@ def cargar_operaciones():
         return []
 
 def main():
-    st.title("📊 Explorador de Población Residente en España - INE")
+    st.title("📊 Explorador de Población de Albacete - INE")
     
     # Mensaje explicativo sobre los datos
     st.markdown("""
-    Esta aplicación muestra los datos oficiales de población residente en España, proporcionados por el Instituto Nacional de Estadística (INE).
-    Los datos incluyen la distribución de la población por:
-    - Grupos de edad
-    - Sexo
-    - Periodo temporal
+    Esta aplicación muestra los datos oficiales de población de Albacete y sus municipios, proporcionados por el Instituto Nacional de Estadística (INE).
+    Los datos incluyen:
+    - Población por municipio
+    - Distribución por género
+    - Evolución temporal
     
-    Los datos se actualizan semestralmente y provienen de la tabla 9687 del INE.
+    Los datos se actualizan anualmente y provienen de la tabla 2855 del INE.
     """)
     
     # Sidebar para filtros
@@ -57,35 +57,35 @@ def main():
                     return
                 
                 # Filtros específicos
-                # Filtro de fecha
-                fechas = sorted(df['Periodo'].unique())
-                fecha_seleccionada = st.selectbox(
-                    "Fecha:",
-                    options=fechas,
-                    index=len(fechas)-1 if fechas else 0
+                # Filtro de municipio
+                municipios = DataProcessor.obtener_municipios(df)
+                municipio_seleccionado = st.selectbox(
+                    "Municipio:",
+                    options=municipios,
+                    index=0 if 'Albacete' in municipios else 0
                 )
                 
-                # Filtro de sexo
-                sexos = sorted(df['Sexo_desc'].unique())
-                sexo_seleccionado = st.multiselect(
-                    "Sexo:",
-                    options=sexos,
-                    default=sexos
+                # Filtro de período
+                periodos = DataProcessor.obtener_periodos(df)
+                periodo_seleccionado = st.multiselect(
+                    "Años:",
+                    options=periodos,
+                    default=periodos[-4:] if len(periodos) > 4 else periodos
                 )
                 
-                # Filtro de edad
-                edades = sorted(df['Edad_desc'].unique())
-                edad_seleccionada = st.multiselect(
-                    "Grupo de edad:",
-                    options=edades,
-                    default=edades[:5]  # Primeros 5 grupos por defecto
+                # Filtro de género
+                generos = ['Total', 'Hombres', 'Mujeres']
+                genero_seleccionado = st.multiselect(
+                    "Género:",
+                    options=generos,
+                    default=generos
                 )
                 
                 # Aplicar filtros
                 filtros = {
-                    'Periodo': fecha_seleccionada,
-                    'Sexo_desc': sexo_seleccionado,
-                    'Edad_desc': edad_seleccionada
+                    'Municipio': municipio_seleccionado,
+                    'Periodo': periodo_seleccionado,
+                    'Genero': genero_seleccionado
                 }
                 
                 df_filtrado = DataProcessor.filtrar_datos(df, filtros)
@@ -108,22 +108,19 @@ def main():
         
         # Visualizaciones
         st.header("Visualizaciones")
-        cols = st.columns(2)
         
-        # Selector de columnas para gráficos
-        with cols[0]:
-            col_x = st.selectbox("Variable eje X:", options=df.columns)
-            col_y = st.selectbox("Variable eje Y:", options=df.columns)
-            col_color = st.selectbox("Variable de color (opcional):", 
-                                   options=['Ninguno'] + list(df.columns))
+        # Preparar datos para gráfico
+        df_agrupado = DataProcessor.agrupar_por_municipio_genero(df)
+        df_municipio = df_agrupado[df_agrupado['Municipio'] == municipio_seleccionado]
         
-        # Tipo de gráfico
-        with cols[1]:
-            tipo_grafico = st.selectbox(
-                "Tipo de gráfico:",
-                ["Líneas", "Barras"],
-                format_func=lambda x: "Líneas" if x == "Líneas" else "Barras"
-            )
+        # Crear gráfico de tendencias
+        fig = DataVisualizer.crear_grafico_lineas(
+            df_municipio,
+            x='Periodo',
+            y='Total',
+            color='Genero',
+            titulo=f"Evolución de la Población en {municipio_seleccionado}"
+        )
             
         # Crear y mostrar gráfico
         try:

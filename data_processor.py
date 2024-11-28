@@ -32,20 +32,22 @@ class DataProcessor:
             print("Columnas disponibles:", df.columns.tolist())
             print("Primeras filas:", df.head())
 
-            # Mapear nombres de columnas
-            if 'T3_Periodo' in df.columns:
-                df['Periodo'] = df['T3_Periodo']
+            # Procesar nombres de municipios y género
+            if 'Nombre' in df.columns:
+                # Extraer municipio y género del nombre
+                df['Municipio'] = df['Nombre'].str.extract(r'^([^:]+)(?::|$)')
+                df['Genero'] = df['Nombre'].str.extract(r':\s*(Hombres|Mujeres)')
+                df['Genero'].fillna('Total', inplace=True)
 
-            # Convertir columnas numéricas
+            # Mapear y convertir columnas
+            if 'Anyo' in df.columns:
+                df['Periodo'] = df['Anyo'].astype(str)
+            
             if 'Valor' in df.columns:
                 df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-            
-            # Convertir fechas
-            if 'Fecha' in df.columns:
-                df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
-
-            # Asegurar que tenemos las columnas necesarias
-            columnas_requeridas = ['Fecha', 'Periodo', 'Valor']
+                
+            # Asegurar columnas necesarias
+            columnas_requeridas = ['Municipio', 'Periodo', 'Valor', 'Genero']
             for col in columnas_requeridas:
                 if col not in df.columns:
                     print(f"Columna {col} no encontrada en los datos")
@@ -114,4 +116,23 @@ class DataProcessor:
         """Calcula la tasa de mortalidad por cada 1000 habitantes"""
         if col_defunciones not in df.columns or col_poblacion not in df.columns:
             return 0.0
+    @staticmethod
+    def agrupar_por_municipio_genero(df: pd.DataFrame) -> pd.DataFrame:
+        """Agrupa los datos por municipio y género"""
+        return df.pivot_table(
+            values='Valor',
+            index=['Municipio', 'Periodo'],
+            columns='Genero',
+            aggfunc='first'
+        ).reset_index()
+
+    @staticmethod
+    def obtener_municipios(df: pd.DataFrame) -> List[str]:
+        """Obtiene la lista de municipios disponibles"""
+        return sorted(df['Municipio'].unique().tolist())
+
+    @staticmethod
+    def obtener_periodos(df: pd.DataFrame) -> List[str]:
+        """Obtiene la lista de períodos disponibles"""
+        return sorted(df['Periodo'].unique().tolist())
         return (df[col_defunciones].sum() / df[col_poblacion].sum()) * 1000
