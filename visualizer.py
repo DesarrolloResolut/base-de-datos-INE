@@ -190,3 +190,75 @@ class DataVisualizer:
             height=800
         )
         return fig
+
+
+    @staticmethod
+    def crear_grafico_regresion_multiple(resultados: Dict, titulo: str = "Análisis de Regresión Múltiple") -> go.Figure:
+        """Crea gráfico de regresión múltiple"""
+        fig = go.Figure()
+        
+        # Gráfico de dispersión para valores reales vs predicciones
+        fig.add_trace(go.Scatter(
+            x=resultados['valores_reales'],
+            y=resultados['predicciones'],
+            mode='markers',
+            name='Predicciones vs Reales',
+            marker=dict(color='blue')
+        ))
+        
+        # Línea de referencia y=x
+        min_val = min(min(resultados['valores_reales']), min(resultados['predicciones']))
+        max_val = max(max(resultados['valores_reales']), max(resultados['predicciones']))
+        fig.add_trace(go.Scatter(
+            x=[min_val, max_val],
+            y=[min_val, max_val],
+            mode='lines',
+            name='Línea de referencia',
+            line=dict(color='red', dash='dash')
+        ))
+        
+        fig.update_layout(
+            title=titulo,
+            xaxis_title='Valores reales',
+            yaxis_title='Valores predichos',
+            template='plotly_white',
+            showlegend=True
+        )
+        
+        return fig
+
+    @staticmethod
+    def crear_grafico_series_temporales(resultados: Dict, datos_originales: pd.Series, titulo: str = "Análisis de Series Temporales") -> go.Figure:
+        """Crea gráfico de análisis de series temporales"""
+        fig = go.Figure()
+        
+        # Datos originales
+        fig.add_trace(go.Scatter(
+            y=datos_originales,
+            name='Datos originales',
+            mode='lines+markers'
+        ))
+        
+        # Tendencia
+        fig.add_trace(go.Scatter(
+            y=resultados['descomposicion']['tendencia'],
+            name='Tendencia',
+            line=dict(color='red')
+        ))
+        
+        # Componente estacional
+        fig.add_trace(go.Scatter(
+            y=resultados['descomposicion']['estacional'],
+            name='Estacional',
+            line=dict(color='green')
+        ))
+        
+        fig.update_layout(
+            title=titulo,
+            template='plotly_white',
+            showlegend=True,
+            xaxis_title='Tiempo',
+            yaxis_title='Valor'
+        )
+        
+        return fig

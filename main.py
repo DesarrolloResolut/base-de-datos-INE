@@ -150,6 +150,158 @@ def main():
                         st.metric("Población máxima", f"{stats['max']:.0f}")
             except Exception as e:
                 st.error(f"Error al calcular estadísticas: {str(e)}")
+import streamlit as st
+import pandas as pd
+from api_client import INEApiClient
+from data_processor import DataProcessor
+from visualizer import DataVisualizer
+from utils import (format_nombre_operacion, format_nombre_tabla, 
+                  exportar_a_excel, exportar_a_csv)
+
+st.set_page_config(
+    page_title="Explorador de Datos INE",
+    page_icon="📊",
+    layout="wide"
+)
+
+# Inicialización de estado de la aplicación
+if 'datos_actuales' not in st.session_state:
+    st.session_state.datos_actuales = None
+
+@st.cache_data(ttl=3600)
+def cargar_operaciones():
+    """Carga y cachea las operaciones del INE"""
+    try:
+        return INEApiClient.get_operaciones()
+    except Exception as e:
+        st.error(f"Error al cargar operaciones: {str(e)}")
+        return []
+
+def main():
+    st.title("📊 Explorador de Población de Albacete - INE")
+    
+    # Mensaje explicativo sobre los datos
+    st.markdown("""
+    Esta aplicación muestra los datos oficiales de población de Albacete y sus municipios, proporcionados por el Instituto Nacional de Estadística (INE).
+    Los datos incluyen:
+    - Población por municipio
+    - Distribución por género
+    - Evolución temporal
+    
+    Los datos se actualizan anualmente y provienen de la tabla 2855 del INE.
+    """)
+    
+    # Sidebar para filtros
+    with st.sidebar:
+        st.header("Filtros")
+        
+        try:
+            # Cargar datos de población
+            with st.spinner("Cargando datos de población..."):
+                datos = INEApiClient.get_datos_tabla()
+                if not datos:
+                    st.error("No se pudieron obtener los datos de población.")
+                    return
+                    
+                df = DataProcessor.json_to_dataframe(datos)
+                if df.empty:
+                    st.error("No hay datos disponibles para mostrar.")
+                    return
+                
+                # Filtros específicos
+                # Filtro de municipio
+                municipios = DataProcessor.obtener_municipios(df)
+                municipio_seleccionado = st.selectbox(
+                    "Municipio:",
+                    options=municipios,
+                    index=0 if 'Albacete' in municipios else 0
+                )
+                
+                # Filtro de período
+                periodos = DataProcessor.obtener_periodos(df)
+                periodo_seleccionado = st.multiselect(
+                    "Años:",
+                    options=periodos,
+                    default=periodos[-4:] if len(periodos) > 4 else periodos
+                )
+                
+                # Filtro de género
+                generos = ['Total', 'HOMBRE', 'MUJER']
+                genero_seleccionado = st.multiselect(
+                    "Género:",
+                    options=generos,
+                    default=generos
+                )
+                
+                # Aplicar filtros
+                filtros = {
+                    'Municipio': municipio_seleccionado,
+                    'Periodo': periodo_seleccionado,
+                    'Genero': genero_seleccionado
+                }
+                
+                df_filtrado = DataProcessor.filtrar_datos(df, filtros)
+                st.session_state.datos_actuales = df_filtrado
+                
+        except Exception as e:
+            st.error(f"Error al cargar los datos: {str(e)}")
+    
+    # Área principal
+    if st.session_state.datos_actuales is not None:
+        df = st.session_state.datos_actuales
+        
+        if df.empty:
+            st.warning("No hay datos disponibles para mostrar.")
+            return
+        
+        # Mostrar datos en tabla
+        st.header("Datos")
+        st.dataframe(df)
+        
+        # Visualizaciones
+        st.header("Visualizaciones")
+        
+        try:
+            # Gráfico de evolución temporal
+            st.subheader("Evolución temporal de la población")
+            fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                df,
+                x='Periodo',
+                y='Valor',
+                color='Genero',
+                titulo=f"Evolución de la Población en {municipio_seleccionado}"
+            )
+            st.plotly_chart(fig_evolucion, use_container_width=True)
+            
+            # Gráfico de comparativa por género
+            st.subheader("Comparativa por género")
+            fig_genero = DataVisualizer.crear_grafico_barras(
+                df[df['Periodo'] == df['Periodo'].max()],
+                x='Genero',
+                y='Valor',
+                titulo=f"Distribución por Género en {municipio_seleccionado} ({df['Periodo'].max()})"
+            )
+            st.plotly_chart(fig_genero, use_container_width=True)
+            
+        except Exception as e:
+            st.error(f"Error al crear los gráficos: {str(e)}")
+        
+        # Estadísticas básicas
+        if st.checkbox("Mostrar estadísticas básicas"):
+            try:
+                st.subheader("Estadísticas de población")
+                stats = DataProcessor.calcular_estadisticas(df, 'Valor')
+                if stats:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Población media", f"{stats['media']:.0f}")
+                        st.metric("Población mediana", f"{stats['mediana']:.0f}")
+                        st.metric("Desviación estándar", f"{stats['desv_std']:.0f}")
+                    with col2:
+                        st.metric("Población mínima", f"{stats['min']:.0f}")
+                        st.metric("Población máxima", f"{stats['max']:.0f}")
+            except Exception as e:
+                st.error(f"Error al calcular estadísticas: {str(e)}")
         
         # Análisis Avanzado
         st.header("Análisis Avanzado")
@@ -160,40 +312,80 @@ def main():
 
         if tipo_analisis == "Tendencias y Proyecciones":
             try:
-                # Análisis de tendencias
-                resultados_tendencia = DataProcessor.analizar_tendencias(df)
-                if resultados_tendencia:
-                    st.subheader("Análisis de Tendencia Poblacional")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Tendencia de crecimiento", 
-                                f"{resultados_tendencia['pendiente']:.2f} habitantes/año")
-                        st.metric("R² (Ajuste del modelo)", 
-                                f"{resultados_tendencia['r2']:.3f}")
-                    
-                    # Gráfico de tendencia
-                    fig_tendencia = DataVisualizer.crear_grafico_tendencia(
-                        df,
-                        x='Periodo',
-                        y='Valor',
-                        titulo=f"Tendencia Poblacional - {municipio_seleccionado}"
-                    )
-                    st.plotly_chart(fig_tendencia, use_container_width=True)
+                # Análisis de series temporales avanzado
+                resultados_series = DataProcessor.analisis_series_temporales(df, 'Periodo', 'Valor')
+                
+                st.subheader("Análisis Avanzado de Series Temporales")
+                
+                # Mostrar resultados de la prueba de tendencia
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Coeficiente de tendencia", 
+                            f"{resultados_series['tendencia']['coeficiente']:.3f}")
+                    st.metric("Significancia estadística (p-valor)", 
+                            f"{resultados_series['tendencia']['p_valor']:.4f}")
+                with col2:
+                    st.metric("Tasa de cambio media", 
+                            f"{resultados_series['tasas_cambio']['media']*100:.2f}%")
+                    st.metric("Volatilidad (Desv. Est.)", 
+                            f"{resultados_series['tasas_cambio']['desv_std']*100:.2f}%")
+                
+                # Gráfico de descomposición temporal
+                fig_series = DataVisualizer.crear_grafico_series_temporales(
+                    resultados_series,
+                    df['Valor'],
+                    titulo=f"Descomposición Temporal - {municipio_seleccionado}"
+                )
+                st.plotly_chart(fig_series, use_container_width=True)
+                
+                # Interpretación de resultados
+                st.subheader("Interpretación del Análisis")
+                if resultados_series['tendencia']['significativa']:
+                    st.success("Se ha detectado una tendencia estadísticamente significativa en los datos.")
+                else:
+                    st.info("No se ha detectado una tendencia estadísticamente significativa.")
+                
+                st.write("""
+                - La descomposición temporal muestra la separación de la serie en sus componentes de tendencia,
+                  estacionalidad y residuos.
+                - El componente de tendencia indica la dirección general de los cambios a largo plazo.
+                - El componente estacional muestra patrones que se repiten en intervalos regulares.
+                """)
 
             except Exception as e:
                 st.error(f"Error en el análisis de tendencias: {str(e)}")
 
         elif tipo_analisis == "Correlaciones":
             try:
-                # Análisis de correlaciones
+                # Análisis de correlaciones avanzado
                 variables_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
                 if len(variables_numericas) > 1:
+                    resultados_corr = DataProcessor.calcular_correlaciones(df, variables_numericas)
+                    
+                    st.subheader("Matriz de Correlaciones")
                     fig_corr = DataVisualizer.crear_heatmap_correlacion(
                         df,
                         variables_numericas,
                         titulo=f"Correlaciones - {municipio_seleccionado}"
                     )
                     st.plotly_chart(fig_corr, use_container_width=True)
+                    
+                    # Mostrar correlaciones significativas
+                    st.subheader("Correlaciones Significativas")
+                    correlaciones_sig = []
+                    for i in range(len(variables_numericas)):
+                        for j in range(i+1, len(variables_numericas)):
+                            if resultados_corr['p_values'].iloc[i,j] < 0.05:
+                                correlaciones_sig.append({
+                                    'Variables': f"{variables_numericas[i]} - {variables_numericas[j]}",
+                                    'Correlación': resultados_corr['correlaciones'].iloc[i,j],
+                                    'P-valor': resultados_corr['p_values'].iloc[i,j]
+                                })
+                    
+                    if correlaciones_sig:
+                        st.table(pd.DataFrame(correlaciones_sig))
+                    else:
+                        st.info("No se encontraron correlaciones estadísticamente significativas.")
                 else:
                     st.warning("No hay suficientes variables numéricas para análisis de correlación")
 

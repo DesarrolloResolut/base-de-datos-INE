@@ -162,9 +162,104 @@ class DataProcessor:
         }
 
     @staticmethod
-    def calcular_correlaciones(df: pd.DataFrame, variables: List[str] = None) -> pd.DataFrame:
-        """Calcula la matriz de correlaciones entre las variables numéricas especificadas"""
-        if variables is None:
-            variables = df.select_dtypes(include=[np.number]).columns
+    def calcular_correlaciones(df: pd.DataFrame, variables: List[str] = None) -> Dict:
+        """Calcula la matriz de correlaciones y p-values entre las variables numéricas especificadas"""
+        from scipy import stats
+        import numpy as np
         
-        return df[variables].corr()
+        if variables is None:
+    @staticmethod
+    def analisis_regresion_multiple(df: pd.DataFrame, variable_dependiente: str, variables_independientes: List[str]) -> Dict:
+        """Realiza análisis de regresión múltiple"""
+        from sklearn.linear_model import LinearRegression
+        from sklearn.model_selection import train_test_split
+        from sklearn.metrics import r2_score, mean_squared_error
+        import numpy as np
+        
+        X = df[variables_independientes]
+        y = df[variable_dependiente]
+        
+        # Dividir datos en entrenamiento y prueba
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Ajustar modelo
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+        
+        # Realizar predicciones
+        y_pred = model.predict(X_test)
+        
+        # Calcular métricas
+        r2 = r2_score(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        
+        # Preparar coeficientes
+        coef_dict = dict(zip(variables_independientes, model.coef_))
+        
+        return {
+            'r2': r2,
+            'rmse': rmse,
+            'coeficientes': coef_dict,
+            'intercepto': model.intercept_,
+            'predicciones': y_pred.tolist(),
+            'valores_reales': y_test.tolist()
+        }
+
+    @staticmethod
+    def analisis_series_temporales(df: pd.DataFrame, columna_fecha: str, columna_valor: str) -> Dict:
+        """Realiza análisis de series temporales con descomposición y pruebas estadísticas"""
+        from statsmodels.tsa.seasonal import seasonal_decompose
+        from scipy import stats
+        import numpy as np
+        
+        # Convertir a serie temporal
+        df_ts = df.copy()
+        df_ts[columna_fecha] = pd.to_datetime(df_ts[columna_fecha])
+        df_ts = df_ts.set_index(columna_fecha)
+        
+        # Descomposición de la serie temporal
+        descomposicion = seasonal_decompose(df_ts[columna_valor], period=12, extrapolate_trend='freq')
+        
+        # Prueba de tendencia Mann-Kendall
+        tendencia, p_valor = stats.kendalltau(df_ts.index.values, df_ts[columna_valor])
+        
+        # Calcular tasas de cambio
+        tasas_cambio = df_ts[columna_valor].pct_change().dropna()
+        
+        return {
+            'tendencia': {
+                'coeficiente': tendencia,
+                'p_valor': p_valor,
+                'significativa': p_valor < 0.05
+            },
+            'descomposicion': {
+                'tendencia': descomposicion.trend.tolist(),
+                'estacional': descomposicion.seasonal.tolist(),
+                'residual': descomposicion.resid.tolist()
+            },
+            'tasas_cambio': {
+                'media': tasas_cambio.mean(),
+                'mediana': tasas_cambio.median(),
+                'desv_std': tasas_cambio.std()
+            }
+        }
+            variables = df.select_dtypes(include=[np.number]).columns.tolist()
+        
+        n = len(variables)
+        corr_matrix = pd.DataFrame(np.zeros((n, n)), columns=variables, index=variables)
+        p_matrix = pd.DataFrame(np.zeros((n, n)), columns=variables, index=variables)
+        
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    corr, p_value = stats.pearsonr(df[variables[i]], df[variables[j]])
+                    corr_matrix.iloc[i, j] = corr
+                    p_matrix.iloc[i, j] = p_value
+                else:
+                    corr_matrix.iloc[i, j] = 1.0
+                    p_matrix.iloc[i, j] = 0.0
+        
+        return {
+            'correlaciones': corr_matrix,
+            'p_values': p_matrix
+        }
