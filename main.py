@@ -6,6 +6,7 @@ from data_processor import DataProcessor
 from visualizer import DataVisualizer
 from utils import (format_nombre_operacion, format_nombre_tabla, 
                   exportar_a_excel, exportar_a_csv)
+from report_generator import ReportGenerator
 
 st.set_page_config(
     page_title="Explorador de Datos INE",
