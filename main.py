@@ -151,6 +151,71 @@ def main():
             except Exception as e:
                 st.error(f"Error al calcular estadísticas: {str(e)}")
         
+        # Análisis Avanzado
+        st.header("Análisis Avanzado")
+        tipo_analisis = st.selectbox(
+            "Tipo de análisis",
+            ["Tendencias y Proyecciones", "Correlaciones", "Crecimiento Poblacional"]
+        )
+
+        if tipo_analisis == "Tendencias y Proyecciones":
+            try:
+                # Análisis de tendencias
+                resultados_tendencia = DataProcessor.analizar_tendencias(df)
+                if resultados_tendencia:
+                    st.subheader("Análisis de Tendencia Poblacional")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Tendencia de crecimiento", 
+                                f"{resultados_tendencia['pendiente']:.2f} habitantes/año")
+                        st.metric("R² (Ajuste del modelo)", 
+                                f"{resultados_tendencia['r2']:.3f}")
+                    
+                    # Gráfico de tendencia
+                    fig_tendencia = DataVisualizer.crear_grafico_tendencia(
+                        df,
+                        x='Periodo',
+                        y='Valor',
+                        titulo=f"Tendencia Poblacional - {municipio_seleccionado}"
+                    )
+                    st.plotly_chart(fig_tendencia, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Error en el análisis de tendencias: {str(e)}")
+
+        elif tipo_analisis == "Correlaciones":
+            try:
+                # Análisis de correlaciones
+                variables_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+                if len(variables_numericas) > 1:
+                    fig_corr = DataVisualizer.crear_heatmap_correlacion(
+                        df,
+                        variables_numericas,
+                        titulo=f"Correlaciones - {municipio_seleccionado}"
+                    )
+                    st.plotly_chart(fig_corr, use_container_width=True)
+                else:
+                    st.warning("No hay suficientes variables numéricas para análisis de correlación")
+
+            except Exception as e:
+                st.error(f"Error en el análisis de correlaciones: {str(e)}")
+
+        elif tipo_analisis == "Crecimiento Poblacional":
+            try:
+                # Análisis de crecimiento poblacional
+                df_crecimiento = DataProcessor.calcular_crecimiento_poblacional(df)
+                if not df_crecimiento.empty:
+                    st.subheader("Análisis de Crecimiento Poblacional")
+                    fig_crecimiento = DataVisualizer.crear_grafico_lineas(
+                        df_crecimiento,
+                        x='Periodo',
+                        y='Crecimiento',
+                        titulo=f"Tasa de Crecimiento Poblacional - {municipio_seleccionado}"
+                    )
+                    st.plotly_chart(fig_crecimiento, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Error en el análisis de crecimiento: {str(e)}")
         # Exportación
         st.header("Exportar datos")
         col1, col2 = st.columns(2)

@@ -1,17 +1,18 @@
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
-from typing import Dict
+import numpy as np
+from typing import Dict, List
 
 class DataVisualizer:
     """Visualización de datos del INE"""
     
     @staticmethod
     def crear_grafico_lineas(df: pd.DataFrame, 
-                            x: str, 
-                            y: str, 
-                            color: str = None,
-                            titulo: str = "Evolución Temporal") -> go.Figure:
+                         x: str, 
+                         y: str, 
+                         color: str = None,
+                         titulo: str = "Evolución Temporal") -> go.Figure:
         """Crea gráfico de líneas temporal"""
         fig = px.line(df, x=x, y=y, color=color,
                      title=titulo,
@@ -28,10 +29,10 @@ class DataVisualizer:
     
     @staticmethod
     def crear_grafico_barras(df: pd.DataFrame,
-                            x: str,
-                            y: str,
-                            color: str = None,
-                            titulo: str = "Comparativa") -> go.Figure:
+                         x: str,
+                         y: str,
+                         color: str = None,
+                         titulo: str = "Comparativa") -> go.Figure:
         """Crea gráfico de barras"""
         fig = px.bar(df, x=x, y=y, color=color,
                     title=titulo,
@@ -47,27 +48,91 @@ class DataVisualizer:
         return fig
     
     @staticmethod
-    def crear_mapa_espana(df: pd.DataFrame,
-                         columna_ccaa: str,
-                         columna_valores: str,
-                         titulo: str = "Distribución por Comunidades Autónomas") -> go.Figure:
-        """Crea mapa coroplético de España"""
-        fig = px.choropleth(df,
-                           locations=columna_ccaa,
-                           color=columna_valores,
-                           scope="europe",
-                           title=titulo,
-                           labels={columna_valores: columna_valores.replace('_', ' ').title()})
+    def crear_grafico_tendencia(df: pd.DataFrame,
+                            x: str,
+                            y: str,
+                            titulo: str = "Análisis de Tendencia") -> go.Figure:
+        """Crea gráfico de tendencia con línea de regresión"""
+        fig = px.scatter(df, x=x, y=y,
+                        title=titulo,
+                        trendline="ols",
+                        labels={x: x.replace('_', ' ').title(),
+                               y: y.replace('_', ' ').title()})
+        
         fig.update_layout(
             template='plotly_white',
-            geo_scope='europe'
+            hovermode='x unified',
+            xaxis_title=x.replace('_', ' ').title(),
+            yaxis_title=y.replace('_', ' ').title()
         )
         return fig
+
+    @staticmethod
+    def crear_heatmap_correlacion(df: pd.DataFrame,
+                              variables: List[str],
+                              titulo: str = "Matriz de Correlaciones") -> go.Figure:
+        """Crea un heatmap de correlaciones entre variables"""
+        corr_matrix = df[variables].corr()
         
+        fig = go.Figure(data=go.Heatmap(
+            z=corr_matrix,
+            x=variables,
+            y=variables,
+            colorscale='RdBu',
+            zmin=-1,
+            zmax=1
+        ))
+        
+        fig.update_layout(
+            title=titulo,
+            template='plotly_white',
+            xaxis_title="Variables",
+            yaxis_title="Variables"
+        )
+        return fig
+
+    @staticmethod
+    def crear_grafico_proyeccion(df: pd.DataFrame,
+                             x: str,
+                             y: str,
+                             predicciones: List[float],
+                             periodos_futuros: List[str],
+                             titulo: str = "Proyección de Población") -> go.Figure:
+        """Crea gráfico de proyección poblacional"""
+        # Crear figura base con datos históricos
+        fig = go.Figure()
+        
+        # Añadir datos históricos
+        fig.add_trace(go.Scatter(
+            x=df[x],
+            y=df[y],
+            name='Datos históricos',
+            mode='lines+markers'
+        ))
+        
+        # Añadir proyección
+        fig.add_trace(go.Scatter(
+            x=periodos_futuros,
+            y=predicciones,
+            name='Proyección',
+            mode='lines+markers',
+            line=dict(dash='dash')
+        ))
+        
+        fig.update_layout(
+            title=titulo,
+            template='plotly_white',
+            hovermode='x unified',
+            xaxis_title=x.replace('_', ' ').title(),
+            yaxis_title=y.replace('_', ' ').title(),
+            showlegend=True
+        )
+        return fig
+
     @staticmethod
     def crear_piramide_poblacion(df: pd.DataFrame,
-                               periodo: str = None,
-                               titulo: str = None) -> go.Figure:
+                             periodo: str = None,
+                             titulo: str = None) -> go.Figure:
         """Crea una pirámide de población optimizada para datos del INE"""
         # Preparar datos
         hombres_df = df[df['Sexo_desc'] == 'Hombres'].sort_values('Edad_desc')
@@ -78,10 +143,10 @@ class DataVisualizer:
         # Hombres (valores negativos para mostrar a la izquierda)
         fig.add_trace(go.Bar(
             y=hombres_df['Edad_desc'],
-            x=-hombres_df['Total'],  # Valores negativos para la izquierda
+            x=-hombres_df['Total'],
             name='Hombres',
             orientation='h',
-            marker_color='rgb(0, 123, 255)'  # Azul
+            marker_color='rgb(0, 123, 255)'
         ))
         
         # Mujeres (valores positivos para mostrar a la derecha)
@@ -90,7 +155,7 @@ class DataVisualizer:
             x=mujeres_df['Total'],
             name='Mujeres',
             orientation='h',
-            marker_color='rgb(255, 99, 132)'  # Rosa
+            marker_color='rgb(255, 99, 132)'
         ))
         
         # Título dinámico
@@ -113,16 +178,15 @@ class DataVisualizer:
             ),
             xaxis=dict(
                 title='Población',
-                tickformat=',d',  # Formato de números con separadores de miles
+                tickformat=',d',
                 zeroline=True,
                 zerolinecolor='black',
                 zerolinewidth=1
             ),
             yaxis=dict(
                 title='Grupo de edad',
-                autorange="reversed"  # Invertir el eje Y para mostrar edades de mayor a menor
+                autorange="reversed"
             ),
-            height=800  # Altura fija para mejor visualización
+            height=800
         )
-        
         return fig

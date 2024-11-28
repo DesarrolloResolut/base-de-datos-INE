@@ -116,3 +116,55 @@ class DataProcessor:
         if col_defunciones not in df.columns or col_poblacion not in df.columns:
             return 0.0
         return (df[col_defunciones].sum() / df[col_poblacion].sum()) * 1000
+
+    @staticmethod
+    def calcular_crecimiento_poblacional(df: pd.DataFrame, columna_valor: str = 'Valor', columna_periodo: str = 'Periodo') -> pd.DataFrame:
+        """Calcula la tasa de crecimiento poblacional entre períodos consecutivos"""
+        if columna_valor not in df.columns or columna_periodo not in df.columns:
+            return pd.DataFrame()
+            
+        # Ordenar por período
+        df_sorted = df.sort_values(columna_periodo)
+        
+        # Calcular el crecimiento porcentual
+        df_sorted['Crecimiento'] = df_sorted[columna_valor].pct_change() * 100
+        
+        return df_sorted
+
+    @staticmethod
+    def analizar_tendencias(df: pd.DataFrame, columna_valor: str = 'Valor', columna_periodo: str = 'Periodo') -> Dict:
+        """Realiza análisis de tendencias usando regresión lineal simple"""
+        from sklearn.linear_model import LinearRegression
+        import numpy as np
+        
+        if columna_valor not in df.columns or columna_periodo not in df.columns:
+            return {}
+            
+        # Convertir períodos a números
+        df_sorted = df.sort_values(columna_periodo)
+        X = np.arange(len(df_sorted)).reshape(-1, 1)
+        y = df_sorted[columna_valor].values
+        
+        # Ajustar regresión lineal
+        model = LinearRegression()
+        model.fit(X, y)
+        
+        # Calcular predicciones y R²
+        y_pred = model.predict(X)
+        r2 = model.score(X, y)
+        
+        return {
+            'pendiente': model.coef_[0],
+            'intercepto': model.intercept_,
+            'r2': r2,
+            'predicciones': y_pred.tolist(),
+            'periodos': df_sorted[columna_periodo].tolist()
+        }
+
+    @staticmethod
+    def calcular_correlaciones(df: pd.DataFrame, variables: List[str] = None) -> pd.DataFrame:
+        """Calcula la matriz de correlaciones entre las variables numéricas especificadas"""
+        if variables is None:
+            variables = df.select_dtypes(include=[np.number]).columns
+        
+        return df[variables].corr()
