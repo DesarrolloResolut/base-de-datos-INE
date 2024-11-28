@@ -97,8 +97,7 @@ def exportar_a_excel(df: pd.DataFrame, filename: str) -> str:
         df_export.to_excel(
             filename,
             index=False,
-            engine='openpyxl',
-            encoding='utf-8'
+            engine='openpyxl'
         )
         return "Datos exportados exitosamente a Excel"
     except ValueError as ve:
