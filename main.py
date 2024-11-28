@@ -109,37 +109,30 @@ def main():
         # Visualizaciones
         st.header("Visualizaciones")
         
-        # Preparar datos para gráfico
-        df_agrupado = DataProcessor.agrupar_por_municipio_genero(df)
-        df_municipio = df_agrupado[df_agrupado['Municipio'] == municipio_seleccionado]
-        
-        # Crear gráfico de tendencias
-        fig = DataVisualizer.crear_grafico_lineas(
-            df_municipio,
-            x='Periodo',
-            y='Total',
-            color='Genero',
-            titulo=f"Evolución de la Población en {municipio_seleccionado}"
-        )
-            
-        # Crear y mostrar gráfico
         try:
-            if tipo_grafico == "Líneas":
-                fig = DataVisualizer.crear_grafico_lineas(
-                    df, col_x, col_y,
-                    color=None if col_color == 'Ninguno' else col_color,
-                    titulo=f"Evolución de {col_y} por {col_x}"
-                )
-            else:
-                fig = DataVisualizer.crear_grafico_barras(
-                    df, col_x, col_y,
-                    color=None if col_color == 'Ninguno' else col_color,
-                    titulo=f"Comparativa de {col_y} por {col_x}"
-                )
+            # Gráfico de evolución temporal
+            st.subheader("Evolución temporal de la población")
+            fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                df,
+                x='Periodo',
+                y='Valor',
+                color='Genero',
+                titulo=f"Evolución de la Población en {municipio_seleccionado}"
+            )
+            st.plotly_chart(fig_evolucion, use_container_width=True)
             
-            st.plotly_chart(fig, use_container_width=True)
+            # Gráfico de comparativa por género
+            st.subheader("Comparativa por género")
+            fig_genero = DataVisualizer.crear_grafico_barras(
+                df[df['Periodo'] == df['Periodo'].max()],
+                x='Genero',
+                y='Valor',
+                titulo=f"Distribución por Género en {municipio_seleccionado} ({df['Periodo'].max()})"
+            )
+            st.plotly_chart(fig_genero, use_container_width=True)
+            
         except Exception as e:
-            st.error(f"Error al crear el gráfico: {str(e)}")
+            st.error(f"Error al crear los gráficos: {str(e)}")
         
         # Estadísticas básicas
         if st.checkbox("Mostrar estadísticas básicas"):

@@ -1,94 +1,75 @@
 import pandas as pd
-import numpy as np
 from typing import Dict, List
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class DataProcessor:
     """Procesamiento de datos del INE"""
     
     @staticmethod
-    def json_to_dataframe(datos: Dict) -> pd.DataFrame:
-        """Convierte datos JSON del INE a DataFrame"""
-        if not datos:
-            return pd.DataFrame()
-            
+    def json_to_dataframe(data: Dict) -> pd.DataFrame:
         try:
-            # Extraer datos principales
-            if isinstance(datos, list):
-                # Manejar el caso cuando la respuesta es una lista de objetos
-                all_data = []
-                for item in datos:
-                    if 'Data' in item:
-                        all_data.extend(item['Data'])
-                    elif isinstance(item, dict):
-                        all_data.append(item)
-                df = pd.DataFrame(all_data)
-            elif isinstance(datos, dict) and 'Data' in datos:
-                df = pd.DataFrame(datos['Data'])
-            else:
-                print("Formato de datos no reconocido:", type(datos))
-                return pd.DataFrame()
-            
-            # Debug logging
-            print("Columnas disponibles:", df.columns.tolist())
-            print("Primeras filas:", df.head())
-
-            # Procesar nombres de municipios y género
-            if 'Nombre' in df.columns:
-                # Extraer municipio y género del nombre
-                df['Municipio'] = df['Nombre'].str.extract(r'^([^:]+)(?::|$)')
-                df['Genero'] = df['Nombre'].str.extract(r':\s*(Hombres|Mujeres)')
-                df['Genero'].fillna('Total', inplace=True)
-
-            # Mapear y convertir columnas
-            if 'Anyo' in df.columns:
-                df['Periodo'] = df['Anyo'].astype(str)
-            
-            if 'Valor' in df.columns:
-                df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            # Extraer datos de la estructura JSON
+            registros = []
+            for item in data:
+                nombre = item.get('Nombre', '').split('.')
+                # Procesar el nombre para extraer municipio y género
+                municipio = nombre[0].strip() if len(nombre) > 0 else 'No especificado'
+                genero = nombre[2].strip() if len(nombre) > 2 else 'Total'
                 
-            # Asegurar columnas necesarias
-            columnas_requeridas = ['Municipio', 'Periodo', 'Valor', 'Genero']
-            for col in columnas_requeridas:
-                if col not in df.columns:
-                    print(f"Columna {col} no encontrada en los datos")
-                    return pd.DataFrame()
-                
-            return df
+                # Procesar los datos
+                for dato in item.get('Data', []):
+                    registro = {
+                        'Municipio': municipio,
+                        'Genero': genero,
+                        'Periodo': dato.get('Anyo'),
+                        'Valor': dato.get('Valor', 0)
+                    }
+                    registros.append(registro)
             
+            return pd.DataFrame(registros)
         except Exception as e:
-            print(f"Error al procesar los datos: {str(e)}")
+            print(f"Error al procesar JSON: {e}")
+            print(f"Columnas disponibles: {list(data[0].keys()) if data else []}")
             return pd.DataFrame()
-            
-        # Procesar metadatos si están disponibles
-        if 'Metadata' in datos:
-            metadata = datos['Metadata']
-            # Añadir información de variables como columnas
-            for var in metadata.get('Variables', []):
-                nombre = var.get('Nombre', '')
-                valores = var.get('Valores', [])
-                if valores:
-                    # Crear mapeo de códigos a nombres
-                    mapping = {str(v['Codigo']): v['Nombre'] for v in valores}
-                    # Aplicar mapeo si la columna existe
-                    if nombre in df.columns:
-                        df[f"{nombre}_desc"] = df[nombre].map(mapping)
-        
-        return df
-    
+
     @staticmethod
     def filtrar_datos(df: pd.DataFrame, filtros: Dict) -> pd.DataFrame:
-        """Aplica filtros al DataFrame"""
-        df_filtered = df.copy()
+        """Filtra el DataFrame según los criterios especificados"""
+        df_filtrado = df.copy()
         
-        for columna, valor in filtros.items():
-            if columna in df_filtered.columns and valor:
-                if isinstance(valor, list):
-                    df_filtered = df_filtered[df_filtered[columna].isin(valor)]
+        for columna, valores in filtros.items():
+            if valores and columna in df_filtrado.columns:
+                if isinstance(valores, (list, tuple)):
+                    df_filtrado = df_filtrado[df_filtrado[columna].isin(valores)]
                 else:
-                    df_filtered = df_filtered[df_filtered[columna] == valor]
-        
-        return df_filtered
-    
+                    df_filtrado = df_filtrado[df_filtrado[columna] == valores]
+                    
+        return df_filtrado
+
+    @staticmethod
+    def agrupar_por_municipio_genero(df: pd.DataFrame) -> pd.DataFrame:
+        """Agrupa los datos por municipio y género"""
+        return df.pivot_table(
+            values='Valor',
+            index=['Municipio', 'Periodo'],
+            columns='Genero',
+            aggfunc='first'
+        ).reset_index()
+
+    @staticmethod
+    def obtener_municipios(df: pd.DataFrame) -> List[str]:
+        """Obtiene la lista de municipios disponibles"""
+        return sorted(df['Municipio'].unique().tolist())
+
+    @staticmethod
+    def obtener_periodos(df: pd.DataFrame) -> List[str]:
+        """Obtiene la lista de períodos disponibles"""
+        return sorted(df['Periodo'].unique().tolist())
+
     @staticmethod
     def calcular_estadisticas(df: pd.DataFrame, columna_valores: str) -> Dict:
         """Calcula estadísticas básicas de una columna"""
@@ -116,23 +97,4 @@ class DataProcessor:
         """Calcula la tasa de mortalidad por cada 1000 habitantes"""
         if col_defunciones not in df.columns or col_poblacion not in df.columns:
             return 0.0
-    @staticmethod
-    def agrupar_por_municipio_genero(df: pd.DataFrame) -> pd.DataFrame:
-        """Agrupa los datos por municipio y género"""
-        return df.pivot_table(
-            values='Valor',
-            index=['Municipio', 'Periodo'],
-            columns='Genero',
-            aggfunc='first'
-        ).reset_index()
-
-    @staticmethod
-    def obtener_municipios(df: pd.DataFrame) -> List[str]:
-        """Obtiene la lista de municipios disponibles"""
-        return sorted(df['Municipio'].unique().tolist())
-
-    @staticmethod
-    def obtener_periodos(df: pd.DataFrame) -> List[str]:
-        """Obtiene la lista de períodos disponibles"""
-        return sorted(df['Periodo'].unique().tolist())
         return (df[col_defunciones].sum() / df[col_poblacion].sum()) * 1000

@@ -225,15 +225,15 @@ class INEApiClient:
             raise ValueError(error_msg)
     
     @staticmethod
-    def get_datos_tabla(tabla_id: str = "9687") -> Dict:
-        """Obtiene datos de población residente
+    def get_datos_tabla(tabla_id: str = "2855") -> Dict:
+        """Obtiene datos de población de Albacete y sus municipios
         Args:
-            tabla_id: ID de la tabla (por defecto '9687' para población residente)
+            tabla_id: ID de la tabla (por defecto '2855' para población de Albacete)
         """
         try:
-            url = "https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/2855"
+            url = f"https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/{tabla_id}"
             params = {'nult': '4', 'det': '2'}
-            logger.info(f"Consultando datos de población residente en: {url}")
+            logger.info(f"Consultando datos de población de Albacete en: {url}")
             
             session = INEApiClient._get_session()
             try:
