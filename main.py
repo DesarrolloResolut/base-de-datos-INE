@@ -126,11 +126,11 @@ def main():
                     )
                     
                     # Filtro de rangos
-                    rangos = sorted(df['Rango'].unique().tolist())
-                    rango_seleccionado = st.multiselect(
+                    rangos = ['Total'] + sorted(df['Rango'].unique().tolist())
+                    rango_seleccionado = st.selectbox(
                         "Rangos de población:",
                         options=rangos,
-                        default=rangos
+                        index=0  # Total será el valor por defecto
                     )
             
             # Aplicar filtros según la categoría
@@ -143,7 +143,7 @@ def main():
             elif categoria_seleccionada == "municipios_habitantes":
                 filtros = {
                     'Periodo': periodo_seleccionado,
-                    'Rango': rango_seleccionado
+                    'Rango': [rango_seleccionado] if rango_seleccionado != 'Total' else df['Rango'].unique().tolist()
                 }
             
             df_filtrado = DataProcessor.filtrar_datos(df, filtros)
