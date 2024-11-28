@@ -258,42 +258,48 @@ def main():
             except Exception as e:
                 st.error(f"Error en el análisis de crecimiento: {str(e)}")
         
-        # Exportación
-        st.header("Exportar datos")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Exportar a Excel"):
-                try:
-                    df_export = st.session_state.datos_actuales.copy()
-                    nombre_archivo = f"datos_poblacion_{municipio_seleccionado.lower()}.xlsx"
-                    mensaje = exportar_a_excel(df_export, nombre_archivo)
-                    st.success(mensaje)
-                    with open(nombre_archivo, "rb") as f:
-                        st.download_button(
-                            label="Descargar Excel",
-                            data=f,
-                            file_name=nombre_archivo,
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
-                except Exception as e:
-                    st.error(f"Error al exportar a Excel: {str(e)}")
+        # Exportación de informes
+        st.header("Exportar Informes")
+        
+        # Opciones de exportación
+        tipo_informe = st.radio(
+            "Tipo de informe",
+            ["Informe completo (Excel)", "Informe básico (CSV)"]
+        )
+        
+        if st.button("Generar Informe"):
+            try:
+                df_export = st.session_state.datos_actuales.copy()
                 
-        with col2:
-            if st.button("Exportar a CSV"):
-                try:
-                    df_export = st.session_state.datos_actuales.copy()
-                    nombre_archivo = f"datos_poblacion_{municipio_seleccionado.lower()}.csv"
-                    mensaje = exportar_a_csv(df_export, nombre_archivo)
-                    st.success(mensaje)
+                if tipo_informe == "Informe completo (Excel)":
+                    nombre_archivo = ReportGenerator.generar_informe_completo(
+                        df_export,
+                        municipio_seleccionado,
+                        formato='excel'
+                    )
+                    mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                else:
+                    nombre_archivo = ReportGenerator.generar_informe_completo(
+                        df_export,
+                        municipio_seleccionado,
+                        formato='csv'
+                    )
+                    mime_type = "text/csv"
+                
+                if nombre_archivo:
+                    st.success("Informe generado correctamente")
                     with open(nombre_archivo, "rb") as f:
                         st.download_button(
-                            label="Descargar CSV",
+                            label=f"Descargar {tipo_informe.split('(')[0].strip()}",
                             data=f,
                             file_name=nombre_archivo,
-                            mime="text/csv"
+                            mime=mime_type
                         )
-                except Exception as e:
-                    st.error(f"Error al exportar a CSV: {str(e)}")
+                else:
+                    st.error("Error al generar el informe")
+                    
+            except Exception as e:
+                st.error(f"Error al generar el informe: {str(e)}")
 
 if __name__ == "__main__":
     main()
