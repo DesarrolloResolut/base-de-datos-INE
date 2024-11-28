@@ -126,20 +126,20 @@ def main():
                     )
                     
                     # Filtro de rangos
-                    rangos = df['Rango'].unique().tolist()
-                    # Remover 'Total' si existe y ordenar el resto numéricamente
-                    rangos = [r for r in rangos if r != 'Total']
-                    
-                    # Función para extraer el primer número del rango
-                    def extraer_primer_numero(rango):
-                        # Extraer el primer número del rango
-                        numeros = ''.join(c if c.isdigit() or c == '.' else ' ' for c in rango).split()
-                        return float(numeros[0]) if numeros else 0
-                    
-                    # Ordenar los rangos numéricamente
-                    rangos_ordenados = sorted(rangos, key=extraer_primer_numero)
-                    # Añadir 'Total' al principio
-                    rangos_ordenados = ['Total'] + rangos_ordenados
+                    rangos_ordenados = [
+                        'Total',
+                        'Menos de 101 habitantes',
+                        'De 101 a 500',
+                        'De 501 a 1.000',
+                        'De 1.001 a 2.000',
+                        'De 2.001 a 5.000',
+                        'De 5.001 a 10.000',
+                        'De 10.001 a 20.000',
+                        'De 20.001 a 50.000',
+                        'De 50.001 a 100.000',
+                        'De 100.001 a 500.000',
+                        'Más de 500.000'
+                    ]
 
                     rango_seleccionado = st.selectbox(
                         "Rangos de población:",
