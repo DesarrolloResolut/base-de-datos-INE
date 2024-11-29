@@ -12,13 +12,15 @@ class DataProcessor:
         """Convierte datos JSON a DataFrame según la categoría
         Args:
             datos: Datos en formato JSON
-            categoria: Categoría de datos ('provincias' o 'municipios_habitantes')
+            categoria: Categoría de datos ('provincias', 'municipios_habitantes' o 'censo_agrario')
         """
         try:
             if categoria == "provincias":
                 return DataProcessor._procesar_datos_demografia(datos)
             elif categoria == "municipios_habitantes":
                 return DataProcessor._procesar_datos_municipios(datos)
+            elif categoria == "censo_agrario":
+                return DataProcessor._procesar_datos_censo_agrario(datos)
             else:
                 raise ValueError(f"Categoría no válida: {categoria}")
         except Exception as e:
@@ -123,8 +125,75 @@ class DataProcessor:
             
             return df
             
+    @staticmethod
+    def _procesar_datos_censo_agrario(datos: Dict) -> pd.DataFrame:
+        """Procesa datos del censo agrario"""
+        try:
+            if not isinstance(datos, (list, dict)):
+                raise ValueError(f"Formato de datos inválido: {type(datos)}")
+                
+            registros = []
+            for dato in datos:
+                if not isinstance(dato, dict):
+                    continue
+                    
+                nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
+                
+                if not nombre or not valores:
+                    continue
+                
+                # Extraer información del nombre
+                partes = nombre.split('.')
+                provincia = partes[0].strip() if len(partes) > 0 else 'No especificada'
+                comarca = partes[1].strip() if len(partes) > 1 else 'Total'
+                
+                # Extraer personalidad jurídica y tipo de dato
+                nombre_lower = nombre.lower()
+                if 'persona física' in nombre_lower:
+                    personalidad = 'Persona Física'
+                elif 'persona jurídica' in nombre_lower:
+                    personalidad = 'Persona Jurídica'
+                elif 'sociedad mercantil' in nombre_lower:
+                    personalidad = 'Sociedad Mercantil'
+                elif 'cooperativa' in nombre_lower:
+                    personalidad = 'Cooperativa'
+                else:
+                    personalidad = 'Otras'
+                
+                # Determinar tipo de dato con validación
+                if 'SAU' in nombre:
+                    tipo_dato = 'SAU (ha.)'
+                elif 'PET' in nombre:
+                    tipo_dato = 'PET (miles €)'
+                else:
+                    tipo_dato = 'Número de explotaciones'
+                
+                # Procesar valores
+                for valor in valores:
+                    registros.append({
+                        'Provincia': provincia,
+                        'Comarca': comarca,
+                        'Personalidad_Juridica': personalidad,
+                        'Tipo_Dato': tipo_dato,
+                        'Periodo': valor.get('NombrePeriodo', ''),
+                        'Valor': valor.get('Valor', 0)
+                    })
+            
+            if not registros:
+                raise ValueError("No se encontraron datos del censo agrario")
+                
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
+            
+            # Convertir tipos de datos
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            return df
+            
         except Exception as e:
-            raise ValueError(f"Error al procesar datos de municipios: {str(e)}")
+            raise ValueError(f"Error al procesar datos del censo agrario: {str(e)}")
 
     @staticmethod
     def obtener_municipios(df: pd.DataFrame) -> List[str]:

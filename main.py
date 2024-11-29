@@ -59,13 +59,14 @@ def main():
         - Evolución temporal de la distribución
         - Análisis comparativo por rangos
         """)
+    elif categoria_seleccionada == "censo_agrario":
         st.markdown("""
-        Esta aplicación muestra los datos oficiales de sectores manufactureros de alta y media-alta tecnología, proporcionados por el Instituto Nacional de Estadística (INE).
+        Esta aplicación muestra los datos del Censo Agrario, proporcionados por el Instituto Nacional de Estadística (INE).
         Los datos incluyen:
-        - Número de ocupados
-        - Porcentaje sobre el total
-        - Distribución por género
-        - Análisis por sector
+        - Número de explotaciones por tamaño según superficie agrícola utilizada (SAU)
+        - Datos por personalidad jurídica del titular
+        - Análisis por provincia y comarca
+        - Indicadores específicos del sector agrario
         """)
     
     try:
@@ -154,6 +155,37 @@ def main():
                         options=rangos_ordenados,
                         index=0  # Total será el valor por defecto
                     )
+                elif categoria_seleccionada == "censo_agrario":
+                    # Filtro de ámbito territorial
+                    provincias = sorted(df['Provincia'].unique().tolist())
+                    provincia_seleccionada = st.selectbox(
+                        "Provincia:",
+                        options=provincias
+                    )
+                    
+                    comarcas = sorted([c for c in df[df['Provincia'] == provincia_seleccionada]['Comarca'].unique() if pd.notna(c)])
+                    if comarcas:
+                        comarca_seleccionada = st.selectbox(
+                            "Comarca:",
+                            options=['Todas'] + comarcas,
+                            index=0
+                        )
+                    
+                    # Filtro de tipo de censo
+                    tipos_censo = ['Explotaciones por tamaño según SAU y personalidad jurídica']
+                    tipo_censo_seleccionado = st.selectbox(
+                        "Tipo de Censo:",
+                        options=tipos_censo,
+                        index=0
+                    )
+                    
+                    # Filtro de personalidad jurídica
+                    personalidades = sorted(df['Personalidad_Juridica'].unique().tolist())
+                    personalidad_seleccionada = st.multiselect(
+                        "Personalidad Jurídica:",
+                        options=personalidades,
+                        default=personalidades
+                    )
             
             # Aplicar filtros según la categoría
             if categoria_seleccionada == "provincias":
@@ -167,6 +199,12 @@ def main():
                     'Provincia': provincia_seleccionada,
                     'Periodo': periodo_seleccionado,
                     'Rango': [rango_seleccionado] if rango_seleccionado != 'Total' else df['Rango'].unique().tolist()
+                }
+            elif categoria_seleccionada == "censo_agrario":
+                filtros = {
+                    'Provincia': provincia_seleccionada,
+                    'Comarca': comarca_seleccionada if 'comarca_seleccionada' in locals() and comarca_seleccionada != 'Todas' else None,
+                    'Personalidad_Juridica': personalidad_seleccionada
                 }
             
             df_filtrado = DataProcessor.filtrar_datos(df, filtros)
@@ -236,63 +274,137 @@ def main():
                 )
                 st.plotly_chart(fig_barras, use_container_width=True)
                 
-            else:  # demografía
-                if categoria_seleccionada == "provincias":
-                    # Gráfico de evolución temporal por municipio
-                    st.subheader("Evolución temporal")
-                    fig_evolucion = DataVisualizer.crear_grafico_lineas(
-                        df,
+            elif categoria_seleccionada == "censo_agrario":
+                try:
+                    # Visualizaciones específicas para censo agrario
+                    st.subheader("Análisis del Censo Agrario")
+                    
+                    if df.empty:
+                        st.warning("No hay datos disponibles para mostrar.")
+                        return
+                        
+                    # Filtrar datos por tipo
+                    df_explotaciones = df[df['Tipo_Dato'] == 'Número de explotaciones'].copy()
+                    if df_explotaciones.empty:
+                        st.warning("No hay datos de explotaciones disponibles.")
+                        return
+                    
+                    # Gráfico de distribución por personalidad jurídica
+                    fig_distribucion = DataVisualizer.crear_grafico_barras(
+                        df_explotaciones,
+                        x='Personalidad_Juridica',
+                        y='Valor',
+                        titulo="Distribución de Explotaciones por Personalidad Jurídica"
+                    )
+                    st.plotly_chart(fig_distribucion, use_container_width=True)
+
+                    # Gráfico de distribución por comarca
+                    if 'Comarca' in df.columns and not df_explotaciones.empty:
+                        fig_comarca = DataVisualizer.crear_grafico_barras(
+                            df_explotaciones,
+                            x='Comarca',
+                            y='Valor',
+                            color='Personalidad_Juridica',
+                            titulo="Distribución de Explotaciones por Comarca"
+                        )
+                        st.plotly_chart(fig_comarca, use_container_width=True)
+                    
+                    # Métricas clave
+                    st.subheader("Métricas Clave")
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        total_explotaciones = df_explotaciones['Valor'].sum() if not df_explotaciones.empty else 0
+                        st.metric("Total Explotaciones", f"{total_explotaciones:,.0f}")
+                    
+                    with col2:
+                        df_sau = df[df['Tipo_Dato'] == 'SAU (ha.)']
+                        promedio_sau = df_sau['Valor'].mean() if not df_sau.empty else 0
+                        st.metric("Promedio SAU (ha.)", f"{promedio_sau:,.2f}")
+                    
+                    with col3:
+                        df_pet = df[df['Tipo_Dato'] == 'PET (miles €)']
+                        if not df_pet.empty:
+                            promedio_pet = df_pet['Valor'].mean()
+                            st.metric("Promedio PET (miles €)", f"{promedio_pet:,.2f}")
+                    
+                    # Análisis por tipo de dato
+                    st.subheader("Análisis por Tipo de Dato")
+                    tipo_dato_seleccionado = st.selectbox(
+                        "Seleccione el tipo de dato a analizar:",
+                        options=df['Tipo_Dato'].unique()
+                    )
+                    
+                    df_tipo = df[df['Tipo_Dato'] == tipo_dato_seleccionado]
+                    if not df_tipo.empty:
+                        fig_tipo = DataVisualizer.crear_grafico_barras(
+                            df_tipo,
+                            x='Personalidad_Juridica',
+                            y='Valor',
+                            color='Comarca',
+                            titulo=f"Distribución de {tipo_dato_seleccionado}"
+                        )
+                        st.plotly_chart(fig_tipo, use_container_width=True)
+
+                except Exception as e:
+                    st.error(f"Error al crear los gráficos para censo agrario: {str(e)}")
+            
+            elif categoria_seleccionada == "provincias":
+                # Gráfico de evolución temporal por municipio
+                st.subheader("Evolución temporal")
+                fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                    df,
+                    x='Periodo',
+                    y='Valor',
+                    color='Genero',
+                    titulo=f"Evolución temporal - {municipio_seleccionado}"
+                )
+                st.plotly_chart(fig_evolucion, use_container_width=True)
+                
+                # Gráfico comparativo por género y municipio
+                st.subheader("Comparativa por género")
+                df_actual = df[df['Periodo'] == df['Periodo'].max()]
+                fig_comparativa = DataVisualizer.crear_grafico_barras(
+                    df_actual,
+                    x='Genero',
+                    y='Valor',
+                    titulo=f"Distribución por Género - {municipio_seleccionado} ({df['Periodo'].max()})"
+                )
+                st.plotly_chart(fig_comparativa, use_container_width=True)
+                
+                # Comparativa entre municipios si hay más de uno seleccionado
+                if len(municipios) > 1:
+                    st.subheader("Comparativa entre municipios")
+                    df_municipios = df[df['Genero'] == 'Total']
+                    fig_municipios = DataVisualizer.crear_grafico_lineas(
+                        df_municipios,
                         x='Periodo',
                         y='Valor',
-                        color='Genero',
-                        titulo=f"Evolución temporal - {municipio_seleccionado}"
+                        color='Municipio',
+                        titulo="Comparativa de población entre municipios"
                     )
-                    st.plotly_chart(fig_evolucion, use_container_width=True)
+                    st.plotly_chart(fig_municipios, use_container_width=True)
                     
-                    # Gráfico comparativo por género y municipio
-                    st.subheader("Comparativa por género")
-                    df_actual = df[df['Periodo'] == df['Periodo'].max()]
-                    fig_comparativa = DataVisualizer.crear_grafico_barras(
-                        df_actual,
-                        x='Genero',
-                        y='Valor',
-                        titulo=f"Distribución por Género - {municipio_seleccionado} ({df['Periodo'].max()})"
-                    )
-                    st.plotly_chart(fig_comparativa, use_container_width=True)
-                    
-                    # Comparativa entre municipios si hay más de uno seleccionado
-                    if len(municipios) > 1:
-                        st.subheader("Comparativa entre municipios")
-                        df_municipios = df[df['Genero'] == 'Total']
-                        fig_municipios = DataVisualizer.crear_grafico_lineas(
-                            df_municipios,
-                            x='Periodo',
-                            y='Valor',
-                            color='Municipio',
-                            titulo="Comparativa de población entre municipios"
-                        )
-                        st.plotly_chart(fig_municipios, use_container_width=True)
-                    
-                elif categoria_seleccionada == "demografia_municipios":
-                    # Gráfico de barras para distribución de municipios
-                    st.subheader("Distribución de Municipios por Tamaño")
-                    fig_barras = DataVisualizer.crear_grafico_barras(
-                        df[df['Periodo'] == df['Periodo'].max()],
-                        x='Rango',
-                        y='Valor',
-                        titulo=f"Municipios por Rango de Población ({df['Periodo'].max()})"
-                    )
-                    st.plotly_chart(fig_barras, use_container_width=True)
-                    
-                    # Gráfico de pastel para distribución porcentual
-                    st.subheader("Distribución Porcentual de Municipios")
-                    fig_pie = DataVisualizer.crear_grafico_pastel(
-                        df[df['Periodo'] == df['Periodo'].max()],
-                        names='Rango',
-                        values='Valor',
-                        titulo=f"Distribución Porcentual de Municipios ({df['Periodo'].max()})"
-                    )
-                    st.plotly_chart(fig_pie, use_container_width=True)
+            elif categoria_seleccionada == "municipios_habitantes":
+                # Gráfico de barras para distribución de municipios
+                st.subheader("Distribución de Municipios por Tamaño")
+                fig_barras = DataVisualizer.crear_grafico_barras(
+                    df[df['Periodo'] == df['Periodo'].max()],
+                    x='Rango',
+                    y='Valor',
+                    titulo=f"Municipios por Rango de Población ({df['Periodo'].max()})"
+                )
+                st.plotly_chart(fig_barras, use_container_width=True)
+                
+                # Gráfico de pastel para distribución porcentual
+                st.subheader("Distribución Porcentual de Municipios")
+                fig_pie = DataVisualizer.crear_grafico_pastel(
+                    df[df['Periodo'] == df['Periodo'].max()],
+                    names='Rango',
+                    values='Valor',
+                    titulo=f"Distribución Porcentual de Municipios ({df['Periodo'].max()})"
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
             
         except Exception as e:
             st.error(f"Error al crear los gráficos: {str(e)}")

@@ -48,6 +48,11 @@ class INEApiClient:
             'name': 'Municipios por habitantes',
             'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/61399',
             'default_params': {'nult': '4', 'det': '2'}
+        },
+        'censo_agrario': {
+            'name': 'Censo Agrario',
+            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156',
+            'default_params': {'nult': '4', 'det': '2'}
         }
     }
     
