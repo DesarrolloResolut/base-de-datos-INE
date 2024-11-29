@@ -163,13 +163,13 @@ def main():
                         options=provincias
                     )
                     
-                    comarcas = sorted([c for c in df[df['Provincia'] == provincia_seleccionada]['Comarca'].unique() if pd.notna(c)])
-                    if comarcas:
-                        comarca_seleccionada = st.selectbox(
-                            "Comarca:",
-                            options=['Todas'] + comarcas,
-                            index=0
-                        )
+                    # Filtro de tipo
+                    tipos_disponibles = sorted(df['Tipo_Dato'].unique().tolist())
+                    tipo_seleccionado = st.selectbox(
+                        "Tipo:",
+                        options=['Todos'] + tipos_disponibles,
+                        index=0
+                    )
                     
                     # Filtro de tipo de censo
                     tipos_censo = ['Explotaciones por tamaño según SAU y personalidad jurídica']
@@ -203,7 +203,7 @@ def main():
             elif categoria_seleccionada == "censo_agrario":
                 filtros = {
                     'Provincia': provincia_seleccionada,
-                    'Comarca': comarca_seleccionada if 'comarca_seleccionada' in locals() and comarca_seleccionada != 'Todas' else None,
+                    'Tipo_Dato': tipo_seleccionado if 'tipo_seleccionado' in locals() and tipo_seleccionado != 'Todos' else None,
                     'Personalidad_Juridica': personalidad_seleccionada
                 }
             
@@ -298,16 +298,16 @@ def main():
                     )
                     st.plotly_chart(fig_distribucion, use_container_width=True)
 
-                    # Gráfico de distribución por comarca
-                    if 'Comarca' in df.columns and not df_explotaciones.empty:
-                        fig_comarca = DataVisualizer.crear_grafico_barras(
+                    # Gráfico de distribución por tipo
+                    if 'Tipo_Dato' in df.columns and not df_explotaciones.empty:
+                        fig_tipo = DataVisualizer.crear_grafico_barras(
                             df_explotaciones,
-                            x='Comarca',
+                            x='Tipo_Dato',
                             y='Valor',
                             color='Personalidad_Juridica',
-                            titulo="Distribución de Explotaciones por Comarca"
+                            titulo="Distribución de Explotaciones por Tipo"
                         )
-                        st.plotly_chart(fig_comarca, use_container_width=True)
+                        st.plotly_chart(fig_tipo, use_container_width=True)
                     
                     # Métricas clave
                     st.subheader("Métricas Clave")
