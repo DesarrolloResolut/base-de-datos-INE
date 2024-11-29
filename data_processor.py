@@ -488,17 +488,30 @@ class DataProcessor:
             
             total_explotaciones = df_expl['Valor'].sum()
             
-            # Calcular estadísticas de distribución
+            # Calcular totales
+            totales_juridica = df_expl.groupby('Personalidad_Juridica')['Valor'].sum()
+            totales_territorial = df_expl.groupby('Comarca')['Valor'].sum()
+            
+            # Calcular porcentajes
+            porcentajes_juridica = (totales_juridica / total_explotaciones) * 100
+            porcentajes_territorial = (totales_territorial / total_explotaciones) * 100
+            
+            # Crear DataFrames separados
+            dist_juridica = pd.DataFrame({
+                'total': totales_juridica,
+                'porcentaje': porcentajes_juridica
+            })
+            
+            dist_territorial = pd.DataFrame({
+                'total': totales_territorial,
+                'porcentaje': porcentajes_territorial
+            })
+            
+            # Construir diccionario de resultados
             stats = {
                 'total_explotaciones': total_explotaciones,
-                'distribucion_juridica': df_expl.groupby('Personalidad_Juridica')['Valor'].agg({
-                    'total': 'sum',
-                    'porcentaje': lambda x: (x.sum() / total_explotaciones) * 100
-                }).to_dict('index'),
-                'distribucion_territorial': df_expl.groupby('Comarca')['Valor'].agg({
-                    'total': 'sum',
-                    'porcentaje': lambda x: (x.sum() / total_explotaciones) * 100
-                }).to_dict('index')
+                'distribucion_juridica': dist_juridica.to_dict('index'),
+                'distribucion_territorial': dist_territorial.to_dict('index')
             }
             
             return stats
