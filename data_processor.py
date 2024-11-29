@@ -524,20 +524,22 @@ class DataProcessor:
     def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
-            # Si es DataFrame ya procesado, solo necesitamos transformar las columnas
+            datos_procesados = []
+            
+            # Si es DataFrame ya procesado
             if isinstance(datos, pd.DataFrame):
                 df = datos.copy()
-                
-                # Verificar si es un DataFrame ya procesado (con columnas específicas)
                 if 'Provincia' in df.columns:
                     df['Tipo_Explotacion'] = 'Ecológica'
                     df['Personalidad_Juridica'] = 'Total'
                     df['Periodo'] = '2023'
                     df['Tipo_Valor'] = 'Valor absoluto'
+                    # Asegurar que existe la columna Metrica
+                    if 'Tipo_Dato' in df.columns and 'Metrica' not in df.columns:
+                        df['Metrica'] = df['Tipo_Dato']
                     return df
-                    
-                # Si no, procesar desde el formato JSON original
-                datos_procesados = []
+                
+                # Procesar desde formato JSON
                 for dato in datos.to_dict('records'):
                     nombre = dato.get('Nombre', '')
                     if not nombre or 'Teruel' not in nombre:
@@ -546,49 +548,55 @@ class DataProcessor:
                     valor = dato.get('Valor', 0)
                     partes = [p.strip() for p in nombre.split(',')]
                     
+                    # Determinar la métrica
+                    metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
+                              for term in ['hectáreas', 'ha.', 'superficie']) 
+                              else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
+                              else 'Otros')
+                    
                     datos_procesados.append({
                         'Provincia': 'Teruel',
                         'Tipo_Explotacion': 'Ecológica',
                         'Comarca': partes[1] if len(partes) > 1 else 'Total',
                         'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
                         'Personalidad_Juridica': 'Total',
-                        'Tipo_Dato': ('Superficie (ha.)' if any(term in nombre.lower() 
-                                    for term in ['hectáreas', 'ha.', 'superficie']) 
-                                    else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
-                                    else 'Otros'),
+                        'Tipo_Dato': metrica,
+                        'Metrica': metrica,  # Añadir columna Metrica
                         'Valor': valor,
                         'Periodo': '2023',
                         'Tipo_Valor': 'Valor absoluto'
                     })
-                
-                return pd.DataFrame(datos_procesados)
-                
+            
             # Si son datos en formato lista de diccionarios
-            datos_procesados = []
-            for dato in datos:
-                nombre = dato.get('Nombre', '')
-                data = dato.get('Data', [])
-                
-                if not nombre or not data or 'Teruel' not in nombre:
-                    continue
+            else:
+                for dato in datos:
+                    nombre = dato.get('Nombre', '')
+                    data = dato.get('Data', [])
                     
-                valor = data[0].get('Valor', 0) if data else 0
-                partes = [p.strip() for p in nombre.split(',')]
-                
-                datos_procesados.append({
-                    'Provincia': 'Teruel',
-                    'Tipo_Explotacion': 'Ecológica',
-                    'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                    'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
-                    'Personalidad_Juridica': 'Total',
-                    'Tipo_Dato': ('Superficie (ha.)' if any(term in nombre.lower() 
-                                for term in ['hectáreas', 'ha.', 'superficie']) 
-                                else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
-                                else 'Otros'),
-                    'Valor': valor,
-                    'Periodo': '2023',
-                    'Tipo_Valor': 'Valor absoluto'
-                })
+                    if not nombre or not data or 'Teruel' not in nombre:
+                        continue
+                        
+                    valor = data[0].get('Valor', 0) if data else 0
+                    partes = [p.strip() for p in nombre.split(',')]
+                    
+                    # Determinar la métrica
+                    metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
+                              for term in ['hectáreas', 'ha.', 'superficie']) 
+                              else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
+                              else 'Otros')
+                    
+                    datos_procesados.append({
+                        'Provincia': 'Teruel',
+                        'Tipo_Explotacion': 'Ecológica',
+                        'Comarca': partes[1] if len(partes) > 1 else 'Total',
+                        'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
+                        'Personalidad_Juridica': 'Total',
+                        'Tipo_Dato': metrica,
+                        'Metrica': metrica,  # Añadir columna Metrica
+                        'Valor': valor,
+                        'Periodo': '2023',
+                        'Tipo_Valor': 'Valor absoluto'
+                    })
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
