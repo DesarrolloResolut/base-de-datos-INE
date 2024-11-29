@@ -524,13 +524,45 @@ class DataProcessor:
     def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
-            print("Datos recibidos:", datos[:2] if isinstance(datos, list) else datos.head(2))
-            
             datos_procesados = []
+            
+            # Si es DataFrame, procesar directamente
             if isinstance(datos, pd.DataFrame):
-                df_input = datos
+                for _, row in datos.iterrows():
+                    nombre = row['Nombre']
+                    if 'Teruel' not in nombre:
+                        continue
+                        
+                    # Obtener el valor directamente del DataFrame
+                    valor = row['Valor'] if 'Valor' in row else (
+                        row['Data'][0]['Valor'] if isinstance(row.get('Data'), list) and row['Data'] else 0
+                    )
+                    
+                    # Procesar el nombre según el formato de la API 51178
+                    partes = [p.strip() for p in nombre.split(',')]
+                    
+                    # Extraer tipo de cultivo y superficie
+                    tipo_cultivo = next((p for p in partes[2:] if not any(x in p.lower() for x in 
+                        ['hectáreas', 'ha.', 'superficie', 'explotaciones', 'porcentaje'])), 'Total')
+                    
+                    registro_procesado = {
+                        'Provincia': 'Teruel',
+                        'Tipo_Explotacion': 'Ecológica',
+                        'Comarca': partes[1] if len(partes) > 1 else 'Total',
+                        'Tipo_Cultivo': tipo_cultivo,
+                        'Personalidad_Juridica': 'Total',
+                        'Tipo_Dato': ('Superficie (ha.)' if any(term in nombre.lower() 
+                                    for term in ['hectáreas', 'ha.', 'superficie']) 
+                                    else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
+                                    else 'Otros'),
+                        'Valor': valor,
+                        'Periodo': '2023',
+                        'Tipo_Valor': 'Porcentaje' if 'porcentaje' in nombre.lower() else 'Valor absoluto'
+                    }
+                    
+                    datos_procesados.append(registro_procesado)
             else:
-                # Si es una lista de diccionarios, procesar directamente
+                # Procesar lista de diccionarios
                 for dato in datos:
                     nombre = dato.get('Nombre', '')
                     data = dato.get('Data', [])
@@ -539,15 +571,16 @@ class DataProcessor:
                         continue
                         
                     valor = data[0].get('Valor', 0) if data else 0
-                    
-                    # Procesar el nombre según el formato de la API 51178
                     partes = [p.strip() for p in nombre.split(',')]
+                    
+                    tipo_cultivo = next((p for p in partes[2:] if not any(x in p.lower() for x in 
+                        ['hectáreas', 'ha.', 'superficie', 'explotaciones', 'porcentaje'])), 'Total')
                     
                     registro_procesado = {
                         'Provincia': 'Teruel',
                         'Tipo_Explotacion': 'Ecológica',
                         'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                        'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
+                        'Tipo_Cultivo': tipo_cultivo,
                         'Personalidad_Juridica': 'Total',
                         'Tipo_Dato': ('Superficie (ha.)' if any(term in nombre.lower() 
                                     for term in ['hectáreas', 'ha.', 'superficie']) 
@@ -561,7 +594,8 @@ class DataProcessor:
                     datos_procesados.append(registro_procesado)
             
             if not datos_procesados:
-                print("No se encontraron datos válidos. Datos originales:", datos)
+                print("Estructura de datos recibida:")
+                print(datos[:5] if isinstance(datos, list) else datos.head())
                 raise ValueError("No se encontraron datos válidos para procesar")
                 
             df_result = pd.DataFrame(datos_procesados)
@@ -572,5 +606,6 @@ class DataProcessor:
             print(f"Error detallado en procesar_datos_ecologicos:")
             print(f"Tipo de error: {type(e).__name__}")
             print(f"Mensaje de error: {str(e)}")
-            print(f"Datos recibidos: {datos[:2] if isinstance(datos, list) else 'No es lista'}")
+            print(f"Estructura de datos recibida:")
+            print(datos[:5] if isinstance(datos, list) else datos.head())
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
