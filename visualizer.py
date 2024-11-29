@@ -192,6 +192,34 @@ class DataVisualizer:
         return fig
 
     @staticmethod
+    def crear_grafico_pastel(df: pd.DataFrame,
+                           names: str,
+                           values: str,
+                           titulo: str = "Gráfico de Sectores") -> go.Figure:
+        """Crea un gráfico circular (pie chart)
+        
+        Args:
+            df: DataFrame con los datos
+            names: Columna para las etiquetas
+            values: Columna para los valores
+            titulo: Título del gráfico
+            
+        Returns:
+            Figura de plotly
+        """
+        fig = px.pie(df,
+                    names=names,
+                    values=values,
+                    title=titulo)
+        
+        fig.update_layout(
+            template='plotly_white',
+            showlegend=True
+        )
+        
+        return fig
+
+    @staticmethod
     def crear_grafico_dispersion(df: pd.DataFrame,
                              x: str,
                              y: str,
