@@ -282,32 +282,116 @@ def main():
                     if df.empty:
                         st.warning("No hay datos disponibles para mostrar.")
                         return
-                        
-                    # Filtrar datos por tipo
-                    df_explotaciones = df[df['Tipo_Dato'] == 'Número de explotaciones'].copy()
-                    if df_explotaciones.empty:
-                        st.warning("No hay datos de explotaciones disponibles.")
-                        return
-                    
-                    # Gráfico de distribución por personalidad jurídica
-                    fig_distribucion = DataVisualizer.crear_grafico_barras(
-                        df_explotaciones,
-                        x='Personalidad_Juridica',
-                        y='Valor',
-                        titulo="Distribución de Explotaciones por Personalidad Jurídica"
-                    )
-                    st.plotly_chart(fig_distribucion, use_container_width=True)
 
-                    # Gráfico de distribución por tipo
-                    if 'Tipo_Dato' in df.columns and not df_explotaciones.empty:
-                        fig_tipo = DataVisualizer.crear_grafico_barras(
-                            df_explotaciones,
+                    # Tabs para diferentes tipos de visualizaciones
+                    tab_explotaciones, tab_sau, tab_pet, tab_comparativa = st.tabs([
+                        "Explotaciones", "Superficie Agrícola", "Producción Económica", "Análisis Comparativo"
+                    ])
+
+                    with tab_explotaciones:
+                        st.subheader("Análisis de Explotaciones")
+                        # Filtrar datos por tipo
+                        df_explotaciones = df[df['Tipo_Dato'] == 'Número de explotaciones'].copy()
+                        if not df_explotaciones.empty:
+                            # Distribución por personalidad jurídica
+                            fig_distribucion = DataVisualizer.crear_grafico_barras(
+                                df_explotaciones,
+                                x='Personalidad_Juridica',
+                                y='Valor',
+                                titulo="Distribución de Explotaciones por Personalidad Jurídica"
+                            )
+                            st.plotly_chart(fig_distribucion, use_container_width=True)
+
+                            # Distribución por comarca
+                            fig_comarca = DataVisualizer.crear_grafico_barras(
+                                df_explotaciones,
+                                x='Comarca',
+                                y='Valor',
+                                color='Personalidad_Juridica',
+                                titulo="Distribución de Explotaciones por Comarca"
+                            )
+                            st.plotly_chart(fig_comarca, use_container_width=True)
+
+                    with tab_sau:
+                        st.subheader("Análisis de Superficie Agrícola Utilizada (SAU)")
+                        df_sau = df[df['Tipo_Dato'] == 'SAU (ha.)'].copy()
+                        if not df_sau.empty:
+                            # Gráfico de SAU por comarca
+                            fig_sau_comarca = DataVisualizer.crear_grafico_barras(
+                                df_sau,
+                                x='Comarca',
+                                y='Valor',
+                                color='Personalidad_Juridica',
+                                titulo="Superficie Agrícola por Comarca"
+                            )
+                            st.plotly_chart(fig_sau_comarca, use_container_width=True)
+
+                            # Gráfico circular de distribución de SAU
+                            fig_sau_pie = DataVisualizer.crear_grafico_pastel(
+                                df_sau,
+                                names='Personalidad_Juridica',
+                                values='Valor',
+                                titulo="Distribución de SAU por Personalidad Jurídica"
+                            )
+                            st.plotly_chart(fig_sau_pie, use_container_width=True)
+
+                    with tab_pet:
+                        st.subheader("Análisis de Producción Estándar Total (PET)")
+                        df_pet = df[df['Tipo_Dato'] == 'PET (miles €)'].copy()
+                        if not df_pet.empty:
+                            # Gráfico de PET por comarca
+                            fig_pet_comarca = DataVisualizer.crear_grafico_barras(
+                                df_pet,
+                                x='Comarca',
+                                y='Valor',
+                                color='Personalidad_Juridica',
+                                titulo="Producción Estándar Total por Comarca"
+                            )
+                            st.plotly_chart(fig_pet_comarca, use_container_width=True)
+
+                            # Gráfico de dispersión PET vs SAU
+                            if not df_sau.empty:
+                                df_merged = pd.merge(
+                                    df_pet.groupby('Comarca')['Valor'].sum().reset_index(),
+                                    df_sau.groupby('Comarca')['Valor'].sum().reset_index(),
+                                    on='Comarca', suffixes=('_PET', '_SAU')
+                                )
+                                fig_correlacion = DataVisualizer.crear_grafico_dispersion(
+                                    df_merged,
+                                    x='Valor_SAU',
+                                    y='Valor_PET',
+                                    text='Comarca',
+                                    titulo="Correlación entre SAU y PET por Comarca"
+                                )
+                                st.plotly_chart(fig_correlacion, use_container_width=True)
+
+                    with tab_comparativa:
+                        st.subheader("Análisis Comparativo")
+                        # Resumen estadístico por tipo de dato
+                        st.write("### Resumen Estadístico por Tipo de Dato")
+                        
+                        for tipo_dato in df['Tipo_Dato'].unique():
+                            df_tipo = df[df['Tipo_Dato'] == tipo_dato]
+                            stats = DataProcessor.calcular_estadisticas(df_tipo, 'Valor')
+                            
+                            st.write(f"#### {tipo_dato}")
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Media", f"{stats['media']:,.2f}")
+                            with col2:
+                                st.metric("Mediana", f"{stats['mediana']:,.2f}")
+                            with col3:
+                                st.metric("Desv. Estándar", f"{stats['desv_std']:,.2f}")
+
+                        # Gráfico comparativo de todos los indicadores
+                        fig_comparativa = DataVisualizer.crear_grafico_barras(
+                            df,
                             x='Tipo_Dato',
                             y='Valor',
-                            color='Personalidad_Juridica',
-                            titulo="Distribución de Explotaciones por Tipo"
+                            color='Comarca',
+                            titulo="Comparativa General por Tipo de Dato y Comarca"
                         )
-                        st.plotly_chart(fig_tipo, use_container_width=True)
+                        st.plotly_chart(fig_comparativa, use_container_width=True)
                     
                     # Métricas clave
                     st.subheader("Métricas Clave")

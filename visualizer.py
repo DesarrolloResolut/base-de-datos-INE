@@ -191,6 +191,32 @@ class DataVisualizer:
         )
         return fig
 
+    @staticmethod
+    def crear_grafico_dispersion(df: pd.DataFrame,
+                             x: str,
+                             y: str,
+                             text: str = None,
+                             titulo: str = "Gráfico de Dispersión") -> go.Figure:
+        """Crea gráfico de dispersión con etiquetas opcionales"""
+        if text:
+            fig = px.scatter(df, x=x, y=y, text=text,
+                           title=titulo,
+                           labels={x: x.replace('_', ' ').title(),
+                                  y: y.replace('_', ' ').title()})
+            fig.update_traces(textposition='top center')
+        else:
+            fig = px.scatter(df, x=x, y=y,
+                           title=titulo,
+                           labels={x: x.replace('_', ' ').title(),
+                                  y: y.replace('_', ' ').title()})
+            
+        fig.update_layout(
+            template='plotly_white',
+            xaxis_title=x.replace('_', ' ').title(),
+            yaxis_title=y.replace('_', ' ').title()
+        )
+        return fig
+
 
     @staticmethod
     def crear_grafico_regresion_multiple(resultados: Dict, titulo: str = "Análisis de Regresión Múltiple") -> go.Figure:
