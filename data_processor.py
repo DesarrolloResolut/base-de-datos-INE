@@ -523,27 +523,36 @@ class DataProcessor:
     def procesar_datos_ecologicos(df: pd.DataFrame) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
-            # Filtrar solo los datos de Teruel
+            # Filtrar solo los datos de Teruel y crear copia
             df_teruel = df[df['Nombre'].str.contains('Teruel', na=False)].copy()
             
-            # Extraer información del campo Nombre
+            # Extraer información usando el nuevo formato de nombres
             df_teruel['Tipo_Explotacion'] = df_teruel['Nombre'].apply(
-                lambda x: x.split(',')[1].strip() if len(x.split(',')) > 1 else 'Total'
+                lambda x: x.split(',')[0].replace('Teruel', '').strip() if ',' in x else 'Total'
             )
             
             df_teruel['Tipo_Cultivo'] = df_teruel['Nombre'].apply(
-                lambda x: x.split(',')[2].strip() if len(x.split(',')) > 2 else 'Total'
+                lambda x: x.split(',')[1].strip() if len(x.split(',')) > 1 else 'Total'
             )
             
-            # Extraer métricas
+            # Extraer métricas según el nuevo formato
             df_teruel['Metrica'] = df_teruel['Nombre'].apply(
                 lambda x: 'Nº explotaciones' if 'explotaciones' in x.lower()
-                else 'Superficie (ha.)' if 'superficie' in x.lower()
+                else 'Superficie (ha.)' if 'hectáreas' in x.lower() or 'ha.' in x.lower()
                 else 'Tamaño medio' if 'tamaño' in x.lower()
                 else 'Otros'
+            )
+            
+            # Añadir columna para tipo de valor
+            df_teruel['Tipo_Valor'] = df_teruel['Nombre'].apply(
+                lambda x: 'Porcentaje' if 'porcentaje' in x.lower()
+                else 'Valor absoluto'
             )
             
             return df_teruel
             
         except Exception as e:
+            # Añadir logging para debug
+            print(f"Error procesando datos: {str(e)}")
+            print(f"Ejemplo de Nombre: {df['Nombre'].iloc[0] if not df.empty else 'DataFrame vacío'}")
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
