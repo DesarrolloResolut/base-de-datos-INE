@@ -523,8 +523,21 @@ class DataProcessor:
     def procesar_datos_ecologicos(df: pd.DataFrame) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
+            # Logging inicial para debug
+            print("Columnas disponibles:", df.columns.tolist())
+            print("Primeras filas:", df.head().to_string())
+            
+            # Verificar si existe la columna Nombre
+            if 'Nombre' not in df.columns:
+                raise ValueError("La columna 'Nombre' no existe en el DataFrame")
+                
             # Filtrar solo los datos de Teruel y crear copia
             df_teruel = df[df['Nombre'].str.contains('Teruel', na=False)].copy()
+            
+            # Logging después del filtrado
+            print("Registros de Teruel encontrados:", len(df_teruel))
+            if not df_teruel.empty:
+                print("Ejemplo de datos de Teruel:", df_teruel.iloc[0]['Nombre'])
             
             # Extraer información usando el nuevo formato de nombres
             df_teruel['Tipo_Explotacion'] = df_teruel['Nombre'].apply(
@@ -552,7 +565,10 @@ class DataProcessor:
             return df_teruel
             
         except Exception as e:
-            # Añadir logging para debug
-            print(f"Error procesando datos: {str(e)}")
-            print(f"Ejemplo de Nombre: {df['Nombre'].iloc[0] if not df.empty else 'DataFrame vacío'}")
+            print("Error detallado:")
+            print(f"Tipo de error: {type(e).__name__}")
+            print(f"Mensaje de error: {str(e)}")
+            print("Estado del DataFrame:")
+            print(f"Shape: {df.shape if df is not None else 'None'}")
+            print(f"Columnas: {df.columns.tolist() if df is not None else 'None'}")
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
