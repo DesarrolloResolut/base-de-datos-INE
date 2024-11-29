@@ -525,8 +525,6 @@ class DataProcessor:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
             datos_procesados = []
-            
-            # Convertir datos a DataFrame si es necesario
             df_input = pd.DataFrame(datos) if not isinstance(datos, pd.DataFrame) else datos
             
             for _, registro in df_input.iterrows():
@@ -540,30 +538,32 @@ class DataProcessor:
                 else:
                     valor = registro.get('Valor', 0)
                 
-                # Extraer componentes según el nuevo formato
+                # Procesar el nombre para extraer información
                 partes = nombre.split(',')
-                tipo_explotacion = 'Ecológica'  # Nuevo tipo específico
-                tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
                 
-                # Determinar métrica
-                if 'explotaciones' in nombre.lower():
-                    metrica = 'Nº explotaciones'
-                elif 'superficie' in nombre.lower() or 'ha.' in nombre.lower():
-                    metrica = 'Superficie (ha.)'
-                else:
-                    metrica = 'Otros'
-                
-                datos_procesados.append({
-                    'Tipo_Explotacion': tipo_explotacion,
-                    'Tipo_Cultivo': tipo_cultivo,
-                    'Metrica': metrica,
+                # Asegurar que tenemos todas las columnas necesarias
+                registro_procesado = {
+                    'Provincia': 'Teruel',
+                    'Tipo_Explotacion': 'Ecológica',
+                    'Comarca': partes[1].strip() if len(partes) > 1 else 'Total',
+                    'Tipo_Cultivo': partes[2].strip() if len(partes) > 2 else 'Total',
+                    'Personalidad_Juridica': 'Total',  # Valor por defecto
+                    'Tipo_Dato': 'Superficie (ha.)' if 'hectáreas' in nombre.lower() or 'ha.' in nombre.lower() 
+                               else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
+                               else 'Otros',
                     'Valor': valor,
+                    'Periodo': '2023',  # Ajustar según corresponda
                     'Tipo_Valor': 'Porcentaje' if 'porcentaje' in nombre.lower() else 'Valor absoluto'
-                })
+                }
+                
+                datos_procesados.append(registro_procesado)
             
+            if not datos_procesados:
+                raise ValueError("No se encontraron datos válidos para procesar")
+                
             return pd.DataFrame(datos_procesados)
             
         except Exception as e:
             print(f"Error en procesar_datos_ecologicos: {str(e)}")
-            print(f"Datos recibidos: {datos[:2] if isinstance(datos, list) else 'No es lista'}")
+            print(f"Ejemplo de datos recibidos: {datos[0] if isinstance(datos, list) and datos else 'No hay datos'}")
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
