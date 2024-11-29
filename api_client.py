@@ -277,7 +277,13 @@ class INEApiClient:
                 
             category_info = INEApiClient.CATEGORIES[categoria]
             url = category_info['url']
-            params = category_info['default_params']
+            params = category_info['default_params'].copy()
+            
+            # Añadir filtro específico para censo agrario
+            if categoria == 'censo_agrario':
+                params['name'] = 'Teruel'  # Filtrar solo datos de Teruel
+                logger.info("Aplicando filtro para datos de Teruel en censo agrario")
+            
             logger.info(f"Consultando datos de {category_info['name']} en: {url}")
             
             session = INEApiClient._get_session()
@@ -295,11 +301,17 @@ class INEApiClient:
             data = INEApiClient._validate_json_response(response)
             
             if not data:
-                error_msg = "No se encontraron datos de población residente"
+                error_msg = "No se encontraron datos"
                 logger.warning(error_msg)
                 raise ValueError(error_msg)
+            
+            # Filtrar datos de Teruel para censo agrario
+            if categoria == 'censo_agrario':
+                data = [d for d in data if isinstance(d, dict) and 
+                       d.get('Nombre', '').startswith('Teruel')]
+                logger.info(f"Datos filtrados de Teruel: {len(data)} registros")
                 
-            logger.info("Datos de población residente obtenidos correctamente")
+            logger.info("Datos obtenidos correctamente")
             return data
             
         except Exception as e:

@@ -155,7 +155,16 @@ class DataProcessor:
             if isinstance(datos, dict):
                 datos = [datos]
             
-            logger.info(f"Total de registros a procesar: {len(datos)}")
+            # Verificar que todos los datos son de Teruel
+            datos = [d for d in datos if isinstance(d, dict) and 
+                    d.get('Nombre', '').startswith('Teruel')]
+            
+            if not datos:
+                error_msg = "No se encontraron datos válidos para Teruel"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            logger.info(f"Total de registros de Teruel a procesar: {len(datos)}")
             
             def procesar_lote(lote_datos):
                 registros_lote = []
