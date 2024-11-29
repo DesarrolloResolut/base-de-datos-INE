@@ -1,0 +1,102 @@
+1. Estructura General
+Nueva Categoría: Censo Agrario
+Filtros Asociados:
+Tipo de Censo: Subcategorías relacionadas con la información del censo agrario.
+Ámbito Territorial: Filtro para seleccionar:
+Provincia (Muestra los datos de toda la provincia).
+Comarca (Muestra los datos específicos de una comarca seleccionada dentro de la provincia).
+2. Detalles Técnicos
+a) API de Datos
+URL de la API:
+https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156?nult=4&det=2
+
+b) Estructura de Datos
+Ejemplo de datos extraídos de la API:
+
+{
+  "Nombre": "Teruel, Todas las explotaciones, Sociedades mercantiles, Nº explotaciones, Valor absoluto",
+  "Data": [
+    {
+      "Valor": 383.0,
+      "Secreto": false
+    }
+  ]
+}
+El campo Nombre sigue este formato:
+
+[Provincia], [Subcategoría de Explotaciones], [Tipo de Personalidad Jurídica], [Tipo de Dato], [Unidad de Medida]
+Campos clave a extraer:
+
+Provincia: Por ejemplo, "Teruel".
+Subcategoría de Explotaciones: Ejemplo, "Todas las explotaciones".
+Personalidad Jurídica del Titular: Ejemplo, "Sociedades mercantiles".
+Tipo de Dato: Ejemplo, "Nº explotaciones" o "SAU (ha.)".
+Unidad de Medida: Ejemplo, "Valor absoluto", "Porcentaje" o "Tamaño medio".
+Valor: Por ejemplo, 383.0.
+c) Filtros de Navegación
+Tipo de Censo:
+Único en esta categoría: "Explotaciones por tamaño según superficie agrícola utilizada (SAU) y personalidad jurídica del titular".
+
+Ámbito Territorial:
+
+Provincia: El filtro muestra datos agregados de todas las explotaciones de la provincia seleccionada.
+Comarca: Si se selecciona una comarca, la aplicación muestra datos específicos de esa comarca.
+3. Cambios en la Aplicación
+a) Interfaz de Usuario
+Categoría Principal:
+Añadir una nueva categoría en el menú principal llamada "Censo Agrario".
+
+Filtros:
+Dentro de "Censo Agrario", agregar:
+
+Tipo de Censo: Menú desplegable con la opción: "Explotaciones por tamaño según SAU y personalidad jurídica del titular".
+Ámbito Territorial:
+Provincias: Listado de provincias disponibles en los datos (extraídas del campo Nombre en la API).
+Comarcas: Una vez seleccionada una provincia, desplegar las comarcas asociadas.
+b) Estructura de Datos
+Provincia: Los datos de cada provincia deben ser agregados y organizados por:
+
+Subcategorías como "Todas las explotaciones".
+Personalidad Jurídica como "Sociedades mercantiles", "Personas físicas", etc.
+Tipos de Datos: "Nº explotaciones", "SAU (ha.)", "UGT", "PET (miles €)".
+Comarca: Filtrar los datos del JSON para mostrar solo aquellos cuyo campo Nombre incluye la comarca seleccionada.
+
+c) Lógica de Carga de Datos
+Filtrar por Provincia o Comarca:
+
+Provincia: Filtrar por el valor inicial del campo Nombre (e.g., "Teruel").
+Comarca: Filtrar los datos dentro de la provincia seleccionada por las comarcas específicas incluidas en el campo Nombre.
+Estructura de Visualización:
+
+Mostrar cada subcategoría (e.g., "Todas las explotaciones") agrupada por el tipo de personalidad jurídica (e.g., "Sociedades mercantiles").
+Dentro de cada agrupación, mostrar los tipos de datos ("Nº explotaciones", "SAU (ha.)", etc.) con sus respectivos valores.
+4. Adaptaciones de Diseño
+a) Componentes del Frontend
+Filtro de Ámbito Territorial:
+Dropdown para provincias.
+Dropdown dependiente para comarcas.
+Visualización de Datos:
+Tablas o gráficos que muestren los valores numéricos agrupados según la personalidad jurídica y el tipo de dato.
+b) Backend
+Endpoint para Provincias y Comarcas:
+Añadir lógica para procesar datos de la API, devolviendo:
+Datos de todas las provincias.
+Datos específicos de una comarca dentro de una provincia.
+Cache de Datos:
+Considerar almacenar localmente las estructuras de provincias y comarcas para reducir la carga de la API.
+5. Ejemplo de Visualización
+Selección de Filtros:
+
+Tipo de Censo: "Explotaciones por tamaño según SAU y personalidad jurídica".
+Provincia: "Teruel".
+Comarca: Seleccionada: Comarca de Albarracín.
+Visualización:
+
+Personalidad Jurídica	Tipo de Dato	Valor Absoluto	Porcentaje	Tamaño Medio
+Sociedades Mercantiles	Nº Explotaciones	383.0	1.09	-
+Sociedades Mercantiles	SAU (ha.)	25255.0	0.75	66.0
+Sociedades Mercantiles	PET (miles €)	102777.0	0.82	268.0
+6. Consideraciones Adicionales
+Datos Nulos: Mostrar un mensaje o icono para valores que sean null o donde el campo Secreto sea true.
+Escalabilidad: La estructura permite añadir más datos relacionados al censo agrario en el futuro sin afectar la lógica existente.
+Con estas directrices, la nueva categoría "Censo Agrario" se integrará eficientemente en tu aplicación, manteniendo la lógica, diseño y funcionalidad actuales.
