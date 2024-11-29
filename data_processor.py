@@ -385,3 +385,123 @@ class DataProcessor:
             return df_total
         except Exception as e:
             raise ValueError(f"Error al calcular crecimiento poblacional: {str(e)}")
+
+    @staticmethod
+    def calcular_indice_gini(df: pd.DataFrame, columna_valor: str = 'Valor') -> float:
+        """Calcula el índice de Gini para medir la concentración de explotaciones"""
+        try:
+            if df.empty:
+                return 0.0
+                
+            # Ordenar valores de menor a mayor
+            valores_ordenados = sorted(df[columna_valor].values)
+            n = len(valores_ordenados)
+            
+            if n == 0:
+                return 0.0
+                
+            # Calcular índice de Gini
+            numerador = sum((i+1)*yi for i, yi in enumerate(valores_ordenados))
+            denominador = n * sum(valores_ordenados)
+            
+            if denominador == 0:
+                return 0.0
+                
+            return (2 * numerador)/(n * denominador) - (n + 1)/n
+            
+        except Exception as e:
+            raise ValueError(f"Error al calcular índice de Gini: {str(e)}")
+    
+    @staticmethod
+    def calcular_indice_especializacion(df: pd.DataFrame, 
+                                      columna_territorio: str = 'Comarca',
+                                      columna_tipo: str = 'Tipo_Dato',
+                                      columna_valor: str = 'Valor') -> pd.DataFrame:
+        """Calcula índices de especialización agraria por territorio"""
+        try:
+            # Calcular total por territorio
+            total_territorio = df.groupby(columna_territorio)[columna_valor].sum()
+            total_global = total_territorio.sum()
+            
+            # Calcular total por tipo
+            total_tipo = df.groupby(columna_tipo)[columna_valor].sum()
+            
+            indices = []
+            for territorio in df[columna_territorio].unique():
+                for tipo in df[columna_tipo].unique():
+                    valor_local = df[
+                        (df[columna_territorio] == territorio) & 
+                        (df[columna_tipo] == tipo)
+                    ][columna_valor].sum()
+                    
+                    # Calcular índice de especialización
+                    ie = (valor_local / total_territorio[territorio]) / (total_tipo[tipo] / total_global)
+                    
+                    indices.append({
+                        'Territorio': territorio,
+                        'Tipo': tipo,
+                        'Indice_Especializacion': ie
+                    })
+            
+            return pd.DataFrame(indices)
+            
+        except Exception as e:
+            raise ValueError(f"Error al calcular índices de especialización: {str(e)}")
+    
+    @staticmethod
+    def analizar_eficiencia_agraria(df: pd.DataFrame) -> pd.DataFrame:
+        """Analiza la eficiencia agraria relacionando SAU y PET"""
+        try:
+            # Filtrar datos de SAU y PET
+            df_sau = df[df['Tipo_Dato'] == 'SAU (ha.)'].copy()
+            df_pet = df[df['Tipo_Dato'] == 'PET (miles €)'].copy()
+            
+            resultados = []
+            for comarca in df_sau['Comarca'].unique():
+                sau_total = df_sau[df_sau['Comarca'] == comarca]['Valor'].sum()
+                pet_total = df_pet[df_pet['Comarca'] == comarca]['Valor'].sum()
+                
+                # Calcular indicadores de eficiencia
+                if sau_total > 0:
+                    eficiencia = pet_total / sau_total  # PET por hectárea
+                else:
+                    eficiencia = 0
+                    
+                resultados.append({
+                    'Comarca': comarca,
+                    'SAU_Total': sau_total,
+                    'PET_Total': pet_total,
+                    'Eficiencia_PET_por_ha': eficiencia
+                })
+            
+            return pd.DataFrame(resultados)
+            
+        except Exception as e:
+            raise ValueError(f"Error al analizar eficiencia agraria: {str(e)}")
+    
+    @staticmethod
+    def analizar_distribucion_tamano(df: pd.DataFrame) -> Dict:
+        """Analiza la distribución por tamaño de las explotaciones"""
+        try:
+            # Filtrar datos de explotaciones
+            df_expl = df[df['Tipo_Dato'] == 'Número de explotaciones'].copy()
+            
+            total_explotaciones = df_expl['Valor'].sum()
+            
+            # Calcular estadísticas de distribución
+            stats = {
+                'total_explotaciones': total_explotaciones,
+                'distribucion_juridica': df_expl.groupby('Personalidad_Juridica')['Valor'].agg({
+                    'total': 'sum',
+                    'porcentaje': lambda x: (x.sum() / total_explotaciones) * 100
+                }).to_dict('index'),
+                'distribucion_territorial': df_expl.groupby('Comarca')['Valor'].agg({
+                    'total': 'sum',
+                    'porcentaje': lambda x: (x.sum() / total_explotaciones) * 100
+                }).to_dict('index')
+            }
+            
+            return stats
+            
+        except Exception as e:
+            raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")

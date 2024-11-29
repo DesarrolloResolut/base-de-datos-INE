@@ -366,10 +366,63 @@ def main():
                                 st.plotly_chart(fig_correlacion, use_container_width=True)
 
                     with tab_comparativa:
-                        st.subheader("Análisis Comparativo")
+                        st.subheader("Análisis Estadístico Avanzado")
+                        
+                        # Análisis de concentración (Índice de Gini)
+                        st.write("### Análisis de Concentración")
+                        df_explotaciones = df[df['Tipo_Dato'] == 'Número de explotaciones']
+                        if not df_explotaciones.empty:
+                            gini = DataProcessor.calcular_indice_gini(df_explotaciones)
+                            st.metric(
+                                "Índice de Gini",
+                                f"{gini:.4f}",
+                                help="Mide la concentración de explotaciones (0=distribución equitativa, 1=máxima concentración)"
+                            )
+                        
+                        # Índices de especialización
+                        st.write("### Índices de Especialización Agraria")
+                        indices_esp = DataProcessor.calcular_indice_especializacion(df)
+                        if not indices_esp.empty:
+                            st.dataframe(
+                                indices_esp.pivot(
+                                    index='Territorio',
+                                    columns='Tipo',
+                                    values='Indice_Especializacion'
+                                ).round(2)
+                            )
+                        
+                        # Análisis de eficiencia
+                        st.write("### Análisis de Eficiencia Agraria")
+                        eficiencia = DataProcessor.analizar_eficiencia_agraria(df)
+                        if not eficiencia.empty:
+                            # Mostrar métricas de eficiencia
+                            st.dataframe(eficiencia.sort_values('Eficiencia_PET_por_ha', ascending=False))
+                            
+                            # Gráfico de eficiencia
+                            fig_eficiencia = DataVisualizer.crear_grafico_barras(
+                                eficiencia,
+                                x='Comarca',
+                                y='Eficiencia_PET_por_ha',
+                                titulo='Eficiencia (PET por hectárea) por Comarca'
+                            )
+                            st.plotly_chart(fig_eficiencia, use_container_width=True)
+                        
+                        # Análisis de distribución por tamaño
+                        st.write("### Distribución por Tamaño")
+                        dist_tamano = DataProcessor.analizar_distribucion_tamano(df)
+                        if dist_tamano:
+                            # Mostrar distribución por personalidad jurídica
+                            st.write("#### Distribución por Personalidad Jurídica")
+                            dist_juridica = pd.DataFrame(dist_tamano['distribucion_juridica']).round(2)
+                            st.dataframe(dist_juridica)
+                            
+                            # Mostrar distribución territorial
+                            st.write("#### Distribución Territorial")
+                            dist_terr = pd.DataFrame(dist_tamano['distribucion_territorial']).round(2)
+                            st.dataframe(dist_terr)
+                        
                         # Resumen estadístico por tipo de dato
                         st.write("### Resumen Estadístico por Tipo de Dato")
-                        
                         for tipo_dato in df['Tipo_Dato'].unique():
                             df_tipo = df[df['Tipo_Dato'] == tipo_dato]
                             stats = DataProcessor.calcular_estadisticas(df_tipo, 'Valor')
