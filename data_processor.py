@@ -524,63 +524,33 @@ class DataProcessor:
     def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
-            datos_procesados = []
-            
-            # Si es DataFrame, procesar directamente
+            # Si es DataFrame ya procesado, solo necesitamos transformar las columnas
             if isinstance(datos, pd.DataFrame):
-                for _, row in datos.iterrows():
-                    nombre = row['Nombre']
-                    if 'Teruel' not in nombre:
-                        continue
-                        
-                    # Obtener el valor directamente del DataFrame
-                    valor = row['Valor'] if 'Valor' in row else (
-                        row['Data'][0]['Valor'] if isinstance(row.get('Data'), list) and row['Data'] else 0
-                    )
+                df = datos.copy()
+                
+                # Verificar si es un DataFrame ya procesado (con columnas específicas)
+                if 'Provincia' in df.columns:
+                    df['Tipo_Explotacion'] = 'Ecológica'
+                    df['Personalidad_Juridica'] = 'Total'
+                    df['Periodo'] = '2023'
+                    df['Tipo_Valor'] = 'Valor absoluto'
+                    return df
                     
-                    # Procesar el nombre según el formato de la API 51178
-                    partes = [p.strip() for p in nombre.split(',')]
-                    
-                    # Extraer tipo de cultivo y superficie
-                    tipo_cultivo = next((p for p in partes[2:] if not any(x in p.lower() for x in 
-                        ['hectáreas', 'ha.', 'superficie', 'explotaciones', 'porcentaje'])), 'Total')
-                    
-                    registro_procesado = {
-                        'Provincia': 'Teruel',
-                        'Tipo_Explotacion': 'Ecológica',
-                        'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                        'Tipo_Cultivo': tipo_cultivo,
-                        'Personalidad_Juridica': 'Total',
-                        'Tipo_Dato': ('Superficie (ha.)' if any(term in nombre.lower() 
-                                    for term in ['hectáreas', 'ha.', 'superficie']) 
-                                    else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
-                                    else 'Otros'),
-                        'Valor': valor,
-                        'Periodo': '2023',
-                        'Tipo_Valor': 'Porcentaje' if 'porcentaje' in nombre.lower() else 'Valor absoluto'
-                    }
-                    
-                    datos_procesados.append(registro_procesado)
-            else:
-                # Procesar lista de diccionarios
-                for dato in datos:
+                # Si no, procesar desde el formato JSON original
+                datos_procesados = []
+                for dato in datos.to_dict('records'):
                     nombre = dato.get('Nombre', '')
-                    data = dato.get('Data', [])
-                    
-                    if not nombre or not data or 'Teruel' not in nombre:
+                    if not nombre or 'Teruel' not in nombre:
                         continue
-                        
-                    valor = data[0].get('Valor', 0) if data else 0
+                    
+                    valor = dato.get('Valor', 0)
                     partes = [p.strip() for p in nombre.split(',')]
                     
-                    tipo_cultivo = next((p for p in partes[2:] if not any(x in p.lower() for x in 
-                        ['hectáreas', 'ha.', 'superficie', 'explotaciones', 'porcentaje'])), 'Total')
-                    
-                    registro_procesado = {
+                    datos_procesados.append({
                         'Provincia': 'Teruel',
                         'Tipo_Explotacion': 'Ecológica',
                         'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                        'Tipo_Cultivo': tipo_cultivo,
+                        'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
                         'Personalidad_Juridica': 'Total',
                         'Tipo_Dato': ('Superficie (ha.)' if any(term in nombre.lower() 
                                     for term in ['hectáreas', 'ha.', 'superficie']) 
@@ -588,19 +558,42 @@ class DataProcessor:
                                     else 'Otros'),
                         'Valor': valor,
                         'Periodo': '2023',
-                        'Tipo_Valor': 'Porcentaje' if 'porcentaje' in nombre.lower() else 'Valor absoluto'
-                    }
+                        'Tipo_Valor': 'Valor absoluto'
+                    })
+                
+                return pd.DataFrame(datos_procesados)
+                
+            # Si son datos en formato lista de diccionarios
+            datos_procesados = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '')
+                data = dato.get('Data', [])
+                
+                if not nombre or not data or 'Teruel' not in nombre:
+                    continue
                     
-                    datos_procesados.append(registro_procesado)
+                valor = data[0].get('Valor', 0) if data else 0
+                partes = [p.strip() for p in nombre.split(',')]
+                
+                datos_procesados.append({
+                    'Provincia': 'Teruel',
+                    'Tipo_Explotacion': 'Ecológica',
+                    'Comarca': partes[1] if len(partes) > 1 else 'Total',
+                    'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
+                    'Personalidad_Juridica': 'Total',
+                    'Tipo_Dato': ('Superficie (ha.)' if any(term in nombre.lower() 
+                                for term in ['hectáreas', 'ha.', 'superficie']) 
+                                else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
+                                else 'Otros'),
+                    'Valor': valor,
+                    'Periodo': '2023',
+                    'Tipo_Valor': 'Valor absoluto'
+                })
             
             if not datos_procesados:
-                print("Estructura de datos recibida:")
-                print(datos[:5] if isinstance(datos, list) else datos.head())
                 raise ValueError("No se encontraron datos válidos para procesar")
                 
-            df_result = pd.DataFrame(datos_procesados)
-            print("DataFrame procesado:", df_result.head())
-            return df_result
+            return pd.DataFrame(datos_procesados)
             
         except Exception as e:
             print(f"Error detallado en procesar_datos_ecologicos:")
