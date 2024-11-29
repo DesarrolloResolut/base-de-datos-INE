@@ -520,18 +520,25 @@ class DataProcessor:
             raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")
 
     @staticmethod
-    def procesar_datos_ecologicos(datos_json: List[Dict]) -> pd.DataFrame:
+    def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
             # Crear lista para almacenar los datos procesados
             datos_procesados = []
             
+            # Si los datos ya son un DataFrame, trabajar directamente con él
+            if isinstance(datos, pd.DataFrame):
+                df_input = datos
+            else:
+                # Si son datos JSON, convertir a DataFrame
+                df_input = pd.DataFrame(datos)
+            
             # Logging inicial
-            print(f"Total de registros a procesar: {len(datos_json)}")
+            print(f"Total de registros a procesar: {len(df_input)}")
             
             # Procesar cada registro
-            for registro in datos_json:
-                nombre = registro.get('Nombre', '')
+            for _, registro in df_input.iterrows():
+                nombre = registro['Nombre'] if 'Nombre' in registro.index else ''
                 if 'Teruel' not in nombre:
                     continue
                     
@@ -552,8 +559,13 @@ class DataProcessor:
                 elif 'tamaño' in nombre.lower():
                     metrica = 'Tamaño medio'
                 
-                # Obtener valor
-                valor = registro.get('Data', [{}])[0].get('Valor', 0)
+                # Obtener valor (asumiendo que viene en la columna 'Data' o 'Valor')
+                if 'Data' in registro.index and isinstance(registro['Data'], list):
+                    valor = registro['Data'][0].get('Valor', 0) if registro['Data'] else 0
+                elif 'Valor' in registro.index:
+                    valor = registro['Valor']
+                else:
+                    valor = 0
                 
                 # Añadir a la lista de datos procesados
                 datos_procesados.append({
@@ -564,7 +576,7 @@ class DataProcessor:
                     'Tipo_Valor': 'Porcentaje' if 'porcentaje' in nombre.lower() else 'Valor absoluto'
                 })
             
-            # Crear DataFrame
+            # Crear DataFrame con los resultados
             df_resultado = pd.DataFrame(datos_procesados)
             
             # Logging final
@@ -576,7 +588,10 @@ class DataProcessor:
             return df_resultado
             
         except Exception as e:
-            print("Error detallado:")
+            print(f"Error detallado en procesar_datos_ecologicos:")
             print(f"Tipo de error: {type(e).__name__}")
             print(f"Mensaje de error: {str(e)}")
+            print(f"Tipo de datos recibido: {type(datos)}")
+            if isinstance(datos, pd.DataFrame):
+                print(f"Columnas disponibles: {datos.columns.tolist()}")
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
