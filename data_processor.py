@@ -548,6 +548,13 @@ class DataProcessor:
                     valor = dato.get('Valor', 0)
                     partes = [p.strip() for p in nombre.split(',')]
                     
+                    # Extraer tipo de cultivo específicamente
+                    tipo_cultivo = None
+                    for parte in partes[2:]:  # Empezar desde el tercer elemento
+                        if any(term in parte.lower() for term in ['tierra', 'pasto', 'cultivo']):
+                            tipo_cultivo = parte
+                            break
+                    
                     # Determinar la métrica
                     metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
                               for term in ['hectáreas', 'ha.', 'superficie']) 
@@ -558,10 +565,10 @@ class DataProcessor:
                         'Provincia': 'Teruel',
                         'Tipo_Explotacion': 'Ecológica',
                         'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                        'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
+                        'Tipo_Cultivo': tipo_cultivo if tipo_cultivo else 'Total',
                         'Personalidad_Juridica': 'Total',
                         'Tipo_Dato': metrica,
-                        'Metrica': metrica,  # Añadir columna Metrica
+                        'Metrica': metrica,
                         'Valor': valor,
                         'Periodo': '2023',
                         'Tipo_Valor': 'Valor absoluto'
@@ -579,6 +586,13 @@ class DataProcessor:
                     valor = data[0].get('Valor', 0) if data else 0
                     partes = [p.strip() for p in nombre.split(',')]
                     
+                    # Extraer tipo de cultivo específicamente
+                    tipo_cultivo = None
+                    for parte in partes[2:]:  # Empezar desde el tercer elemento
+                        if any(term in parte.lower() for term in ['tierra', 'pasto', 'cultivo']):
+                            tipo_cultivo = parte
+                            break
+                    
                     # Determinar la métrica
                     metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
                               for term in ['hectáreas', 'ha.', 'superficie']) 
@@ -589,10 +603,10 @@ class DataProcessor:
                         'Provincia': 'Teruel',
                         'Tipo_Explotacion': 'Ecológica',
                         'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                        'Tipo_Cultivo': partes[2] if len(partes) > 2 else 'Total',
+                        'Tipo_Cultivo': tipo_cultivo if tipo_cultivo else 'Total',
                         'Personalidad_Juridica': 'Total',
                         'Tipo_Dato': metrica,
-                        'Metrica': metrica,  # Añadir columna Metrica
+                        'Metrica': metrica,
                         'Valor': valor,
                         'Periodo': '2023',
                         'Tipo_Valor': 'Valor absoluto'
