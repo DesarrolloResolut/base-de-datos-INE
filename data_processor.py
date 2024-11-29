@@ -128,74 +128,146 @@ class DataProcessor:
             raise ValueError(f"Error al procesar datos de municipios: {str(e)}")
             
     @staticmethod
-    def _procesar_datos_censo_agrario(datos: Dict) -> pd.DataFrame:
-        """Procesa datos del censo agrario"""
+    def _procesar_datos_censo_agrario(datos: Dict, batch_size: int = 1000, timeout: int = 30) -> pd.DataFrame:
+        """Procesa datos del censo agrario de manera optimizada
+        
+        Args:
+            datos: Diccionario con los datos del censo
+            batch_size: Tamaño del lote para procesamiento
+            timeout: Tiempo máximo de procesamiento en segundos
+        """
+        import logging
+        import time
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError
+        
+        logger = logging.getLogger(__name__)
+        start_time = time.time()
+        
         try:
+            logger.info("Iniciando procesamiento de datos del censo agrario")
+            
             if not isinstance(datos, (list, dict)):
-                raise ValueError(f"Formato de datos inválido: {type(datos)}")
+                error_msg = f"Formato de datos inválido: {type(datos)}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            # Validación temprana de estructura de datos
+            if isinstance(datos, dict):
+                datos = [datos]
+            
+            logger.info(f"Total de registros a procesar: {len(datos)}")
+            
+            def procesar_lote(lote_datos):
+                registros_lote = []
+                for dato in lote_datos:
+                    try:
+                        if not isinstance(dato, dict):
+                            logger.warning(f"Registro inválido encontrado: {type(dato)}")
+                            continue
+                        
+                        nombre = dato.get('Nombre', '')
+                        valores = dato.get('Data', [])
+                        
+                        if not nombre or not valores:
+                            logger.warning(f"Registro incompleto encontrado: {dato}")
+                            continue
+                        
+                        # Extraer información del nombre de manera más eficiente
+                        partes = nombre.split('.')
+                        provincia = partes[0].strip() if len(partes) > 0 else 'No especificada'
+                        comarca = partes[1].strip() if len(partes) > 1 else 'Total'
+                        
+                        # Optimizar extracción de personalidad jurídica
+                        nombre_lower = nombre.lower()
+                        personalidad = (
+                            'Persona Física' if 'persona física' in nombre_lower
+                            else 'Persona Jurídica' if 'persona jurídica' in nombre_lower
+                            else 'Sociedad Mercantil' if 'sociedad mercantil' in nombre_lower
+                            else 'Cooperativa' if 'cooperativa' in nombre_lower
+                            else 'Otras'
+                        )
+                        
+                        # Optimizar determinación de tipo de dato
+                        tipo_dato = (
+                            'SAU (ha.)' if 'SAU' in nombre
+                            else 'PET (miles €)' if 'PET' in nombre
+                            else 'Número de explotaciones'
+                        )
+                        
+                        # Procesar valores de manera más eficiente
+                        nuevos_registros = [{
+                            'Provincia': provincia,
+                            'Comarca': comarca,
+                            'Personalidad_Juridica': personalidad,
+                            'Tipo_Dato': tipo_dato,
+                            'Periodo': valor.get('NombrePeriodo', ''),
+                            'Valor': valor.get('Valor', 0)
+                        } for valor in valores if valor.get('Valor') is not None]
+                        
+                        registros_lote.extend(nuevos_registros)
+                        
+                    except Exception as e:
+                        logger.error(f"Error procesando registro: {str(e)}")
+                        continue
                 
+                return registros_lote
+            
+            # Procesar datos en lotes
             registros = []
-            for dato in datos:
-                if not isinstance(dato, dict):
-                    continue
-                    
-                nombre = dato.get('Nombre', '')
-                valores = dato.get('Data', [])
+            total_lotes = (len(datos) + batch_size - 1) // batch_size
+            
+            logger.info(f"Iniciando procesamiento por lotes. Total de lotes: {total_lotes}")
+            
+            for i in range(0, len(datos), batch_size):
+                if time.time() - start_time > timeout:
+                    error_msg = f"Timeout alcanzado después de {timeout} segundos"
+                    logger.error(error_msg)
+                    raise TimeoutError(error_msg)
                 
-                if not nombre or not valores:
-                    continue
+                lote = datos[i:i + batch_size]
+                logger.info(f"Procesando lote {(i // batch_size) + 1} de {total_lotes}")
                 
-                # Extraer información del nombre
-                partes = nombre.split('.')
-                provincia = partes[0].strip() if len(partes) > 0 else 'No especificada'
-                comarca = partes[1].strip() if len(partes) > 1 else 'Total'
-                
-                # Extraer personalidad jurídica y tipo de dato
-                nombre_lower = nombre.lower()
-                if 'persona física' in nombre_lower:
-                    personalidad = 'Persona Física'
-                elif 'persona jurídica' in nombre_lower:
-                    personalidad = 'Persona Jurídica'
-                elif 'sociedad mercantil' in nombre_lower:
-                    personalidad = 'Sociedad Mercantil'
-                elif 'cooperativa' in nombre_lower:
-                    personalidad = 'Cooperativa'
-                else:
-                    personalidad = 'Otras'
-                
-                # Determinar tipo de dato con validación
-                if 'SAU' in nombre:
-                    tipo_dato = 'SAU (ha.)'
-                elif 'PET' in nombre:
-                    tipo_dato = 'PET (miles €)'
-                else:
-                    tipo_dato = 'Número de explotaciones'
-                
-                # Procesar valores
-                for valor in valores:
-                    registros.append({
-                        'Provincia': provincia,
-                        'Comarca': comarca,
-                        'Personalidad_Juridica': personalidad,
-                        'Tipo_Dato': tipo_dato,
-                        'Periodo': valor.get('NombrePeriodo', ''),
-                        'Valor': valor.get('Valor', 0)
-                    })
+                with ThreadPoolExecutor() as executor:
+                    future = executor.submit(procesar_lote, lote)
+                    try:
+                        registros_lote = future.result(timeout=timeout)
+                        registros.extend(registros_lote)
+                    except TimeoutError:
+                        error_msg = f"Timeout en el procesamiento del lote {(i // batch_size) + 1}"
+                        logger.error(error_msg)
+                        raise TimeoutError(error_msg)
             
             if not registros:
-                raise ValueError("No se encontraron datos del censo agrario")
-                
-            # Crear DataFrame
+                error_msg = "No se encontraron datos válidos del censo agrario"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            logger.info(f"Total de registros procesados: {len(registros)}")
+            
+            # Crear DataFrame de manera optimizada
             df = pd.DataFrame(registros)
             
-            # Convertir tipos de datos
-            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
-            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            # Optimizar tipos de datos y memoria
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce', downcast='integer')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce', downcast='float')
+            
+            # Optimizar uso de memoria
+            for col in df.select_dtypes(include=['object']).columns:
+                df[col] = df[col].astype('category')
+            
+            logger.info(f"Procesamiento completado en {time.time() - start_time:.2f} segundos")
+            logger.info(f"Uso de memoria del DataFrame: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
             
             return df
             
+        except TimeoutError as e:
+            error_msg = f"Timeout en el procesamiento de datos: {str(e)}"
+            logger.error(error_msg)
+            raise TimeoutError(error_msg)
         except Exception as e:
-            raise ValueError(f"Error al procesar datos del censo agrario: {str(e)}")
+            error_msg = f"Error al procesar datos del censo agrario: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
     @staticmethod
     def obtener_municipios(df: pd.DataFrame) -> List[str]:
