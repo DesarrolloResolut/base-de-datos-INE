@@ -124,6 +124,8 @@ class DataProcessor:
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             
             return df
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos de municipios: {str(e)}")
             
     @staticmethod
     def _procesar_datos_censo_agrario(datos: Dict) -> pd.DataFrame:
