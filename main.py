@@ -172,12 +172,92 @@ def main():
                     )
                     
                     # Filtro de tipo de censo
-                    tipos_censo = ['Explotaciones por tamaño según SAU y personalidad jurídica']
+                    tipos_censo = [
+                        'Explotaciones por tamaño según SAU y personalidad jurídica',
+                        'Distribución general de la superficie agrícola utilizada ecológica'
+                    ]
                     tipo_censo_seleccionado = st.selectbox(
                         "Tipo de Censo:",
                         options=tipos_censo,
                         index=0
                     )
+                    
+                    # Procesamiento específico según tipo de censo
+                    if tipo_censo_seleccionado == 'Distribución general de la superficie agrícola utilizada ecológica':
+                        df_ecologico = DataProcessor.procesar_datos_ecologicos(df)
+                        
+                        # Mostrar datos por tipo de explotación y cultivo
+                        st.subheader("Análisis de Superficie Agrícola Ecológica")
+                        
+                        # Selección de tipo de explotación
+                        tipos_explotacion = ['Todas las explotaciones'] + sorted(
+                            [t for t in df_ecologico['Tipo_Explotacion'].unique() 
+                             if t != 'Todas las explotaciones']
+                        )
+                        tipo_explotacion = st.selectbox(
+                            "Tipo de Explotación:",
+                            options=tipos_explotacion
+                        )
+                        
+                        # Filtrar por tipo de explotación
+                        df_filtrado = df_ecologico[
+                            df_ecologico['Tipo_Explotacion'] == tipo_explotacion
+                        ]
+                        
+                        # Mostrar datos en pestañas
+                        tab_expl, tab_sup, tab_tam = st.tabs([
+                            "Número de Explotaciones",
+                            "Superficie",
+                            "Tamaño Medio"
+                        ])
+                        
+                        with tab_expl:
+                            df_expl = df_filtrado[
+                                df_filtrado['Metrica'] == 'Nº explotaciones'
+                            ]
+                            if not df_expl.empty:
+                                fig_expl = DataVisualizer.crear_grafico_barras(
+                                    df_expl,
+                                    x='Tipo_Cultivo',
+                                    y='Valor',
+                                    titulo=f"Número de Explotaciones por Tipo de Cultivo - {tipo_explotacion}"
+                                )
+                                st.plotly_chart(fig_expl, use_container_width=True)
+                            
+                        with tab_sup:
+                            df_sup = df_filtrado[
+                                df_filtrado['Metrica'] == 'Superficie (ha.)'
+                            ]
+                            if not df_sup.empty:
+                                fig_sup = DataVisualizer.crear_grafico_barras(
+                                    df_sup,
+                                    x='Tipo_Cultivo',
+                                    y='Valor',
+                                    titulo=f"Superficie (ha.) por Tipo de Cultivo - {tipo_explotacion}"
+                                )
+                                st.plotly_chart(fig_sup, use_container_width=True)
+                                
+                                # Gráfico circular para distribución
+                                fig_pie = DataVisualizer.crear_grafico_pastel(
+                                    df_sup,
+                                    names='Tipo_Cultivo',
+                                    values='Valor',
+                                    titulo=f"Distribución de Superficie por Tipo de Cultivo - {tipo_explotacion}"
+                                )
+                                st.plotly_chart(fig_pie, use_container_width=True)
+                            
+                        with tab_tam:
+                            df_tam = df_filtrado[
+                                df_filtrado['Metrica'] == 'Tamaño medio'
+                            ]
+                            if not df_tam.empty:
+                                fig_tam = DataVisualizer.crear_grafico_barras(
+                                    df_tam,
+                                    x='Tipo_Cultivo',
+                                    y='Valor',
+                                    titulo=f"Tamaño Medio por Tipo de Cultivo - {tipo_explotacion}"
+                                )
+                                st.plotly_chart(fig_tam, use_container_width=True)
                     
                     # Filtro de personalidad jurídica
                     personalidades = sorted(df['Personalidad_Juridica'].unique().tolist())

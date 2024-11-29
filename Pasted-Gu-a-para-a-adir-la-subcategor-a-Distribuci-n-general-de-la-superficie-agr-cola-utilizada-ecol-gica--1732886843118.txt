@@ -1,0 +1,63 @@
+Guía para añadir la subcategoría Distribución general de la superficie agrícola utilizada ecológica por tamaño y tipos de cultivos y/o pastos en tu aplicación
+Esta guía detalla los pasos necesarios para implementar esta nueva subcategoría dentro del filtro "TIPO DE CENSO" bajo la categoría Censo Agrario.
+
+1. Estructura de la Subcategoría
+Categoría: Censo Agrario
+Filtro: TIPO DE CENSO
+Explotaciones por tamaño según superficie agrícola utilizada y personalidad jurídica.
+Nueva subcategoría: Distribución general de la superficie agrícola utilizada ecológica por tamaño y tipos de cultivos y/o pastos.
+2. Integración de la Nueva Subcategoría
+Datos a filtrar:
+
+De la API https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51178?nult=4&det=2, solo se utilizarán los registros que contienen "Teruel" en el campo Nombre.
+Clasificación de los datos:
+Los datos deben agruparse por:
+
+Tipo de explotación: (por ejemplo, "Todas las explotaciones").
+Tipo de cultivo o pasto: (por ejemplo, "Tierra arable", "Cereales para grano", "Trigo blando y escanda").
+Tipo de métrica:
+Número de explotaciones (Nº explotaciones).
+Superficie utilizada (Superficie (ha.)).
+Tamaño medio (Tamaño medio).
+Valor absoluto y porcentaje (cuando aplique).
+Visualización de datos:
+Crear un formato estandarizado para presentar los datos. Ejemplo:
+
+Explotación: Todas las explotaciones.
+Tierra arable:
+Número de explotaciones: 171.
+Superficie (ha.): 9,492.
+Tamaño medio: 56 ha.
+3. Cambios Técnicos Necesarios
+Modificación del Backend:
+
+Filtrar solo los datos relevantes de la API, manteniendo únicamente los registros relacionados con Teruel.
+Clasificar los datos por:
+Tipo de explotación.
+Tipo de cultivo o pasto.
+Métrica asociada (número de explotaciones, superficie, tamaño medio, etc.).
+Integración con el Frontend:
+
+Añadir el nuevo filtro al dropdown de "TIPO DE CENSO".
+Renderizar los datos: Crear una vista para mostrar los datos clasificados en el frontend.
+Ejemplo:
+Mostrar un accordion que permita expandir categorías como tipo de explotación y tipos de cultivos.
+Incluir etiquetas y valores claramente organizados para facilitar la lectura de los datos.
+Actualizar la API del Backend:
+
+Asegurar que la API de la aplicación pueda devolver los datos filtrados y clasificados según los parámetros seleccionados (provincia, tipo de explotación y tipo de cultivo).
+4. Pruebas
+Funcionalidad: Verificar que:
+Solo se cargan datos de Teruel.
+Los datos están clasificados correctamente por tipo de explotación y cultivo.
+Los valores numéricos se muestran correctamente.
+Interacción:
+Probar que la selección en el filtro "TIPO DE CENSO" funciona adecuadamente.
+Comprobar que cambiar entre subcategorías no afecta la funcionalidad de otras partes de la app.
+Compatibilidad:
+Asegurarse de que el diseño se adapta a diferentes resoluciones.
+Validar que los datos se cargan de forma dinámica sin recargar la página completa.
+5. Consideraciones Adicionales
+Implementar manejo de errores en caso de que la API no devuelva datos o haya problemas de conexión.
+Añadir un mensaje informativo si no hay datos disponibles para la subcategoría seleccionada.
+Verificar que la nueva funcionalidad no afecta el rendimiento general de la aplicación.

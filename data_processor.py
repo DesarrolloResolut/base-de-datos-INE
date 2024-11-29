@@ -518,3 +518,32 @@ class DataProcessor:
             
         except Exception as e:
             raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")
+
+    @staticmethod
+    def procesar_datos_ecologicos(df: pd.DataFrame) -> pd.DataFrame:
+        """Procesa los datos de superficie agrícola utilizada ecológica"""
+        try:
+            # Filtrar solo los datos de Teruel
+            df_teruel = df[df['Nombre'].str.contains('Teruel', na=False)].copy()
+            
+            # Clasificar por tipo de explotación y cultivo
+            df_teruel['Tipo_Explotacion'] = df_teruel['Nombre'].apply(
+                lambda x: x.split('.')[1].strip() if len(x.split('.')) > 1 else 'Todas las explotaciones'
+            )
+            
+            df_teruel['Tipo_Cultivo'] = df_teruel['Nombre'].apply(
+                lambda x: x.split('.')[2].strip() if len(x.split('.')) > 2 else 'Total'
+            )
+            
+            # Clasificar métricas
+            df_teruel['Metrica'] = df_teruel['Nombre'].apply(
+                lambda x: 'Nº explotaciones' if 'explotaciones' in x.lower() 
+                else 'Superficie (ha.)' if 'superficie' in x.lower() 
+                else 'Tamaño medio' if 'tamaño' in x.lower() 
+                else 'Otros'
+            )
+            
+            return df_teruel
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
