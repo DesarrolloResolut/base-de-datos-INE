@@ -19,7 +19,12 @@ class ReportGenerator:
         try:
             # Generar nombre de archivo con timestamp
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            nombre_base = f"informe_{municipio.lower()}_{timestamp}"
+            if categoria == 'censo_agrario':
+                nombre_base = f"censo_agrario_provincia_{municipio.lower()}_{timestamp}"
+            elif categoria == 'provincias':
+                nombre_base = f"informe_provincia_{municipio.lower()}_{timestamp}"
+            else:
+                nombre_base = f"informe_{municipio.lower()}_{timestamp}"
             
             # Generar informe según formato
             if formato == 'excel':
