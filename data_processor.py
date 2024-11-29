@@ -524,51 +524,35 @@ class DataProcessor:
     def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
-            # Crear lista para almacenar los datos procesados
             datos_procesados = []
             
-            # Si los datos ya son un DataFrame, trabajar directamente con él
-            if isinstance(datos, pd.DataFrame):
-                df_input = datos
-            else:
-                # Si son datos JSON, convertir a DataFrame
-                df_input = pd.DataFrame(datos)
+            # Convertir datos a DataFrame si es necesario
+            df_input = pd.DataFrame(datos) if not isinstance(datos, pd.DataFrame) else datos
             
-            # Logging inicial
-            print(f"Total de registros a procesar: {len(df_input)}")
-            
-            # Procesar cada registro
             for _, registro in df_input.iterrows():
                 nombre = registro['Nombre'] if 'Nombre' in registro.index else ''
                 if 'Teruel' not in nombre:
                     continue
-                    
-                # Logging del registro actual
-                print(f"Procesando registro: {nombre}")
                 
-                # Extraer componentes del nombre
-                componentes = nombre.split(',')
-                tipo_explotacion = componentes[1].strip() if len(componentes) > 1 else 'Total'
-                tipo_cultivo = componentes[2].strip() if len(componentes) > 2 else 'Total'
+                # Extraer valor
+                if isinstance(registro.get('Data'), list) and registro['Data']:
+                    valor = registro['Data'][0].get('Valor', 0)
+                else:
+                    valor = registro.get('Valor', 0)
                 
-                # Extraer métrica
-                metrica = None
+                # Extraer componentes según el nuevo formato
+                partes = nombre.split(',')
+                tipo_explotacion = 'Ecológica'  # Nuevo tipo específico
+                tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
+                
+                # Determinar métrica
                 if 'explotaciones' in nombre.lower():
                     metrica = 'Nº explotaciones'
-                elif 'ha.' in nombre.lower() or 'hectáreas' in nombre.lower():
+                elif 'superficie' in nombre.lower() or 'ha.' in nombre.lower():
                     metrica = 'Superficie (ha.)'
-                elif 'tamaño' in nombre.lower():
-                    metrica = 'Tamaño medio'
-                
-                # Obtener valor (asumiendo que viene en la columna 'Data' o 'Valor')
-                if 'Data' in registro.index and isinstance(registro['Data'], list):
-                    valor = registro['Data'][0].get('Valor', 0) if registro['Data'] else 0
-                elif 'Valor' in registro.index:
-                    valor = registro['Valor']
                 else:
-                    valor = 0
+                    metrica = 'Otros'
                 
-                # Añadir a la lista de datos procesados
                 datos_procesados.append({
                     'Tipo_Explotacion': tipo_explotacion,
                     'Tipo_Cultivo': tipo_cultivo,
@@ -577,22 +561,9 @@ class DataProcessor:
                     'Tipo_Valor': 'Porcentaje' if 'porcentaje' in nombre.lower() else 'Valor absoluto'
                 })
             
-            # Crear DataFrame con los resultados
-            df_resultado = pd.DataFrame(datos_procesados)
-            
-            # Logging final
-            print(f"Total de registros procesados: {len(df_resultado)}")
-            if not df_resultado.empty:
-                print("Ejemplo de datos procesados:")
-                print(df_resultado.head().to_string())
-            
-            return df_resultado
+            return pd.DataFrame(datos_procesados)
             
         except Exception as e:
-            print(f"Error detallado en procesar_datos_ecologicos:")
-            print(f"Tipo de error: {type(e).__name__}")
-            print(f"Mensaje de error: {str(e)}")
-            print(f"Tipo de datos recibido: {type(datos)}")
-            if isinstance(datos, pd.DataFrame):
-                print(f"Columnas disponibles: {datos.columns.tolist()}")
+            print(f"Error en procesar_datos_ecologicos: {str(e)}")
+            print(f"Datos recibidos: {datos[:2] if isinstance(datos, list) else 'No es lista'}")
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
