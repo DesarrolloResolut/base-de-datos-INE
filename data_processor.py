@@ -520,55 +520,63 @@ class DataProcessor:
             raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")
 
     @staticmethod
-    def procesar_datos_ecologicos(df: pd.DataFrame) -> pd.DataFrame:
+    def procesar_datos_ecologicos(datos_json: List[Dict]) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
-            # Logging inicial para debug
-            print("Columnas disponibles:", df.columns.tolist())
-            print("Primeras filas:", df.head().to_string())
+            # Crear lista para almacenar los datos procesados
+            datos_procesados = []
             
-            # Verificar si existe la columna Nombre
-            if 'Nombre' not in df.columns:
-                raise ValueError("La columna 'Nombre' no existe en el DataFrame")
+            # Logging inicial
+            print(f"Total de registros a procesar: {len(datos_json)}")
+            
+            # Procesar cada registro
+            for registro in datos_json:
+                nombre = registro.get('Nombre', '')
+                if 'Teruel' not in nombre:
+                    continue
+                    
+                # Logging del registro actual
+                print(f"Procesando registro: {nombre}")
                 
-            # Filtrar solo los datos de Teruel y crear copia
-            df_teruel = df[df['Nombre'].str.contains('Teruel', na=False)].copy()
+                # Extraer componentes del nombre
+                componentes = nombre.split(',')
+                tipo_explotacion = componentes[1].strip() if len(componentes) > 1 else 'Total'
+                tipo_cultivo = componentes[2].strip() if len(componentes) > 2 else 'Total'
+                
+                # Extraer métrica
+                metrica = None
+                if 'explotaciones' in nombre.lower():
+                    metrica = 'Nº explotaciones'
+                elif 'ha.' in nombre.lower() or 'hectáreas' in nombre.lower():
+                    metrica = 'Superficie (ha.)'
+                elif 'tamaño' in nombre.lower():
+                    metrica = 'Tamaño medio'
+                
+                # Obtener valor
+                valor = registro.get('Data', [{}])[0].get('Valor', 0)
+                
+                # Añadir a la lista de datos procesados
+                datos_procesados.append({
+                    'Tipo_Explotacion': tipo_explotacion,
+                    'Tipo_Cultivo': tipo_cultivo,
+                    'Metrica': metrica,
+                    'Valor': valor,
+                    'Tipo_Valor': 'Porcentaje' if 'porcentaje' in nombre.lower() else 'Valor absoluto'
+                })
             
-            # Logging después del filtrado
-            print("Registros de Teruel encontrados:", len(df_teruel))
-            if not df_teruel.empty:
-                print("Ejemplo de datos de Teruel:", df_teruel.iloc[0]['Nombre'])
+            # Crear DataFrame
+            df_resultado = pd.DataFrame(datos_procesados)
             
-            # Extraer información usando el nuevo formato de nombres
-            df_teruel['Tipo_Explotacion'] = df_teruel['Nombre'].apply(
-                lambda x: x.split(',')[0].replace('Teruel', '').strip() if ',' in x else 'Total'
-            )
+            # Logging final
+            print(f"Total de registros procesados: {len(df_resultado)}")
+            if not df_resultado.empty:
+                print("Ejemplo de datos procesados:")
+                print(df_resultado.head().to_string())
             
-            df_teruel['Tipo_Cultivo'] = df_teruel['Nombre'].apply(
-                lambda x: x.split(',')[1].strip() if len(x.split(',')) > 1 else 'Total'
-            )
-            
-            # Extraer métricas según el nuevo formato
-            df_teruel['Metrica'] = df_teruel['Nombre'].apply(
-                lambda x: 'Nº explotaciones' if 'explotaciones' in x.lower()
-                else 'Superficie (ha.)' if 'hectáreas' in x.lower() or 'ha.' in x.lower()
-                else 'Tamaño medio' if 'tamaño' in x.lower()
-                else 'Otros'
-            )
-            
-            # Añadir columna para tipo de valor
-            df_teruel['Tipo_Valor'] = df_teruel['Nombre'].apply(
-                lambda x: 'Porcentaje' if 'porcentaje' in x.lower()
-                else 'Valor absoluto'
-            )
-            
-            return df_teruel
+            return df_resultado
             
         except Exception as e:
             print("Error detallado:")
             print(f"Tipo de error: {type(e).__name__}")
             print(f"Mensaje de error: {str(e)}")
-            print("Estado del DataFrame:")
-            print(f"Shape: {df.shape if df is not None else 'None'}")
-            print(f"Columnas: {df.columns.tolist() if df is not None else 'None'}")
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
