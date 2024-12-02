@@ -127,11 +127,12 @@ class DataProcessor:
             raise ValueError(f"Error al procesar datos de municipios: {str(e)}")
             
     @staticmethod
-    def _procesar_datos_censo_agrario(datos: Dict, batch_size: int = 1000, timeout: int = 30) -> pd.DataFrame:
+    def _procesar_datos_censo_agrario(datos: Dict, tipo_censo: str = 'explotaciones_tamano', batch_size: int = 1000, timeout: int = 30) -> pd.DataFrame:
         """Procesa datos del censo agrario de manera optimizada
         
         Args:
             datos: Diccionario con los datos del censo
+            tipo_censo: Tipo de censo ('explotaciones_tamano' o 'distribucion_superficie')
             batch_size: Tamaño del lote para procesamiento
             timeout: Tiempo máximo de procesamiento en segundos
         """
@@ -559,8 +560,8 @@ class DataProcessor:
                 personalidad = 'Total'
                 metrica = 'Superficie (ha.)'
 
-                # Verificar si es un dato válido de superficie
-                if tipo_cultivo == 'Total' or not es_superficie:
+                # Procesar el tipo de cultivo independientemente del tipo de dato
+                if tipo_cultivo == 'Total':
                     continue
                 
                 registro = {
@@ -607,15 +608,26 @@ class DataProcessor:
         return 'Total'
 
     @staticmethod
-    def filtrar_datos_por_tipo(df: pd.DataFrame, tipo: str = 'superficie') -> pd.DataFrame:
-        """Filtra los datos según el tipo (superficie o tamaño)"""
-        if tipo.lower() == 'superficie':
-            return df[
-                (df['Rango_Tamano'] == 'Total') & 
-                (df['Tipo_Cultivo'] != 'Total')
-            ].copy()
-        else:  # tipo == 'tamaño'
-            return df[
-                (df['Rango_Tamano'] != 'Total') & 
-                (df['Tipo_Cultivo'] == 'Total')
-            ].copy()
+    def filtrar_datos_por_tipo(df: pd.DataFrame, tipo: str = 'superficie', tipo_censo: str = 'explotaciones_tamano') -> pd.DataFrame:
+        """Filtra los datos según el tipo y el tipo de censo
+        
+        Args:
+            df: DataFrame a filtrar
+            tipo: Tipo de datos ('superficie' o 'tamaño')
+            tipo_censo: Tipo de censo ('explotaciones_tamano' o 'distribucion_superficie')
+        """
+        df_filtrado = df.copy()
+        
+        if tipo_censo == 'distribucion_superficie':
+            return df_filtrado[df_filtrado['Tipo_Cultivo'] != 'Total'].copy()
+        else:  # tipo_censo == 'explotaciones_tamano'
+            if tipo.lower() == 'superficie':
+                return df_filtrado[
+                    (df_filtrado['Rango_Tamano'] == 'Total') & 
+                    (df_filtrado['Tipo_Cultivo'] != 'Total')
+                ].copy()
+            else:  # tipo == 'tamaño'
+                return df_filtrado[
+                    (df_filtrado['Rango_Tamano'] != 'Total') & 
+                    (df_filtrado['Tipo_Cultivo'] == 'Total')
+                ].copy()
