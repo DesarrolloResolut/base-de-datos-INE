@@ -7,11 +7,12 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 class DataProcessor:
     @staticmethod
-    def json_to_dataframe(datos: Dict, categoria: str = "provincias") -> pd.DataFrame:
+    def json_to_dataframe(datos: Dict, categoria: str = "provincias", filtros: Dict = None) -> pd.DataFrame:
         """Convierte datos JSON a DataFrame según la categoría
         Args:
             datos: Datos en formato JSON
             categoria: Categoría de datos ('provincias', 'municipios_habitantes', 'censo_agrario' o 'censo_cultivo')
+            filtros: Diccionario de filtros a aplicar
         """
         try:
             if categoria == "provincias":
@@ -21,7 +22,7 @@ class DataProcessor:
             elif categoria == "censo_agrario":
                 return DataProcessor._procesar_datos_censo_agrario(datos)
             elif categoria == "censo_cultivo":
-                return DataProcessor.procesar_datos_ecologicos(datos, filtros={})
+                return DataProcessor.procesar_datos_ecologicos(datos, filtros=filtros if filtros else {})
             else:
                 raise ValueError(f"Categoría no válida: {categoria}")
         except Exception as e:
