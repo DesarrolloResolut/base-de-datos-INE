@@ -33,10 +33,11 @@ def main():
         st.header("Filtros")
         
         # Selector de categorías principal
+        categorias_disponibles = list(INEApiClient.CATEGORIES.keys()) + ['censo_cultivos']
         categoria_seleccionada = st.selectbox(
             "Categoría:",
-            options=list(INEApiClient.CATEGORIES.keys()),
-            format_func=lambda x: INEApiClient.CATEGORIES[x]['name']
+            options=categorias_disponibles,
+            format_func=lambda x: "Censo de Cultivos" if x == 'censo_cultivos' else INEApiClient.CATEGORIES[x]['name']
         )
 
     # Título dinámico según la categoría
@@ -67,6 +68,15 @@ def main():
         - Datos por personalidad jurídica del titular
         - Análisis por provincia y comarca
         - Indicadores específicos del sector agrario
+        """)
+    elif categoria_seleccionada == "censo_cultivos":
+        st.markdown("""
+        Esta aplicación muestra los datos específicos de cultivos de Teruel, proporcionados por el Instituto Nacional de Estadística (INE).
+        Los datos incluyen:
+        - Distribución de superficie por tipo de cultivo
+        - Número de explotaciones por tipo de cultivo
+        - Análisis comparativo de cultivos
+        - Indicadores de rendimiento por tipo de cultivo
         """)
     elif categoria_seleccionada == "tasa_empleo":
         st.markdown("""
@@ -468,6 +478,29 @@ def main():
                     'Provincia': provincia_seleccionada,
                     'Tipo_Dato': tipo_seleccionado if 'tipo_seleccionado' in locals() and tipo_seleccionado != 'Todos' else None,
                     'Personalidad_Juridica': personalidad_seleccionada
+                }
+            elif categoria_seleccionada == "censo_cultivos":
+                # Filtros específicos para visualización de cultivos
+                with st.sidebar:
+                    # Selector de tipo de cultivo
+                    tipos_cultivo = ['Todos'] + sorted(df['Tipo_Cultivo'].unique().tolist())
+                    tipo_cultivo_seleccionado = st.selectbox(
+                        "Tipo de Cultivo:",
+                        options=tipos_cultivo,
+                        index=0
+                    )
+                    
+                    # Selector de comarca
+                    comarcas = ['Todas'] + sorted(df['Comarca'].unique().tolist())
+                    comarca_seleccionada = st.selectbox(
+                        "Comarca:",
+                        options=comarcas,
+                        index=0
+                    )
+                
+                filtros = {
+                    'Tipo_Cultivo': None if tipo_cultivo_seleccionado == 'Todos' else tipo_cultivo_seleccionado,
+                    'Comarca': None if comarca_seleccionada == 'Todas' else comarca_seleccionada
                 }
             elif categoria_seleccionada == "tasa_empleo":
                 # Filtros específicos para tasas de empleo
