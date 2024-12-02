@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class INEApiClient:
     """Cliente para la API del INE"""
     
-    BASE_URL = "https://servicios.ine.es/wstempus/js/ES"
+    BASE_URL = "https://servicios.ine.es/wstempus/jsCache/ES"
     
     CATEGORIES = {
         'provincias': {
@@ -56,7 +56,7 @@ class INEApiClient:
         },
         'tasa_empleo': {
             'name': 'Tasas de Empleo',
-            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/EPA11365',
+            'url': 'https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/3996',
             'default_params': {'nult': '4', 'det': '2'}
         }
     }
