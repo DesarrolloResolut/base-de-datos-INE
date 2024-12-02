@@ -633,14 +633,25 @@ class DataProcessor:
             DataFrame con las tasas procesadas
         """
         try:
+            if not isinstance(datos, list):
+                raise ValueError("Los datos deben ser una lista de diccionarios")
+
             registros = []
             for dato in datos:
+                if not isinstance(dato, dict):
+                    continue
+
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 cod = dato.get('COD', '')
                 
+                if not nombre or not valores:
+                    continue
+                
                 # Determinar el tipo de tasa y género
                 nombre_lower = nombre.lower()
+                
+                # Mapeo más preciso de indicadores
                 if 'tasa de actividad' in nombre_lower:
                     indicador = 'Actividad'
                 elif 'tasa de paro' in nombre_lower:
@@ -650,32 +661,44 @@ class DataProcessor:
                 else:
                     continue
                     
+                # Mapeo más preciso de géneros
                 if 'varones' in nombre_lower:
                     genero = 'Hombres'
                 elif 'mujeres' in nombre_lower:
                     genero = 'Mujeres'
+                elif 'ambos sexos' in nombre_lower:
+                    genero = 'Total'
                 else:
                     genero = 'Total'
                 
-                # Procesar valores
+                # Procesar valores con validación adicional
                 for valor in valores:
-                    periodo = valor.get('NombrePeriodo', '')  # Formato esperado: "2023T4"
+                    if not isinstance(valor, dict):
+                        continue
+                        
+                    periodo = valor.get('NombrePeriodo', '')
+                    valor_numerico = valor.get('Valor')
+                    
+                    if not periodo or valor_numerico is None:
+                        continue
+                        
                     registros.append({
                         'Indicador': indicador,
                         'Genero': genero,
                         'Periodo': periodo,
-                        'Valor': valor.get('Valor', 0),
+                        'Valor': valor_numerico,
                         'Codigo': cod
                     })
             
             if not registros:
-                raise ValueError("No se encontraron datos de empleo")
+                raise ValueError("No se encontraron datos de empleo válidos para procesar")
             
             # Crear DataFrame
             df = pd.DataFrame(registros)
             
-            # Convertir tipos de datos
+            # Convertir tipos de datos con manejo de errores
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            df = df.dropna(subset=['Valor'])  # Eliminar filas con valores no numéricos
             
             # Ordenar por período y tipo de indicador
             df = df.sort_values(['Periodo', 'Indicador', 'Genero'])
