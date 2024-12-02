@@ -547,13 +547,7 @@ class DataProcessor:
                     
                     valor = dato.get('Valor', 0)
                     partes = [p.strip() for p in nombre.split(',')]
-                    
-                    # Extraer tipo de cultivo específicamente
-                    tipo_cultivo = None
-                    for parte in partes[2:]:  # Empezar desde el tercer elemento
-                        if any(term in parte.lower() for term in ['tierra', 'pasto', 'cultivo']):
-                            tipo_cultivo = parte
-                            break
+                    tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
                     
                     # Determinar la métrica
                     metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
@@ -585,13 +579,7 @@ class DataProcessor:
                         
                     valor = data[0].get('Valor', 0) if data else 0
                     partes = [p.strip() for p in nombre.split(',')]
-                    
-                    # Extraer tipo de cultivo específicamente
-                    tipo_cultivo = None
-                    for parte in partes[2:]:  # Empezar desde el tercer elemento
-                        if any(term in parte.lower() for term in ['tierra', 'pasto', 'cultivo']):
-                            tipo_cultivo = parte
-                            break
+                    tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
                     
                     # Determinar la métrica
                     metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
