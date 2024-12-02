@@ -719,10 +719,24 @@ class DataProcessor:
         Returns:
             DataFrame procesado según la categoría
         """
-        # Normalizar la categoría a minúsculas para evitar problemas de caso
-        categoria = categoria.lower()
+        # Configurar logging
+        logger = logging.getLogger(__name__)
         
+        # Log de la categoría antes de normalizar
+        logger.info(f"Categoría recibida: '{categoria}'")
+        
+        # Normalizar la categoría a minúsculas para evitar problemas de caso
+        categoria = categoria.lower() if categoria else ''
+        
+        # Log de la categoría después de normalizar
+        logger.info(f"Categoría normalizada: '{categoria}'")
+        
+        # Validar que la categoría no esté vacía
+        if not categoria:
+            raise ValueError("La categoría no puede estar vacía")
+            
         if categoria == "tasa_empleo":
+            logger.info("Procesando datos de tasa de empleo")
             return DataProcessor._procesar_datos_empleo(datos)
         elif categoria == "provincias":
             return DataProcessor._procesar_datos_provincias(datos)

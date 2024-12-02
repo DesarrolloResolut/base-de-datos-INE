@@ -314,6 +314,14 @@ class INEApiClient:
                 error_msg = "No se encontraron datos"
                 logger.warning(error_msg)
                 raise ValueError(error_msg)
+                
+            # Log detallado de la estructura de datos para debugging
+            if categoria == 'tasa_empleo':
+                logger.info(f"Estructura de datos recibida para tasa_empleo:")
+                for item in data[:2]:  # Log primeros 2 items como muestra
+                    logger.info(f"- Nombre: {item.get('Nombre', 'N/A')}")
+                    logger.info(f"  COD: {item.get('COD', 'N/A')}")
+                    logger.info(f"  Datos: {len(item.get('Data', []))} registros")
             
             # Filtrar datos de Teruel para categorías de censo
             if categoria in ['censo_agrario', 'censo_cultivo']:
