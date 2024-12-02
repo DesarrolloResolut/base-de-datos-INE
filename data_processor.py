@@ -22,7 +22,7 @@ class DataProcessor:
             elif categoria == "censo_agrario":
                 return DataProcessor._procesar_datos_censo_agrario(datos)
             elif categoria == "censo_cultivo":
-                return DataProcessor.procesar_datos_ecologicos(datos, filtros=filtros if filtros else {})
+                return DataProcessor.procesar_datos_ecologicos(datos)
             else:
                 raise ValueError(f"Categoría no válida: {categoria}")
         except Exception as e:
@@ -523,102 +523,33 @@ class DataProcessor:
             raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")
 
     @staticmethod
-    def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame], filtros: Dict = None) -> pd.DataFrame:
+    def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
             datos_procesados = []
             
-            # Si no hay filtros, inicializar como diccionario vacío
-            if filtros is None:
-                filtros = {}
-            
-            # Si es DataFrame ya procesado
-            if isinstance(datos, pd.DataFrame):
-                df = datos.copy()
-                if 'Provincia' in df.columns:
-                    df['Tipo_Explotacion'] = 'Ecológica'
-                    df['Personalidad_Juridica'] = 'Total'
-                    df['Periodo'] = '2023'
-                    df['Tipo_Valor'] = 'Valor absoluto'
-                    if 'Tipo_Dato' in df.columns and 'Metrica' not in df.columns:
-                        df['Metrica'] = df['Tipo_Dato']
-                    
-                    # Aplicar filtros si existen
-                    if filtros:
-                        for campo, valores in filtros.items():
-                            if valores and campo in df.columns:
-                                if isinstance(valores, list):
-                                    df = df[df[campo].isin(valores)]
-                                else:
-                                    df = df[df[campo] == valores]
-                    return df
-                
-            # Procesar desde formato JSON o lista de diccionarios
-            for dato in (datos if isinstance(datos, list) else datos.to_dict('records')):
+            # Procesar directamente los datos de la API
+            for dato in datos:
                 nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
+                
                 if not nombre or 'Teruel' not in nombre:
                     continue
-                
-                valor = dato.get('Valor', 0) if isinstance(dato, dict) else dato.get('Data', [{}])[0].get('Valor', 0)
-                partes = [p.strip() for p in nombre.split(',')]
-                
-                # Determinar si es dato de tamaño de explotación o de superficie
-                es_dato_tamano = any(term in nombre.lower() for term in ['de 0 a', 'de 1 a', 'de 2 a', 'de 5 a', 'más de'])
-                
-                # Procesar solo datos de superficie de la API 51178
-                es_superficie = any(term in nombre.lower() for term in ['hectáreas', 'ha.', 'superficie'])
-                if not es_superficie:
-                    continue
-
-                # Extraer tipo de cultivo del tercer elemento
-                tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
-                rango_tamano = 'Total'
-                personalidad = 'Total'
-                metrica = 'Superficie (ha.)'
-
-                # Procesar el tipo de cultivo independientemente del tipo de dato
-                if tipo_cultivo == 'Total':
-                    continue
-                
-                registro = {
-                    'Provincia': 'Teruel',
-                    'Tipo_Explotacion': 'Ecológica',
-                    'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                    'Personalidad_Juridica': personalidad,
-                    'Rango_Tamano': rango_tamano,
-                    'Tipo_Cultivo': tipo_cultivo if not es_dato_tamano else 'Total',
-                    'Tipo_Dato': metrica,
-                    'Metrica': metrica,
-                    'Valor': valor,
-                    'Periodo': '2023',
-                    'Tipo_Valor': 'Valor absoluto'
-                }
-                
-                datos_procesados.append(registro)
+                    
+                for valor in valores:
+                    datos_procesados.append({
+                        'Nombre': nombre,
+                        'Valor': valor.get('Valor', 0)
+                    })
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
                 
-            df = pd.DataFrame(datos_procesados)
-            
-            # Aplicar filtros si existen
-            if filtros:
-                for campo, valores in filtros.items():
-                    if valores and campo in df.columns:
-                        if isinstance(valores, list):
-                            df = df[df[campo].isin(valores)]
-                        else:
-                            df = df[df[campo] == valores]
-            
-            return df
+            return pd.DataFrame(datos_procesados)
             
         except Exception as e:
-            print(f"Error detallado en procesar_datos_ecologicos:")
-            print(f"Tipo de error: {type(e).__name__}")
-            print(f"Mensaje de error: {str(e)}")
-            print(f"Estructura de datos recibida:")
-            print(datos[:5] if isinstance(datos, list) else datos.head())
-            raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
+            print(f"Error al procesar datos: {str(e)}")
+            raise ValueError(f"Error al procesar datos: {str(e)}")
 
     @staticmethod
     def _extraer_personalidad_juridica(nombre: str) -> str:
