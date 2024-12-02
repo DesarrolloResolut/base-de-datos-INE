@@ -623,7 +623,6 @@ class DataProcessor:
             raise ValueError(f"Error al procesar datos: {str(e)}")
 
     @staticmethod
-    @staticmethod
     def _procesar_datos_empleo(datos: Dict) -> pd.DataFrame:
         """Procesa datos de tasas de actividad, paro y empleo
 

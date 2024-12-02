@@ -847,12 +847,12 @@ def main():
                     st.metric("Mujeres", f"{valor_mujeres:.2f}%")
                     
                     fig_municipios = DataVisualizer.crear_grafico_lineas(
-                    df_actual,
-                    x='Periodo',
-                    y='Valor',
-                    titulo="Comparativa de población entre municipios"
-                )
-                st.plotly_chart(fig_municipios, use_container_width=True)
+                        df_actual,
+                        x='Periodo',
+                        y='Valor',
+                        titulo="Comparativa de población entre municipios"
+                    )
+                    st.plotly_chart(fig_municipios, use_container_width=True)
                     
             elif categoria_seleccionada == "tasa_empleo":
                 # Visualización de tasas de actividad, paro y empleo
