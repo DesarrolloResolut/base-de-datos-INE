@@ -535,19 +535,18 @@ class DataProcessor:
                 # Solo procesar datos de Teruel
                 if not nombre.startswith('Teruel'):
                     continue
-                    
-                # Dividir el nombre y obtener componentes por posición
+                
+                # Extraer partes del nombre
                 partes = nombre.split(', ')
                 if len(partes) >= 3:
-                    provincia = partes[0].strip()
                     tipo_explotacion = partes[1].strip()
                     tipo_cultivo = partes[2].strip()
                     
-                    # Extraer valor directamente de Data
+                    # Procesar valores
                     for valor in valores:
-                        if not valor.get('Secreto', False):
+                        if valor.get('Valor') is not None:
                             datos_procesados.append({
-                                'Provincia': provincia,
+                                'Nombre': nombre,
                                 'Tipo_Explotacion': tipo_explotacion,
                                 'Tipo_Cultivo': tipo_cultivo,
                                 'Valor': valor.get('Valor', 0)
@@ -555,7 +554,7 @@ class DataProcessor:
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
-                
+            
             return pd.DataFrame(datos_procesados)
             
         except Exception as e:
