@@ -533,11 +533,10 @@ class DataProcessor:
         import logging
         logger = logging.getLogger(__name__)
         
+        # Asegurar que filtros esté definido al inicio del método
+        filtros = {} if filtros is None else filtros.copy()
+        
         try:
-            # Inicializar filtros como diccionario vacío si no se proporciona
-            if filtros is None:
-                filtros = {}
-                
             datos_procesados = []
             
             # Verificar formato de datos
