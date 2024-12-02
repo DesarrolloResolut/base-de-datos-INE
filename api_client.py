@@ -314,14 +314,36 @@ class INEApiClient:
                 error_msg = "No se encontraron datos"
                 logger.warning(error_msg)
                 raise ValueError(error_msg)
-                
-            # Log detallado de la estructura de datos para debugging
+            
+            # Validación detallada de la estructura de datos
+            if not isinstance(data, list):
+                error_msg = f"Formato de datos inválido. Se esperaba una lista, se recibió: {type(data)}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            # Log detallado de la estructura de datos
             if categoria == 'tasa_empleo':
                 logger.info(f"Estructura de datos recibida para tasa_empleo:")
-                for item in data[:2]:  # Log primeros 2 items como muestra
-                    logger.info(f"- Nombre: {item.get('Nombre', 'N/A')}")
-                    logger.info(f"  COD: {item.get('COD', 'N/A')}")
-                    logger.info(f"  Datos: {len(item.get('Data', []))} registros")
+                logger.info(f"Total de registros recibidos: {len(data)}")
+                
+                for item in data:
+                    # Validar campos requeridos
+                    if not all(key in item for key in ['Nombre', 'Data', 'COD']):
+                        missing_fields = [key for key in ['Nombre', 'Data', 'COD'] if key not in item]
+                        logger.warning(f"Campos faltantes en el registro: {missing_fields}")
+                        continue
+                    
+                    # Log detallado de cada registro
+                    logger.info(f"- Nombre: {item['Nombre']}")
+                    logger.info(f"  COD: {item['COD']}")
+                    logger.info(f"  Datos: {len(item['Data'])} registros")
+                    
+                    # Validar estructura de Data
+                    for valor in item['Data'][:2]:  # Mostrar primeros 2 valores como ejemplo
+                        if 'Valor' not in valor:
+                            logger.warning(f"Campo 'Valor' faltante en Data para {item['Nombre']}")
+                        else:
+                            logger.info(f"    Valor: {valor['Valor']}, Periodo: {valor.get('NombrePeriodo', 'N/A')}")
             
             # Filtrar datos de Teruel para categorías de censo
             if categoria in ['censo_agrario', 'censo_cultivo']:
