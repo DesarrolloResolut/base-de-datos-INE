@@ -847,12 +847,12 @@ def main():
                     st.metric("Mujeres", f"{valor_mujeres:.2f}%")
                     
                     fig_municipios = DataVisualizer.crear_grafico_lineas(
-                        df_actual,
-                        x='Periodo',
-                        y='Valor',
-                        titulo="Comparativa de población entre municipios"
-                    )
-                    st.plotly_chart(fig_municipios, use_container_width=True)
+                    df_actual,
+                    x='Periodo',
+                    y='Valor',
+                    titulo="Comparativa de población entre municipios"
+                )
+                st.plotly_chart(fig_municipios, use_container_width=True)
                     
             elif categoria_seleccionada == "tasa_empleo":
                 # Visualización de tasas de actividad, paro y empleo
@@ -860,6 +860,81 @@ def main():
                 
                 # Procesar datos de empleo
                 df_empleo = DataProcessor._procesar_datos_empleo(df)
+                
+                # Filtros
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    tipo_tasa = st.selectbox(
+                        "Tipo de tasa",
+                        options=sorted(df_empleo['Indicador'].unique()),
+                        key="tasa_tipo"
+                    )
+                with col2:
+                    genero = st.selectbox(
+                        "Género",
+                        options=sorted(df_empleo['Genero'].unique()),
+                        key="tasa_genero"
+                    )
+                with col3:
+                    periodo = st.selectbox(
+                        "Período",
+                        options=sorted(df_empleo['Periodo'].unique(), reverse=True),
+                        key="tasa_periodo"
+                    )
+                
+                # Filtrar datos según selección
+                df_filtrado = df_empleo[
+                    (df_empleo['Indicador'] == tipo_tasa) &
+                    (df_empleo['Genero'] == genero)
+                ]
+                
+                # Mostrar valor actual
+                valor_actual = df_filtrado[df_filtrado['Periodo'] == periodo]['Valor'].iloc[0]
+                st.metric(
+                    f"Tasa de {tipo_tasa} - {genero}",
+                    f"{valor_actual:.2f}%",
+                    help=f"Valor para el período {periodo}"
+                )
+                
+                # Gráfico de evolución temporal por género
+                st.subheader("Evolución Temporal por Género")
+                df_evolucion = df_empleo[df_empleo['Indicador'] == tipo_tasa]
+                fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                    df_evolucion,
+                    x='Periodo',
+                    y='Valor',
+                    color='Genero',
+                    titulo=f"Evolución de la Tasa de {tipo_tasa} por Género"
+                )
+                st.plotly_chart(fig_evolucion, use_container_width=True)
+                
+                # Gráfico comparativo entre tasas
+                st.subheader("Comparativa entre Tasas")
+                df_comparativa = df_empleo[
+                    (df_empleo['Periodo'] == periodo) &
+                    (df_empleo['Genero'] == genero)
+                ]
+                fig_comparativa = DataVisualizer.crear_grafico_barras(
+                    df_comparativa,
+                    x='Indicador',
+                    y='Valor',
+                    titulo=f"Comparativa de Tasas - {genero} ({periodo})"
+                )
+                st.plotly_chart(fig_comparativa, use_container_width=True)
+                
+                # Gráfico específico por indicador
+                st.subheader(f"Análisis Detallado - {tipo_tasa}")
+                df_detalle = df_empleo[
+                    (df_empleo['Indicador'] == tipo_tasa) &
+                    (df_empleo['Periodo'] == periodo)
+                ]
+                fig_detalle = DataVisualizer.crear_grafico_barras(
+                    df_detalle,
+                    x='Genero',
+                    y='Valor',
+                    titulo=f"Tasa de {tipo_tasa} por Género ({periodo})"
+                )
+                st.plotly_chart(fig_detalle, use_container_width=True)
                 
             elif categoria_seleccionada == "municipios_habitantes":
                 # Gráfico de barras para distribución de municipios
