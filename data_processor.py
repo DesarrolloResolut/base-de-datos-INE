@@ -623,73 +623,83 @@ class DataProcessor:
             raise ValueError(f"Error al procesar datos: {str(e)}")
 
     @staticmethod
-    def procesar_datos_cultivos(datos: pd.DataFrame) -> pd.DataFrame:
-        """Procesa los datos de cultivos para su visualización
-        
+    @staticmethod
+    def _procesar_datos_empleo(datos: Dict) -> pd.DataFrame:
+        """Procesa datos de tasas de actividad, paro y empleo
+
         Args:
-            datos: DataFrame con los datos de cultivos
+            datos: Diccionario con los datos de empleo
             
         Returns:
-            DataFrame procesado con la información de cultivos
+            DataFrame con las tasas procesadas
         """
         try:
-            if not isinstance(datos, pd.DataFrame):
-                raise ValueError("Los datos deben estar en formato DataFrame")
+            registros = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
+                cod = dato.get('COD', '')
                 
-            # Crear copia para no modificar los datos originales
-            df_cultivos = datos.copy()
-            
-            # Asegurar que las columnas necesarias existen
-            columnas_requeridas = ['Tipo_Dato', 'Tipo_Cultivo', 'Comarca', 'Valor']
-            if not all(col in df_cultivos.columns for col in columnas_requeridas):
-                raise ValueError(f"Faltan columnas requeridas: {columnas_requeridas}")
-            
-            # Filtrar solo los datos relacionados con cultivos
-            df_cultivos = df_cultivos[
-                (df_cultivos['Tipo_Dato'].str.contains('SAU', na=False)) |
-                (df_cultivos['Tipo_Dato'].str.contains('Número de explotaciones', na=False))
-            ]
-            
-            # Procesar superficie y número de explotaciones por comarca
-            resultados = []
-            for comarca in df_cultivos['Comarca'].unique():
-                df_comarca = df_cultivos[df_cultivos['Comarca'] == comarca]
+                # Determinar el tipo de tasa y género
+                nombre_lower = nombre.lower()
+                if 'tasa de actividad' in nombre_lower:
+                    indicador = 'Actividad'
+                elif 'tasa de paro' in nombre_lower:
+                    indicador = 'Paro'
+                elif 'tasa de empleo' in nombre_lower:
+                    indicador = 'Empleo'
+                else:
+                    continue
+                    
+                if 'varones' in nombre_lower:
+                    genero = 'Hombres'
+                elif 'mujeres' in nombre_lower:
+                    genero = 'Mujeres'
+                else:
+                    genero = 'Total'
                 
-                for tipo in df_comarca['Tipo_Cultivo'].unique():
-                    if tipo != 'Total':
-                        # Obtener superficie
-                        superficie = df_comarca[
-                            (df_comarca['Tipo_Cultivo'] == tipo) &
-                            (df_comarca['Tipo_Dato'].str.contains('SAU', na=False))
-                        ]['Valor'].sum()
-                        
-                        # Obtener número de explotaciones
-                        explotaciones = df_comarca[
-                            (df_comarca['Tipo_Cultivo'] == tipo) &
-                            (df_comarca['Tipo_Dato'].str.contains('Número de explotaciones', na=False))
-                        ]['Valor'].sum()
-                        
-                        # Calcular rendimiento si es posible
-                        rendimiento = superficie / explotaciones if explotaciones > 0 else 0
-                        
-                        resultados.append({
-                            'Comarca': comarca,
-                            'Tipo_Cultivo': tipo,
-                            'Superficie': superficie,
-                            'Num_Explotaciones': explotaciones,
-                            'Rendimiento': rendimiento
-                        })
+                # Procesar valores
+                for valor in valores:
+                    periodo = valor.get('NombrePeriodo', '')  # Formato esperado: "2023T4"
+                    registros.append({
+                        'Indicador': indicador,
+                        'Genero': genero,
+                        'Periodo': periodo,
+                        'Valor': valor.get('Valor', 0),
+                        'Codigo': cod
+                    })
             
-            # Crear DataFrame con los resultados
-            df_resultados = pd.DataFrame(resultados)
+            if not registros:
+                raise ValueError("No se encontraron datos de empleo")
             
-            # Ordenar por superficie descendente
-            df_resultados = df_resultados.sort_values(['Comarca', 'Superficie'], ascending=[True, False])
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
             
-            return df_resultados
+            # Convertir tipos de datos
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            # Ordenar por período y tipo de indicador
+            df = df.sort_values(['Periodo', 'Indicador', 'Genero'])
+            
+            return df
             
         except Exception as e:
-            raise ValueError(f"Error al procesar datos de cultivos: {str(e)}")
+            raise ValueError(f"Error al procesar datos de empleo: {str(e)}")
+    def procesar_datos(datos: List[Dict], categoria: str, filtros: Optional[Dict] = None) -> pd.DataFrame:
+        """Procesa los datos según la categoría especificada
+        
+        Args:
+            datos: Lista de diccionarios con los datos
+            categoria: Categoría de datos a procesar
+            filtros: Diccionario con filtros adicionales
+            
+        Returns:
+            DataFrame procesado según la categoría
+        """
+        if categoria == "tasa_empleo":
+            return DataProcessor._procesar_datos_empleo(datos)
+        else:
+            raise ValueError(f"Categoría no válida: {categoria}")
 
     
     @staticmethod

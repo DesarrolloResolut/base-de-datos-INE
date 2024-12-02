@@ -854,30 +854,12 @@ def main():
                     )
                     st.plotly_chart(fig_municipios, use_container_width=True)
                     
-            elif categoria_seleccionada == "tipos_cultivo":
-                # Visualización de datos por tipo de cultivo
-                st.subheader("Distribución de Cultivos en Teruel")
+            elif categoria_seleccionada == "tasa_empleo":
+                # Visualización de tasas de actividad, paro y empleo
+                st.subheader("Tasas de Actividad, Paro y Empleo")
                 
-                # Procesar datos específicos de cultivos
-                df_cultivos = DataProcessor.procesar_datos_cultivos(df)
-                
-                # Gráfico de barras para superficie por tipo de cultivo
-                fig_superficie = DataVisualizer.crear_grafico_barras(
-                    df_cultivos,
-                    x='Tipo_Cultivo',
-                    y='Superficie',
-                    titulo="Superficie por Tipo de Cultivo (ha)"
-                )
-                st.plotly_chart(fig_superficie, use_container_width=True)
-                
-                # Gráfico de barras para número de explotaciones
-                fig_explotaciones = DataVisualizer.crear_grafico_barras(
-                    df_cultivos,
-                    x='Tipo_Cultivo',
-                    y='Num_Explotaciones',
-                    titulo="Número de Explotaciones por Tipo de Cultivo"
-                )
-                st.plotly_chart(fig_explotaciones, use_container_width=True)
+                # Procesar datos de empleo
+                df_empleo = DataProcessor._procesar_datos_empleo(df)
                 
             elif categoria_seleccionada == "municipios_habitantes":
                 # Gráfico de barras para distribución de municipios
