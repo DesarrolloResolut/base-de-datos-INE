@@ -12,7 +12,7 @@ class DataProcessor:
         Args:
             datos: Datos en formato JSON
             categoria: Categoría de datos ('provincias', 'municipios_habitantes', 'censo_agrario' o 'censo_cultivo')
-            filtros: Diccionario de filtros a aplicar
+            filtros: Diccionario de filtros a aplicar (opcional)
         """
         try:
             if categoria == "provincias":
@@ -22,7 +22,7 @@ class DataProcessor:
             elif categoria == "censo_agrario":
                 return DataProcessor._procesar_datos_censo_agrario(datos)
             elif categoria == "censo_cultivo":
-                return DataProcessor.procesar_datos_ecologicos(datos)
+                return DataProcessor.procesar_datos_ecologicos(datos)  # No necesita filtros
             else:
                 raise ValueError(f"Categoría no válida: {categoria}")
         except Exception as e:
