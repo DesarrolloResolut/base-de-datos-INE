@@ -51,8 +51,25 @@ class INEApiClient:
         },
         'censo_agrario': {
             'name': 'Censo Agrario',
-            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156',
-            'default_params': {'nult': '4', 'det': '2'}
+            'description': '''Censo Agrario - INE
+Esta aplicación muestra los datos del Censo Agrario, proporcionados por el Instituto Nacional de Estadística (INE). Los datos incluyen:
+
+- Número de explotaciones por tamaño según superficie agrícola utilizada (SAU)
+- Datos por personalidad jurídica del titular
+- Análisis por provincia y comarca
+- Indicadores específicos del sector agrario. Análisis por tipo de cultivo y pastos''',
+            'subcategories': {
+                'explotaciones_tamano': {
+                    'name': 'Explotaciones por tamaño',
+                    'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156',
+                    'default_params': {'nult': '4', 'det': '2'}
+                },
+                'distribucion_superficie': {
+                    'name': 'Distribución de superficie',
+                    'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51178',
+                    'default_params': {'nult': '4', 'det': '2'}
+                }
+            }
         }
     }
     
@@ -266,23 +283,30 @@ class INEApiClient:
             raise ValueError(error_msg)
     
     @staticmethod
-    def get_datos_tabla(categoria: str = "demografia") -> Dict:
-        """Obtiene datos según la categoría especificada
+    def get_datos_tabla(categoria: str = "demografia", subcategoria: str = None) -> Dict:
+        """Obtiene datos según la categoría y subcategoría especificada
         Args:
             categoria: Nombre de la categoría (por defecto 'demografia')
+            subcategoria: Nombre de la subcategoría (opcional)
         """
         try:
             if categoria not in INEApiClient.CATEGORIES:
                 raise ValueError(f"Categoría no válida: {categoria}")
                 
             category_info = INEApiClient.CATEGORIES[categoria]
-            url = category_info['url']
-            params = category_info['default_params'].copy()
             
-            # Añadir filtro específico para censo agrario
+            # Manejar subcategorías para censo agrario
             if categoria == 'censo_agrario':
+                if not subcategoria or subcategoria not in category_info['subcategories']:
+                    subcategoria = 'explotaciones_tamano'  # subcategoría por defecto
+                subcategory_info = category_info['subcategories'][subcategoria]
+                url = subcategory_info['url']
+                params = subcategory_info['default_params'].copy()
                 params['name'] = 'Teruel'  # Filtrar solo datos de Teruel
-                logger.info("Aplicando filtro para datos de Teruel en censo agrario")
+                logger.info(f"Aplicando filtro para datos de Teruel en censo agrario - {subcategoria}")
+            else:
+                url = category_info['url']
+                params = category_info['default_params'].copy()
             
             logger.info(f"Consultando datos de {category_info['name']} en: {url}")
             
