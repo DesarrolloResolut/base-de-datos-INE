@@ -528,21 +528,31 @@ class DataProcessor:
         try:
             datos_procesados = []
             
-            # Procesar directamente los datos de la API
+            # Procesar datos de la API
             for dato in datos:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 
-                # Extraer el tipo de cultivo (tercer elemento)
-                partes = nombre.split(',')
-                tipo_cultivo = partes[2].strip() if len(partes) > 2 else ''
-                
-                for valor in valores:
-                    if valor.get('Valor') is not None:
-                        datos_procesados.append({
-                            'Tipo_Cultivo': tipo_cultivo,
-                            'Valor': valor.get('Valor', 0)
-                        })
+                # Solo procesar datos de Teruel
+                if not nombre.startswith('Teruel'):
+                    continue
+                    
+                # Dividir el nombre en sus componentes
+                partes = nombre.split(', ')
+                if len(partes) >= 3:
+                    provincia = partes[0].strip()
+                    tipo_explotacion = partes[1].strip()
+                    tipo_cultivo = partes[2].strip()
+                    
+                    # Procesar valores si no son secretos
+                    for valor in valores:
+                        if valor.get('Valor') is not None and not valor.get('Secreto', False):
+                            datos_procesados.append({
+                                'Provincia': provincia,
+                                'Tipo_Explotacion': tipo_explotacion,
+                                'Tipo_Cultivo': tipo_cultivo,
+                                'Valor': valor.get('Valor', 0)
+                            })
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
