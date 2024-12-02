@@ -314,8 +314,8 @@ class INEApiClient:
             # Log básico de la estructura de datos
             logger.info(f"Total de registros recibidos: {len(data)}")
             
-            # Filtrar datos de Teruel para categorías de censo
-            if categoria in ['censo_agrario', 'censo_cultivo']:
+            # Filtrar datos de Teruel para censo agrario
+            if categoria == 'censo_agrario':
                 data = [d for d in data if isinstance(d, dict) and 
                        d.get('Nombre', '').startswith('Teruel')]
                 logger.info(f"Datos filtrados de Teruel: {len(data)} registros")
