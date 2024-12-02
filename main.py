@@ -370,8 +370,63 @@ def main():
                     elif tipo_censo_seleccionado == 'Distribución general de la superficie agrícola utilizada ecológica':
                         df_ecologico = DataProcessor.procesar_datos_ecologicos(df)
                         
-                        # Mostrar datos por tipo de explotación y cultivo
-                        st.subheader("Análisis de Superficie Agrícola Ecológica")
+                        # Crear pestañas para diferentes análisis
+                        tab_general, tab_comparativo = st.tabs([
+                            "Análisis General",
+                            "Análisis Comparativo Superficie-Explotaciones"
+                        ])
+                        
+                        with tab_general:
+                            # Mostrar datos por tipo de explotación y cultivo
+                            st.subheader("Análisis de Superficie Agrícola Ecológica")
+                            
+                        with tab_comparativo:
+                            st.subheader("Análisis Comparativo de Superficie y Explotaciones")
+                            
+                            # Gráfico de dispersión comparativo
+                            fig_comparativa = DataVisualizer.crear_grafico_dispersion(
+                                df_ecologico,
+                                x='Superficie (ha.)',
+                                y='Nº explotaciones',
+                                text='Tipo_Cultivo',
+                                titulo="Relación entre Superficie y Número de Explotaciones"
+                            )
+                            st.plotly_chart(fig_comparativa, use_container_width=True)
+                            
+                            # Gráficos de barras comparativos
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                df_sup = df_ecologico[df_ecologico['Metrica'] == 'Superficie (ha.)']
+                                fig_sup = DataVisualizer.crear_grafico_barras(
+                                    df_sup,
+                                    x='Tipo_Explotacion',
+                                    y='Valor',
+                                    color='Tipo_Cultivo',
+                                    titulo="Superficie por Tipo de Explotación"
+                                )
+                                st.plotly_chart(fig_sup, use_container_width=True)
+                            
+                            with col2:
+                                df_expl = df_ecologico[df_ecologico['Metrica'] == 'Nº explotaciones']
+                                fig_expl = DataVisualizer.crear_grafico_barras(
+                                    df_expl,
+                                    x='Tipo_Explotacion',
+                                    y='Valor',
+                                    color='Tipo_Cultivo',
+                                    titulo="Número de Explotaciones por Tipo"
+                                )
+                                st.plotly_chart(fig_expl, use_container_width=True)
+                            
+                            # Tabla comparativa
+                            st.subheader("Resumen Comparativo")
+                            df_resumen = df_ecologico.pivot_table(
+                                index=['Tipo_Explotacion', 'Tipo_Cultivo'],
+                                columns='Metrica',
+                                values='Valor',
+                                aggfunc='sum'
+                            ).round(2)
+                            st.dataframe(df_resumen)
                         
                         # Selección de tipo de explotación
                         tipos_explotacion = ['Todas las explotaciones'] + sorted(
