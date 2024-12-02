@@ -21,7 +21,7 @@ class DataProcessor:
             elif categoria == "censo_agrario":
                 return DataProcessor._procesar_datos_censo_agrario(datos)
             elif categoria == "censo_cultivo":
-                return DataProcessor.procesar_datos_ecologicos(datos)
+                return DataProcessor.procesar_datos_ecologicos(datos, filtros={})
             else:
                 raise ValueError(f"Categoría no válida: {categoria}")
         except Exception as e:
