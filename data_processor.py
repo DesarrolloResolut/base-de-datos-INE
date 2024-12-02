@@ -522,10 +522,14 @@ class DataProcessor:
             raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")
 
     @staticmethod
-    def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
+    def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame], filtros: Dict = None) -> pd.DataFrame:
         """Procesa los datos de superficie agrícola utilizada ecológica"""
         try:
             datos_procesados = []
+            
+            # Si no hay filtros, inicializar como diccionario vacío
+            if filtros is None:
+                filtros = {}
             
             # Si es DataFrame ya procesado
             if isinstance(datos, pd.DataFrame):
@@ -537,6 +541,15 @@ class DataProcessor:
                     df['Tipo_Valor'] = 'Valor absoluto'
                     if 'Tipo_Dato' in df.columns and 'Metrica' not in df.columns:
                         df['Metrica'] = df['Tipo_Dato']
+                    
+                    # Aplicar filtros si existen
+                    if filtros:
+                        for campo, valores in filtros.items():
+                            if valores and campo in df.columns:
+                                if isinstance(valores, list):
+                                    df = df[df[campo].isin(valores)]
+                                else:
+                                    df = df[df[campo] == valores]
                     return df
                 
             # Procesar desde formato JSON o lista de diccionarios
@@ -585,7 +598,18 @@ class DataProcessor:
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
                 
-            return pd.DataFrame(datos_procesados)
+            df = pd.DataFrame(datos_procesados)
+            
+            # Aplicar filtros si existen
+            if filtros:
+                for campo, valores in filtros.items():
+                    if valores and campo in df.columns:
+                        if isinstance(valores, list):
+                            df = df[df[campo].isin(valores)]
+                        else:
+                            df = df[df[campo] == valores]
+            
+            return df
             
         except Exception as e:
             print(f"Error detallado en procesar_datos_ecologicos:")
