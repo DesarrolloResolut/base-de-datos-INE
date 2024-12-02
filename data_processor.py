@@ -722,20 +722,30 @@ class DataProcessor:
         # Configurar logging
         logger = logging.getLogger(__name__)
         
-        # Log de la categoría antes de normalizar
-        logger.info(f"Categoría recibida: '{categoria}'")
+        # Validación inicial de datos
+        if not isinstance(datos, list):
+            error_msg = f"Tipo de datos inválido: {type(datos)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+            
+        # Log detallado de la categoría antes de normalizar
+        logger.info(f"Categoría recibida (tipo: {type(categoria)}): '{categoria}'")
         
-        # Normalizar la categoría a minúsculas y eliminar espacios para evitar problemas
+        # Normalizar la categoría manteniendo el formato exacto para tasa_empleo
+        categoria_original = categoria
         categoria = categoria.lower().strip() if categoria else ''
         
-        # Log de la categoría después de normalizar
-        logger.info(f"Categoría normalizada: '{categoria}'")
+        # Log detallado después de la normalización
+        logger.info(f"Categoría después de normalización: '{categoria}'")
+        logger.info(f"Categoría original: '{categoria_original}'")
         
         # Validar que la categoría no esté vacía
         if not categoria:
-            raise ValueError("La categoría no puede estar vacía")
+            error_msg = "La categoría no puede estar vacía"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
             
-        # Lista de categorías válidas
+        # Lista de categorías válidas con sus procesadores
         categorias_validas = {
             "tasa_empleo": DataProcessor._procesar_datos_empleo,
             "provincias": DataProcessor._procesar_datos_provincias,
@@ -744,11 +754,28 @@ class DataProcessor:
             "tipos_cultivo": DataProcessor.procesar_datos_ecologicos
         }
         
+        # Log de categorías válidas disponibles
+        logger.info(f"Categorías válidas disponibles: {', '.join(categorias_validas.keys())}")
+        
+        # Validar si la categoría es válida
         if categoria not in categorias_validas:
-            raise ValueError(f"Categoría no válida: {categoria}. Categorías válidas: {', '.join(categorias_validas.keys())}")
+            error_msg = f"Categoría no válida: {categoria}. Categorías válidas: {', '.join(categorias_validas.keys())}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
             
-        logger.info(f"Procesando datos de categoría: {categoria}")
-        return categorias_validas[categoria](datos)
+        # Log del procesamiento
+        logger.info(f"Iniciando procesamiento de datos para categoría: {categoria}")
+        logger.info(f"Procesador seleccionado: {categorias_validas[categoria].__name__}")
+        
+        try:
+            # Procesar datos según la categoría
+            resultado = categorias_validas[categoria](datos)
+            logger.info(f"Procesamiento exitoso para categoría {categoria}")
+            return resultado
+        except Exception as e:
+            error_msg = f"Error al procesar datos de {categoria}: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
     
     @staticmethod
