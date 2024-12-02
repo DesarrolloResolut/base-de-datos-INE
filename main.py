@@ -68,6 +68,15 @@ def main():
         - Análisis por provincia y comarca
         - Indicadores específicos del sector agrario
         """)
+    elif categoria_seleccionada == "tasa_empleo":
+        st.markdown("""
+        Esta aplicación muestra las tasas de actividad, paro y empleo, proporcionadas por el Instituto Nacional de Estadística (INE).
+        Los datos incluyen:
+        - Tasas de actividad por género
+        - Tasas de paro por género
+        - Tasas de empleo por género
+        - Evolución temporal de los indicadores
+        """)
     
     
     try:
@@ -175,7 +184,8 @@ def main():
                     # Filtro de tipo de censo
                     tipos_censo = [
                         'Explotaciones por tamaño según SAU y personalidad jurídica',
-                        'Distribución general de la superficie agrícola utilizada ecológica'
+                        'Distribución general de la superficie agrícola utilizada ecológica',
+                        'Distribución por tipo de cultivo'
                     ]
                     tipo_censo_seleccionado = st.selectbox(
                         "Tipo de Censo:",
@@ -184,7 +194,179 @@ def main():
                     )
                     
                     # Procesamiento específico según tipo de censo
-                    if tipo_censo_seleccionado == 'Distribución general de la superficie agrícola utilizada ecológica':
+                    if tipo_censo_seleccionado == 'Distribución por tipo de cultivo':
+                        # Procesamiento de datos por tipo de cultivo
+                        df_cultivos = DataProcessor.procesar_datos_cultivos(df)
+                        
+                        if not df_cultivos.empty:
+                            # Filtros específicos para cultivos
+                            st.sidebar.subheader("Filtros de Cultivos")
+                            
+                            # Selector de tipo de cultivo
+                            tipos_cultivo = ['Todos'] + sorted(df_cultivos['Tipo_Cultivo'].unique().tolist())
+                            tipo_cultivo_seleccionado = st.sidebar.selectbox(
+                                "Tipo de Cultivo:",
+                                options=tipos_cultivo,
+                                index=0
+                            )
+                            
+                            # Filtro de comarca
+                            comarcas = ['Todas'] + sorted(df_cultivos['Comarca'].unique().tolist())
+                            comarca_seleccionada = st.sidebar.selectbox(
+                                "Comarca:",
+                                options=comarcas,
+                                index=0
+                            )
+                            
+                            # Aplicar filtros
+                            df_filtrado = df_cultivos.copy()
+                            if tipo_cultivo_seleccionado != 'Todos':
+                                df_filtrado = df_filtrado[df_filtrado['Tipo_Cultivo'] == tipo_cultivo_seleccionado]
+                            if comarca_seleccionada != 'Todas':
+                                df_filtrado = df_filtrado[df_filtrado['Comarca'] == comarca_seleccionada]
+                            
+                            # Visualizaciones
+                            st.subheader("Análisis por Tipo de Cultivo en Teruel")
+                            
+                            # Crear pestañas para diferentes visualizaciones
+                            tab_superficie, tab_explotaciones, tab_comparativa = st.tabs([
+                                "Superficie", "Explotaciones", "Análisis Comparativo"
+                            ])
+                            
+                            with tab_superficie:
+                                st.subheader("Análisis de Superficie")
+                                
+                                # Distribución de superficie por tipo de cultivo
+                                fig_superficie = DataVisualizer.crear_grafico_barras(
+                                    df_filtrado,
+                                    x='Tipo_Cultivo',
+                                    y='Superficie',
+                                    color='Comarca' if comarca_seleccionada == 'Todas' else None,
+                                    titulo="Distribución de Superficie por Tipo de Cultivo"
+                                )
+                                st.plotly_chart(fig_superficie, use_container_width=True)
+                                
+                                # Gráfico circular para ver la proporción de cada tipo de cultivo
+                                fig_proporcion = DataVisualizer.crear_grafico_pastel(
+                                    df_filtrado,
+                                    names='Tipo_Cultivo',
+                                    values='Superficie',
+                                    titulo=f"Proporción de Superficie por Tipo de Cultivo {f'en {comarca_seleccionada}' if comarca_seleccionada != 'Todas' else 'por Comarca'}"
+                                )
+                                st.plotly_chart(fig_proporcion, use_container_width=True)
+                                
+                                # Métricas de superficie
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    total_superficie = df_filtrado['Superficie'].sum()
+                                    st.metric("Superficie Total (ha)", f"{total_superficie:,.2f}")
+                                with col2:
+                                    media_superficie = df_filtrado['Superficie'].mean()
+                                    st.metric("Superficie Media (ha)", f"{media_superficie:,.2f}")
+                                with col3:
+                                    max_superficie = df_filtrado['Superficie'].max()
+                                    st.metric("Superficie Máxima (ha)", f"{max_superficie:,.2f}")
+                            
+                            with tab_explotaciones:
+                                st.subheader("Análisis de Explotaciones")
+                                
+                                # Distribución del número de explotaciones
+                                fig_explotaciones = DataVisualizer.crear_grafico_barras(
+                                    df_filtrado,
+                                    x='Tipo_Cultivo',
+                                    y='Num_Explotaciones',
+                                    color='Comarca' if comarca_seleccionada == 'Todas' else None,
+                                    titulo="Número de Explotaciones por Tipo de Cultivo"
+                                )
+                                st.plotly_chart(fig_explotaciones, use_container_width=True)
+                                
+                                # Gráfico circular para ver la proporción de explotaciones
+                                fig_proporcion_expl = DataVisualizer.crear_grafico_pastel(
+                                    df_filtrado,
+                                    names='Tipo_Cultivo',
+                                    values='Num_Explotaciones',
+                                    titulo=f"Proporción de Explotaciones por Tipo de Cultivo {f'en {comarca_seleccionada}' if comarca_seleccionada != 'Todas' else 'por Comarca'}"
+                                )
+                                st.plotly_chart(fig_proporcion_expl, use_container_width=True)
+                                
+                                # Métricas de explotaciones
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    total_expl = df_filtrado['Num_Explotaciones'].sum()
+                                    st.metric("Total Explotaciones", f"{total_expl:,.0f}")
+                                with col2:
+                                    media_expl = df_filtrado['Num_Explotaciones'].mean()
+                                    st.metric("Media Explotaciones", f"{media_expl:,.1f}")
+                                with col3:
+                                    max_expl = df_filtrado['Num_Explotaciones'].max()
+                                    st.metric("Máximo Explotaciones", f"{max_expl:,.0f}")
+                            
+                            with tab_comparativa:
+                                st.subheader("Análisis Comparativo")
+                                
+                                # Gráfico de dispersión Superficie vs Número de Explotaciones
+                                fig_dispersion = DataVisualizer.crear_grafico_dispersion(
+                                    df_filtrado,
+                                    x='Superficie',
+                                    y='Num_Explotaciones',
+                                    text='Tipo_Cultivo',
+                                    titulo="Relación entre Superficie y Número de Explotaciones"
+                                )
+                                st.plotly_chart(fig_dispersion, use_container_width=True)
+                                
+                                # Tabla de resumen
+                                st.subheader("Resumen por Tipo de Cultivo")
+                                df_resumen = df_filtrado.groupby('Tipo_Cultivo').agg({
+                                    'Superficie': ['sum', 'mean'],
+                                    'Num_Explotaciones': ['sum', 'mean']
+                                }).round(2)
+                                df_resumen.columns = ['Superficie Total', 'Superficie Media', 
+                                                    'Total Explotaciones', 'Media Explotaciones']
+                                st.dataframe(df_resumen)
+                            
+                            # Análisis de rendimiento
+                            if 'Rendimiento' in df_filtrado.columns:
+                                fig_rendimiento = DataVisualizer.crear_grafico_barras(
+                                    df_filtrado,
+                                    x='Tipo_Cultivo',
+                                    y='Rendimiento',
+                                    color='Comarca' if comarca_seleccionada == 'Todas' else None,
+                                    titulo="Rendimiento por Tipo de Cultivo (Toneladas/ha)"
+                                )
+                                st.plotly_chart(fig_rendimiento, use_container_width=True)
+                            
+                            # Métricas clave
+                            st.subheader("Métricas Clave")
+                            col1, col2, col3, col4 = st.columns(4)
+                            
+                            with col1:
+                                total_superficie = df_filtrado['Superficie'].sum()
+                                st.metric("Superficie Total (ha)", f"{total_superficie:,.2f}")
+                            
+                            with col2:
+                                total_explotaciones = df_filtrado['Num_Explotaciones'].sum()
+                                st.metric("Total Explotaciones", f"{total_explotaciones:,.0f}")
+                            
+                            with col3:
+                                promedio_superficie = df_filtrado['Superficie'].mean()
+                                st.metric("Superficie Media (ha)", f"{promedio_superficie:,.2f}")
+                            
+                            with col4:
+                                if 'Rendimiento' in df_filtrado.columns:
+                                    promedio_rendimiento = df_filtrado['Rendimiento'].mean()
+                                    st.metric("Rendimiento Medio (Ton/ha)", f"{promedio_rendimiento:,.2f}")
+                            
+                            # Tabla de resumen
+                            st.subheader("Resumen Detallado")
+                            tabla_resumen = df_filtrado.groupby('Tipo_Cultivo').agg({
+                                'Superficie': ['sum', 'mean'],
+                                'Num_Explotaciones': ['sum', 'mean']
+                            }).round(2)
+                            tabla_resumen.columns = ['Superficie Total', 'Superficie Media', 
+                                                   'Total Explotaciones', 'Media Explotaciones']
+                            st.dataframe(tabla_resumen)
+                    
+                    elif tipo_censo_seleccionado == 'Distribución general de la superficie agrícola utilizada ecológica':
                         df_ecologico = DataProcessor.procesar_datos_ecologicos(df)
                         
                         # Mostrar datos por tipo de explotación y cultivo
@@ -286,6 +468,27 @@ def main():
                     'Provincia': provincia_seleccionada,
                     'Tipo_Dato': tipo_seleccionado if 'tipo_seleccionado' in locals() and tipo_seleccionado != 'Todos' else None,
                     'Personalidad_Juridica': personalidad_seleccionada
+                }
+            elif categoria_seleccionada == "tasa_empleo":
+                # Filtros específicos para tasas de empleo
+                with st.sidebar:
+                    # Filtro de indicador
+                    indicadores = ['Tasa de actividad', 'Tasa de paro', 'Tasa de empleo']
+                    indicador_seleccionado = st.selectbox(
+                        "Indicador:",
+                        options=indicadores
+                    )
+                    
+                    # Filtro de género
+                    generos = ['Todos', 'Hombres', 'Mujeres']
+                    genero_seleccionado = st.selectbox(
+                        "Género:",
+                        options=generos
+                    )
+                
+                filtros = {
+                    'Indicador': indicador_seleccionado,
+                    'Genero': genero_seleccionado
                 }
             
             df_filtrado = DataProcessor.filtrar_datos(df, filtros)
@@ -604,7 +807,78 @@ def main():
                         titulo="Comparativa de población entre municipios"
                     )
                     st.plotly_chart(fig_municipios, use_container_width=True)
+            
+            elif categoria_seleccionada == "tasa_empleo":
+                # Visualizaciones para tasas de empleo
+                st.subheader("Evolución Temporal de Tasas")
+                
+                # Gráfico de evolución temporal
+                fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                    df,
+                    x='Periodo',
+                    y='Valor',
+                    color='Genero',
+                    titulo=f"Evolución de {indicador_seleccionado}"
+                )
+                st.plotly_chart(fig_evolucion, use_container_width=True)
+                
+                # Comparativa por género
+                if genero_seleccionado == 'Todos':
+                    st.subheader("Comparativa por Género")
+                    fig_genero = DataVisualizer.crear_grafico_barras(
+                        df[df['Periodo'] == df['Periodo'].max()],
+                        x='Genero',
+                        y='Valor',
+                        titulo=f"{indicador_seleccionado} por Género ({df['Periodo'].max()})"
+                    )
+                    st.plotly_chart(fig_genero, use_container_width=True)
+                
+                # Métricas clave
+                st.subheader("Métricas Clave")
+                ultimo_periodo = df['Periodo'].max()
+                df_actual = df[df['Periodo'] == ultimo_periodo]
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    valor_hombres = df_actual[df_actual['Genero'] == 'Hombres']['Valor'].iloc[0]
+                    st.metric("Hombres", f"{valor_hombres:.2f}%")
+                with col2:
+                    valor_mujeres = df_actual[df_actual['Genero'] == 'Mujeres']['Valor'].iloc[0]
+                    st.metric("Mujeres", f"{valor_mujeres:.2f}%")
                     
+                    fig_municipios = DataVisualizer.crear_grafico_lineas(
+                        df_actual,
+                        x='Periodo',
+                        y='Valor',
+                        titulo="Comparativa de población entre municipios"
+                    )
+                    st.plotly_chart(fig_municipios, use_container_width=True)
+                    
+            elif categoria_seleccionada == "tipos_cultivo":
+                # Visualización de datos por tipo de cultivo
+                st.subheader("Distribución de Cultivos en Teruel")
+                
+                # Procesar datos específicos de cultivos
+                df_cultivos = DataProcessor.procesar_datos_cultivos(df)
+                
+                # Gráfico de barras para superficie por tipo de cultivo
+                fig_superficie = DataVisualizer.crear_grafico_barras(
+                    df_cultivos,
+                    x='Tipo_Cultivo',
+                    y='Superficie',
+                    titulo="Superficie por Tipo de Cultivo (ha)"
+                )
+                st.plotly_chart(fig_superficie, use_container_width=True)
+                
+                # Gráfico de barras para número de explotaciones
+                fig_explotaciones = DataVisualizer.crear_grafico_barras(
+                    df_cultivos,
+                    x='Tipo_Cultivo',
+                    y='Num_Explotaciones',
+                    titulo="Número de Explotaciones por Tipo de Cultivo"
+                )
+                st.plotly_chart(fig_explotaciones, use_container_width=True)
+                
             elif categoria_seleccionada == "municipios_habitantes":
                 # Gráfico de barras para distribución de municipios
                 st.subheader("Distribución de Municipios por Tamaño")

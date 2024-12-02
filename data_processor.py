@@ -622,6 +622,75 @@ class DataProcessor:
             logger.error(f"Error al procesar datos: {str(e)}")
             raise ValueError(f"Error al procesar datos: {str(e)}")
 
+    @staticmethod
+    def procesar_datos_cultivos(datos: pd.DataFrame) -> pd.DataFrame:
+        """Procesa los datos de cultivos para su visualización
+        
+        Args:
+            datos: DataFrame con los datos de cultivos
+            
+        Returns:
+            DataFrame procesado con la información de cultivos
+        """
+        try:
+            if not isinstance(datos, pd.DataFrame):
+                raise ValueError("Los datos deben estar en formato DataFrame")
+                
+            # Crear copia para no modificar los datos originales
+            df_cultivos = datos.copy()
+            
+            # Asegurar que las columnas necesarias existen
+            columnas_requeridas = ['Tipo_Dato', 'Tipo_Cultivo', 'Comarca', 'Valor']
+            if not all(col in df_cultivos.columns for col in columnas_requeridas):
+                raise ValueError(f"Faltan columnas requeridas: {columnas_requeridas}")
+            
+            # Filtrar solo los datos relacionados con cultivos
+            df_cultivos = df_cultivos[
+                (df_cultivos['Tipo_Dato'].str.contains('SAU', na=False)) |
+                (df_cultivos['Tipo_Dato'].str.contains('Número de explotaciones', na=False))
+            ]
+            
+            # Procesar superficie y número de explotaciones por comarca
+            resultados = []
+            for comarca in df_cultivos['Comarca'].unique():
+                df_comarca = df_cultivos[df_cultivos['Comarca'] == comarca]
+                
+                for tipo in df_comarca['Tipo_Cultivo'].unique():
+                    if tipo != 'Total':
+                        # Obtener superficie
+                        superficie = df_comarca[
+                            (df_comarca['Tipo_Cultivo'] == tipo) &
+                            (df_comarca['Tipo_Dato'].str.contains('SAU', na=False))
+                        ]['Valor'].sum()
+                        
+                        # Obtener número de explotaciones
+                        explotaciones = df_comarca[
+                            (df_comarca['Tipo_Cultivo'] == tipo) &
+                            (df_comarca['Tipo_Dato'].str.contains('Número de explotaciones', na=False))
+                        ]['Valor'].sum()
+                        
+                        # Calcular rendimiento si es posible
+                        rendimiento = superficie / explotaciones if explotaciones > 0 else 0
+                        
+                        resultados.append({
+                            'Comarca': comarca,
+                            'Tipo_Cultivo': tipo,
+                            'Superficie': superficie,
+                            'Num_Explotaciones': explotaciones,
+                            'Rendimiento': rendimiento
+                        })
+            
+            # Crear DataFrame con los resultados
+            df_resultados = pd.DataFrame(resultados)
+            
+            # Ordenar por superficie descendente
+            df_resultados = df_resultados.sort_values(['Comarca', 'Superficie'], ascending=[True, False])
+            
+            return df_resultados
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos de cultivos: {str(e)}")
+
     
     @staticmethod
     def _extraer_personalidad_juridica(nombre: str) -> str:

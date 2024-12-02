@@ -1,0 +1,84 @@
+Guía para Añadir la Categoría "Tasa de Actividad, Paro y Empleo"
+Esta guía te ayudará a integrar la nueva categoría "Tasa de Actividad, Paro y Empleo" en tu aplicación. El objetivo es mostrar los datos de empleo y paro por género (hombres y mujeres) utilizando la API proporcionada.
+
+1. Preparación
+API: La URL de la API que contiene los datos es:
+https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/3996?nult=4&det=2
+Estructura de los Datos: Cada registro tiene:
+Nombre: Describe el tipo de dato, género, y región.
+Unidad: Información sobre las unidades de medida (en este caso, tasas).
+Data: Contiene un array con los valores, fechas, y períodos de referencia.
+2. Estructura de la Categoría
+Crea una nueva categoría llamada "Tasa de Actividad, Paro y Empleo" con las siguientes subcategorías:
+
+Género: Filtrar por Hombres o Mujeres.
+Indicador: Seleccionar entre:
+Tasa de actividad.
+Tasa de paro.
+Tasa de empleo.
+3. Extracción y Procesamiento de Datos
+Paso 1: Consumir los Datos desde la API
+Utiliza la URL para descargar los datos en formato JSON.
+
+Paso 2: Procesar la Información
+Dividir el Campo Nombre: Extrae los siguientes componentes:
+Indicador: (Tasa de actividad, Tasa de paro, Tasa de empleo).
+Género: (Hombres, Mujeres).
+Región: Provincia o zona específica.
+Extraer Valores:
+Del campo Data, obtén los valores correspondientes a cada período.
+4. Integración en la Aplicación
+Paso 1: Crear la Nueva Categoría
+Añade una nueva entrada en la lista de categorías principales de la aplicación:
+
+Nombre: Tasa de Actividad, Paro y Empleo.
+Filtros:
+Género: Hombres, Mujeres.
+Indicador: Tasa de actividad, Tasa de paro, Tasa de empleo.
+Paso 2: Conectar con la API
+Implementa una función que:
+Consume la API.
+Procesa los datos (divide el campo Nombre y extrae el valor de Data).
+Filtra los datos según los filtros seleccionados.
+Paso 3: Mostrar los Resultados
+Los datos deben mostrarse como una tabla o gráfico con:
+Períodos (eje X): Ejemplo, T1 2023, T2 2023.
+Valores (eje Y): Ejemplo, tasa de empleo (60.29% para hombres en T4 2023).
+5. Ejemplo de Código
+Ejemplo de Extracción de Datos
+import requests
+import pandas as pd
+
+# URL de la API
+url = "https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/3996?nult=4&det=2"
+
+# Consumir los datos desde la API
+response = requests.get(url)
+datos = response.json()
+
+# Convertir los datos en un DataFrame
+df = pd.DataFrame(datos)
+
+# Dividir el campo 'Nombre' en componentes
+df[['Indicador', 'Genero', 'Region']] = df['Nombre'].str.extract(r'^(.*?)\. (.*?)\. (.*?)\.')
+
+# Extraer valores de 'Data'
+df['Valores'] = df['Data'].apply(lambda x: [dato['Valor'] for dato in x if not dato['Secreto']])
+
+# Filtrar por género y región (ejemplo: Hombres en Teruel)
+filtro_genero = 'Hombres'
+filtro_region = 'Teruel'
+df_filtrado = df[(df['Genero'] == filtro_genero) & (df['Region'] == filtro_region)]
+
+# Mostrar datos finales
+print(df_filtrado[['Indicador', 'Genero', 'Region', 'Valores']])
+Salida Esperada
+Indicador	Género	Región	Valores
+Tasa de actividad	Hombres	Teruel	[60.29, 61.44, ...]
+6. Verificación
+Prueba la nueva categoría con diferentes filtros.
+Asegúrate de que los valores se actualicen dinámicamente al cambiar el género o el indicador.
+Verifica que los gráficos o tablas se rendericen correctamente.
+7. Mantenimiento
+Actualiza la URL de la API periódicamente si cambian los endpoints.
+Añade nuevas subcategorías si surgen otros indicadores relevantes.

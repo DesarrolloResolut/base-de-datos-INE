@@ -53,6 +53,16 @@ class INEApiClient:
             'name': 'Censo Agrario por Tamaño',
             'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156',
             'default_params': {'nult': '4', 'det': '2'}
+        },
+        'tipos_cultivo': {
+            'name': 'Tipos de Cultivo',
+            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51157',
+            'default_params': {'nult': '4', 'det': '2', 'province': 'Teruel'}
+        },
+        'tasa_empleo': {
+            'name': 'Tasa de Actividad, Paro y Empleo',
+            'url': 'https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/3996',
+            'default_params': {'nult': '4', 'det': '2'}
         }
     }
     
