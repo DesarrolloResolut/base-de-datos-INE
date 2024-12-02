@@ -523,9 +523,18 @@ class DataProcessor:
             raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")
 
     @staticmethod
-    def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame]) -> pd.DataFrame:
-        """Procesa los datos de superficie agrícola utilizada ecológica"""
+    def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame], filtros: Optional[Dict] = None) -> pd.DataFrame:
+        """Procesa los datos de superficie agrícola utilizada ecológica
+        
+        Args:
+            datos: Datos a procesar en formato lista de diccionarios o DataFrame
+            filtros: Diccionario con los filtros a aplicar (opcional)
+        """
         try:
+            # Inicializar filtros como diccionario vacío si no se proporciona
+            if filtros is None:
+                filtros = {}
+                
             datos_procesados = []
             
             for dato in datos:
@@ -545,20 +554,43 @@ class DataProcessor:
                     # Procesar valores
                     for valor in valores:
                         if valor.get('Valor') is not None:
-                            datos_procesados.append({
+                            registro = {
                                 'Nombre': nombre,
                                 'Tipo_Explotacion': tipo_explotacion,
                                 'Tipo_Cultivo': tipo_cultivo,
-                                'Valor': valor.get('Valor', 0)
-                            })
+                                'Valor': valor.get('Valor', 0),
+                                'Periodo': valor.get('NombrePeriodo', '')
+                            }
+                            
+                            # Aplicar filtros si existen
+                            incluir_registro = True
+                            for campo, valor_filtro in filtros.items():
+                                if campo in registro and valor_filtro:
+                                    if isinstance(valor_filtro, list):
+                                        if registro[campo] not in valor_filtro:
+                                            incluir_registro = False
+                                            break
+                                    elif registro[campo] != valor_filtro:
+                                        incluir_registro = False
+                                        break
+                            
+                            if incluir_registro:
+                                datos_procesados.append(registro)
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
             
-            return pd.DataFrame(datos_procesados)
+            df = pd.DataFrame(datos_procesados)
+            
+            # Convertir tipos de datos
+            if 'Periodo' in df.columns:
+                df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            return df
             
         except Exception as e:
-            print(f"Error al procesar datos: {str(e)}")
+            logger.error(f"Error al procesar datos: {str(e)}")
             raise ValueError(f"Error al procesar datos: {str(e)}")
 
     @staticmethod
