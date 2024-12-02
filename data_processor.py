@@ -533,14 +533,16 @@ class DataProcessor:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
                 
-                if not nombre or 'Teruel' not in nombre:
-                    continue
-                    
+                # Extraer el tipo de cultivo (tercer elemento)
+                partes = nombre.split(',')
+                tipo_cultivo = partes[2].strip() if len(partes) > 2 else ''
+                
                 for valor in valores:
-                    datos_procesados.append({
-                        'Nombre': nombre,
-                        'Valor': valor.get('Valor', 0)
-                    })
+                    if valor.get('Valor') is not None:
+                        datos_procesados.append({
+                            'Tipo_Cultivo': tipo_cultivo,
+                            'Valor': valor.get('Valor', 0)
+                        })
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
