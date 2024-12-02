@@ -524,6 +524,65 @@ class DataProcessor:
             raise ValueError(f"Error al analizar distribución por tamaño: {str(e)}")
 
     
+    @staticmethod
+    def _procesar_datos_empleo(datos: Dict) -> pd.DataFrame:
+        """Procesa datos de empleo (tasas de actividad, paro y empleo)"""
+        try:
+            registros = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
+                
+                # Extraer información del nombre
+                partes = nombre.split(',')
+                if len(partes) < 2:
+                    continue
+                
+                territorio = partes[0].strip()
+                # Identificar el tipo de tasa
+                nombre_lower = nombre.lower()
+                if 'tasa de actividad' in nombre_lower:
+                    tipo_tasa = 'Actividad'
+                elif 'tasa de paro' in nombre_lower:
+                    tipo_tasa = 'Paro'
+                elif 'tasa de empleo' in nombre_lower:
+                    tipo_tasa = 'Empleo'
+                else:
+                    continue
+                
+                # Extraer género
+                if 'hombres' in nombre_lower:
+                    genero = 'Hombres'
+                elif 'mujeres' in nombre_lower:
+                    genero = 'Mujeres'
+                else:
+                    genero = 'Total'
+                
+                # Procesar valores
+                for valor in valores:
+                    registros.append({
+                        'Territorio': territorio,
+                        'Tipo_Tasa': tipo_tasa,
+                        'Genero': genero,
+                        'Periodo': valor.get('NombrePeriodo', ''),
+                        'Valor': valor.get('Valor', 0)
+                    })
+            
+            if not registros:
+                raise ValueError("No se encontraron datos de empleo")
+            
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
+            
+            # Convertir tipos de datos
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            return df
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos de empleo: {str(e)}")
+
 
     # Método eliminado según instrucciones del manager
     @staticmethod
