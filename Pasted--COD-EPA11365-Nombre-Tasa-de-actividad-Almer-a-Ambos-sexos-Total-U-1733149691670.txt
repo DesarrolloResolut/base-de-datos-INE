@@ -1,0 +1,111 @@
+{
+    "COD": "EPA11365",
+    "Nombre": "Tasa de actividad. Almería. Ambos sexos. Total. ",
+    "Unidad": {
+      "Id": 135,
+      "Nombre": "Tasas",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Escala": {
+      "Id": 1,
+      "Nombre": " ",
+      "Factor": "1E0",
+      "Codigo": null,
+      "Abrev": null
+    },
+    "Data": [
+      {
+        "Fecha": 1696111200000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 22,
+          "Valor": 4,
+          "FK_Periodicidad": 3,
+          "Dia_inicio": "1",
+          "Mes_inicio": "10",
+          "Codigo": "IV",
+          "Nombre": "T4",
+          "Nombre_largo": "Trimestre 4/"
+        },
+        "Anyo": 2023,
+        "NombrePeriodo": "2023T4",
+        "CodigoPeriodo": "2023IV",
+        "Valor": 58.76,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1688162400000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 21,
+          "Valor": 3,
+          "FK_Periodicidad": 3,
+          "Dia_inicio": "1",
+          "Mes_inicio": "7",
+          "Codigo": "III",
+          "Nombre": "T3",
+          "Nombre_largo": "Trimestre 3/"
+        },
+        "Anyo": 2023,
+        "NombrePeriodo": "2023T3",
+        "CodigoPeriodo": "2023III",
+        "Valor": 61.86,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1680300000000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 20,
+          "Valor": 2,
+          "FK_Periodicidad": 3,
+          "Dia_inicio": "1",
+          "Mes_inicio": "4",
+          "Codigo": "II",
+          "Nombre": "T2",
+          "Nombre_largo": "Trimestre 2/"
+        },
+        "Anyo": 2023,
+        "NombrePeriodo": "2023T2",
+        "CodigoPeriodo": "2023II",
+        "Valor": 61.68,
+        "Secreto": false
+      },
+      {
+        "Fecha": 1672527600000,
+        "TipoDato": {
+          "Id": 1,
+          "Nombre": "Definitivo",
+          "Codigo": "D"
+        },
+        "Periodo": {
+          "Id": 19,
+          "Valor": 1,
+          "FK_Periodicidad": 3,
+          "Dia_inicio": "1",
+          "Mes_inicio": "1",
+          "Codigo": "I",
+          "Nombre": "T1",
+          "Nombre_largo": "Trimestre 1/"
+        },
+        "Anyo": 2023,
+        "NombrePeriodo": "2023T1",
+        "CodigoPeriodo": "2023I",
+        "Valor": 62.32,
+        "Secreto": false
+      }
+    ]
+  },

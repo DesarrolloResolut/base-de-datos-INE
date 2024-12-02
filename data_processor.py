@@ -648,30 +648,37 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Determinar el tipo de tasa y género
-                nombre_lower = nombre.lower()
+                # Extraer componentes del nombre
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 3:
+                    continue
+                
+                # Extraer tipo de tasa, provincia y género
+                tipo_tasa = partes[0].lower()
+                provincia = partes[1]
+                genero = partes[2]
                 
                 # Mapeo más preciso de indicadores
-                if 'tasa de actividad' in nombre_lower:
+                if 'tasa de actividad' in tipo_tasa:
                     indicador = 'Actividad'
-                elif 'tasa de paro' in nombre_lower:
+                elif 'tasa de paro' in tipo_tasa:
                     indicador = 'Paro'
-                elif 'tasa de empleo' in nombre_lower:
+                elif 'tasa de empleo' in tipo_tasa:
                     indicador = 'Empleo'
                 else:
                     continue
                     
                 # Mapeo más preciso de géneros
-                if 'varones' in nombre_lower:
+                if 'varones' in genero.lower():
                     genero = 'Hombres'
-                elif 'mujeres' in nombre_lower:
+                elif 'mujeres' in genero.lower():
                     genero = 'Mujeres'
-                elif 'ambos sexos' in nombre_lower:
+                elif 'ambos sexos' in genero.lower():
                     genero = 'Total'
                 else:
                     genero = 'Total'
                 
-                # Procesar valores con validación adicional
+                # Procesar valores trimestrales
                 for valor in valores:
                     if not isinstance(valor, dict):
                         continue
@@ -684,6 +691,7 @@ class DataProcessor:
                         
                     registros.append({
                         'Indicador': indicador,
+                        'Provincia': provincia,
                         'Genero': genero,
                         'Periodo': periodo,
                         'Valor': valor_numerico,
@@ -748,6 +756,8 @@ class DataProcessor:
         # Lista de categorías válidas con sus procesadores
         categorias_validas = {
             "tasa_empleo": DataProcessor._procesar_datos_empleo,
+            "tasa_actividad": DataProcessor._procesar_datos_empleo,
+            "tasa_paro": DataProcessor._procesar_datos_empleo,
             "provincias": DataProcessor._procesar_datos_provincias,
             "municipios_habitantes": DataProcessor._procesar_datos_municipios,
             "censo_agrario": DataProcessor._procesar_datos_censo_agrario,
