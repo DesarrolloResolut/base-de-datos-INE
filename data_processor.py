@@ -528,7 +528,6 @@ class DataProcessor:
         try:
             datos_procesados = []
             
-            # Procesar datos de la API
             for dato in datos:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
@@ -537,16 +536,16 @@ class DataProcessor:
                 if not nombre.startswith('Teruel'):
                     continue
                     
-                # Dividir el nombre en sus componentes
+                # Dividir el nombre y obtener componentes por posición
                 partes = nombre.split(', ')
                 if len(partes) >= 3:
                     provincia = partes[0].strip()
                     tipo_explotacion = partes[1].strip()
                     tipo_cultivo = partes[2].strip()
                     
-                    # Procesar valores si no son secretos
+                    # Extraer valor directamente de Data
                     for valor in valores:
-                        if valor.get('Valor') is not None and not valor.get('Secreto', False):
+                        if not valor.get('Secreto', False):
                             datos_procesados.append({
                                 'Provincia': provincia,
                                 'Tipo_Explotacion': tipo_explotacion,

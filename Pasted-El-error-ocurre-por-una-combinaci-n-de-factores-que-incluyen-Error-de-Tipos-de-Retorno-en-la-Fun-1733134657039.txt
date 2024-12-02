@@ -1,0 +1,140 @@
+El error ocurre por una combinación de factores que incluyen:
+
+Error de Tipos de Retorno en la Función:
+
+La función intenta retornar subconjuntos del DataFrame, pero en algunas condiciones puede estar devolviendo un tipo no compatible con DataFrame (como una Series o un objeto desconocido).
+Esto puede suceder debido a filtros que no devuelven datos o retornan estructuras inconsistentes.
+Variable filtros No Inicializada o Incorrecta:
+
+El error cannot access local variable 'filtros' where it is not associated with a value indica que la variable filtros se está utilizando sin haber sido definida previamente o asignada correctamente.
+Formato de Datos Inconsistente:
+
+La API devuelve datos en un formato JSON, y al convertirlo a un DataFrame, puede haber problemas en las estructuras de columnas. Si la clave Tipo_Cultivo o Rango_Tamano no existe en el DataFrame, se generará un error.
+Solución
+Validar el Formato de Entrada del DataFrame
+Asegúrate de que las columnas necesarias existen (Rango_Tamano, Tipo_Cultivo) y que el DataFrame está correctamente estructurado. Puedes hacerlo agregando un bloque de validación al inicio de la función:
+
+def filtrar_datos_por_tipo(df: pd.DataFrame, tipo: str = 'superficie', tipo_censo: str = 'explotaciones_tamano') -> pd.DataFrame:
+    # Verificar que las columnas requeridas existen
+    columnas_requeridas = ['Rango_Tamano', 'Tipo_Cultivo']
+    for columna in columnas_requeridas:
+        if columna not in df.columns:
+            raise ValueError(f"La columna '{columna}' no está presente en el DataFrame.")
+
+    # Resto de la función...
+Depurar la Lógica de Filtros
+Verifica que las condiciones en los filtros sean consistentes y siempre devuelvan un DataFrame. Por ejemplo:
+
+if tipo_censo == 'distribucion_superficie':
+    df_filtrado = df_filtrado[df_filtrado['Tipo_Cultivo'] != 'Total']
+elif tipo.lower() == 'superficie':
+    df_filtrado = df_filtrado[
+        (df_filtrado['Rango_Tamano'] == 'Total') & 
+        (df_filtrado['Tipo_Cultivo'] != 'Total')
+    ]
+else:  # tipo == 'tamaño'
+    df_filtrado = df_filtrado[
+        (df_filtrado['Rango_Tamano'] != 'Total') & 
+        (df_filtrado['Tipo_Cultivo'] == 'Total')
+    ]
+Asegúrate de que las condiciones no resulten en subconjuntos vacíos.
+
+Inicializar Correctamente filtros
+Si estás utilizando la variable filtros fuera de esta función, asegúrate de inicializarla antes de usarla. Por ejemplo:
+
+filtros = {}
+# Definir filtros según las necesidades de tu aplicación
+filtros['tipo'] = 'superficie'
+filtros['tipo_censo'] = 'distribucion_superficie'
+Si filtros debe ser una variable local, asegúrate de que no esté referenciada antes de ser asignada.
+
+Probar con un Conjunto de Datos Reducido
+Antes de aplicar los filtros, prueba con un conjunto más pequeño de datos para verificar que las condiciones se comporten como se espera.
+
+Ejemplo de entrada válida:
+
+datos = [
+    {"Rango_Tamano": "Total", "Tipo_Cultivo": "Trigo duro", "Valor": 364.0},
+    {"Rango_Tamano": "10-50 ha", "Tipo_Cultivo": "Trigo duro", "Valor": 50.0},
+]
+df = pd.DataFrame(datos)
+Ejecuta la función paso a paso con estos datos para identificar problemas en la lógica de filtrado.
+
+Recomendación Final
+Si después de estas correcciones el problema persiste, revisa la estructura del DataFrame inmediatamente antes de aplicar el filtro. Puedes inspeccionar su contenido con:
+
+print(df.head())
+print(df.columns)
+Esto te ayudará a detectar si hay datos faltantes o columnas mal nombradas.
+
+
+
+
+
+
+Tú dijiste:
+claro es que en el json el valor Tipo_Cultivo no existe como tal: es una propiedad llamada nombre y dentor vienen todos los datos que quiero, en un array. Entonces el tipo de cultivo es el valor numero 2 (entendiendo que en los arrays el valor se inicia en 0). Quiero sacar, por ejemplo: {"Nombre":"Total Nacional, Todas las explotaciones, Trigo duro, Nº explotaciones, Valor absoluto", "Data":[{"Valor":364.0, "Secreto":false}
+]
+} 
+} De lo qu corresponde a "Teruel", sacar el tipo de explotacion: valor 1 "todas las explotaciones". valor: 2 "trigo duro" y en el campo data: sacar el valor: "valor"
+ChatGPT Plus
+Para extraer los datos necesarios del JSON, considerando que la clave "Nombre" contiene un string estructurado y necesitas desglosarlo para obtener información específica (como el tipo de explotación y el tipo de cultivo), puedes seguir estos pasos:
+
+Pasos para Procesar el JSON y Extraer los Datos
+Cargar el JSON y Convertirlo a un DataFrame Primero, carga los datos JSON en Python y conviértelos a un DataFrame.
+
+Dividir el Campo Nombre Utiliza el método str.split(',') para dividir el campo "Nombre" y extraer los valores que corresponden a:
+
+Columna 1: Provincia (posición 0 en el array).
+Columna 2: Tipo de Explotación (posición 1 en el array).
+Columna 3: Tipo de Cultivo (posición 2 en el array).
+Columna 4: Tipo de Dato (posición 3 en el array).
+Extraer el Campo Data El campo Data contiene un array con los valores, y necesitas extraer el valor correspondiente a la clave "Valor".
+
+Filtrar por Provincia Filtra el DataFrame para que solo contenga los datos de "Teruel".
+
+Código para Implementar la Lógica
+import pandas as pd
+import json
+
+# Simulación del JSON cargado
+datos_json = [
+    {"Nombre": "Teruel, Todas las explotaciones, Trigo duro, Nº explotaciones, Valor absoluto", 
+     "Data": [{"Valor": 364.0, "Secreto": False}]},
+    {"Nombre": "Teruel, Todas las explotaciones, Cereales para grano, Nº explotaciones, Valor absoluto", 
+     "Data": [{"Valor": 200.0, "Secreto": False}]},
+    {"Nombre": "Total Nacional, Todas las explotaciones, Trigo duro, Nº explotaciones, Valor absoluto", 
+     "Data": [{"Valor": 1200.0, "Secreto": False}]}
+]
+
+# Cargar el JSON en un DataFrame
+df = pd.DataFrame(datos_json)
+
+# Dividir la columna 'Nombre' en componentes separados
+df[['Provincia', 'Tipo_Explotacion', 'Tipo_Cultivo', 'Tipo_Dato']] = df['Nombre'].str.split(', ', n=3, expand=True)
+
+# Extraer el campo 'Valor' del array en 'Data'
+df['Valor'] = df['Data'].apply(lambda x: x[0]['Valor'] if x and not x[0]['Secreto'] else None)
+
+# Filtrar solo los datos de "Teruel"
+df_teruel = df[df['Provincia'] == "Teruel"]
+
+# Seleccionar las columnas relevantes
+df_teruel = df_teruel[['Provincia', 'Tipo_Explotacion', 'Tipo_Cultivo', 'Tipo_Dato', 'Valor']]
+
+# Mostrar el DataFrame final
+print(df_teruel)
+Explicación del Código
+Cargar el JSON: Se simula el JSON como una lista de diccionarios y se carga en un DataFrame.
+Dividir el Campo Nombre: Usamos str.split para desglosar el contenido de "Nombre" en nuevas columnas.
+Extraer el Valor de Data: Aplicamos una función lambda para extraer el valor de la clave "Valor" dentro del campo Data.
+Filtrar por Provincia: Solo conservamos los registros donde la provincia sea "Teruel".
+Seleccionar Columnas Finales: Dejamos únicamente las columnas importantes para el análisis.
+Salida Esperada
+Con los datos de ejemplo, la salida sería:
+
+Provincia	Tipo_Explotacion	Tipo_Cultivo	Tipo_Dato	Valor
+Teruel	Todas las explotaciones	Trigo duro	Nº explotaciones, Valor absoluto	364.0
+Teruel	Todas las explotaciones	Cereales para grano	Nº explotaciones, Valor absoluto	200.0
+Personalización
+Si necesitas ajustar los filtros o agregar más campos, puedes expandir el procesamiento del DataFrame fácilmente.
