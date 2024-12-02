@@ -1,6 +1,7 @@
 from typing import Union, List, Dict
 import pandas as pd
 import numpy as np
+import json
 from typing import Dict, List, Optional
 from scipy import stats
 from statsmodels.tsa.seasonal import seasonal_decompose
