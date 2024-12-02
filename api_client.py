@@ -53,6 +53,11 @@ class INEApiClient:
             'name': 'Censo Agrario por Tamaño',
             'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156',
             'default_params': {'nult': '4', 'det': '2'}
+        },
+        'tasa_empleo': {
+            'name': 'Tasas de Empleo',
+            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/EPA11365',
+            'default_params': {'nult': '4', 'det': '2'}
         }
     }
     
