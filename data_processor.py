@@ -685,6 +685,7 @@ class DataProcessor:
             
         except Exception as e:
             raise ValueError(f"Error al procesar datos de empleo: {str(e)}")
+    @staticmethod
     def procesar_datos(datos: List[Dict], categoria: str, filtros: Optional[Dict] = None) -> pd.DataFrame:
         """Procesa los datos según la categoría especificada
         
@@ -698,6 +699,12 @@ class DataProcessor:
         """
         if categoria == "tasa_empleo":
             return DataProcessor._procesar_datos_empleo(datos)
+        elif categoria == "provincias":
+            return DataProcessor._procesar_datos_provincias(datos)
+        elif categoria == "municipios_habitantes":
+            return DataProcessor._procesar_datos_municipios(datos)
+        elif categoria == "censo_agrario":
+            return DataProcessor._procesar_datos_censo(datos)
         else:
             raise ValueError(f"Categoría no válida: {categoria}")
 

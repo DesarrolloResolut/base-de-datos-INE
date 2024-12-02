@@ -859,7 +859,7 @@ def main():
                 st.subheader("Tasas de Actividad, Paro y Empleo")
                 
                 # Procesar datos de empleo
-                df_empleo = DataProcessor._procesar_datos_empleo(df)
+                df_empleo = DataProcessor.procesar_datos(df, "tasa_empleo")
                 
                 # Filtros
                 col1, col2, col3 = st.columns(3)
