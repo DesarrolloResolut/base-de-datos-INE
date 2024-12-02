@@ -725,8 +725,8 @@ class DataProcessor:
         # Log de la categoría antes de normalizar
         logger.info(f"Categoría recibida: '{categoria}'")
         
-        # Normalizar la categoría a minúsculas para evitar problemas de caso
-        categoria = categoria.lower() if categoria else ''
+        # Normalizar la categoría a minúsculas y eliminar espacios para evitar problemas
+        categoria = categoria.lower().strip() if categoria else ''
         
         # Log de la categoría después de normalizar
         logger.info(f"Categoría normalizada: '{categoria}'")
@@ -735,17 +735,20 @@ class DataProcessor:
         if not categoria:
             raise ValueError("La categoría no puede estar vacía")
             
-        if categoria == "tasa_empleo":
-            logger.info("Procesando datos de tasa de empleo")
-            return DataProcessor._procesar_datos_empleo(datos)
-        elif categoria == "provincias":
-            return DataProcessor._procesar_datos_provincias(datos)
-        elif categoria == "municipios_habitantes":
-            return DataProcessor._procesar_datos_municipios(datos)
-        elif categoria == "censo_agrario":
-            return DataProcessor._procesar_datos_censo(datos)
-        else:
-            raise ValueError(f"Categoría no válida: {categoria}")
+        # Lista de categorías válidas
+        categorias_validas = {
+            "tasa_empleo": DataProcessor._procesar_datos_empleo,
+            "provincias": DataProcessor._procesar_datos_provincias,
+            "municipios_habitantes": DataProcessor._procesar_datos_municipios,
+            "censo_agrario": DataProcessor._procesar_datos_censo_agrario,
+            "tipos_cultivo": DataProcessor.procesar_datos_ecologicos
+        }
+        
+        if categoria not in categorias_validas:
+            raise ValueError(f"Categoría no válida: {categoria}. Categorías válidas: {', '.join(categorias_validas.keys())}")
+            
+        logger.info(f"Procesando datos de categoría: {categoria}")
+        return categorias_validas[categoria](datos)
 
     
     @staticmethod
