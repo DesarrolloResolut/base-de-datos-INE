@@ -623,11 +623,11 @@ class DataProcessor:
             raise ValueError(f"Error al procesar datos: {str(e)}")
 
     @staticmethod
-    def _procesar_datos_empleo(datos: Dict) -> pd.DataFrame:
+    def _procesar_datos_empleo(datos: List[Dict]) -> pd.DataFrame:
         """Procesa datos de tasas de actividad, paro y empleo
 
         Args:
-            datos: Diccionario con los datos de empleo
+            datos: Lista de diccionarios con los datos de empleo
             
         Returns:
             DataFrame con las tasas procesadas
@@ -696,6 +696,9 @@ class DataProcessor:
         Returns:
             DataFrame procesado según la categoría
         """
+        # Normalizar la categoría a minúsculas para evitar problemas de caso
+        categoria = categoria.lower()
+        
         if categoria == "tasa_empleo":
             return DataProcessor._procesar_datos_empleo(datos)
         elif categoria == "provincias":
