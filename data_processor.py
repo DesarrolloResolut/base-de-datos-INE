@@ -22,7 +22,7 @@ class DataProcessor:
             elif categoria == "censo_agrario":
                 return DataProcessor._procesar_datos_censo_agrario(datos)
             elif categoria == "censo_cultivo":
-                return DataProcessor.procesar_datos_ecologicos(datos)  # No necesita filtros
+                return DataProcessor._procesar_datos_censo_cultivo(datos, filtros)
             else:
                 raise ValueError(f"Categoría no válida: {categoria}")
         except Exception as e:
@@ -622,6 +622,105 @@ class DataProcessor:
             logger.error(f"Error al procesar datos: {str(e)}")
             raise ValueError(f"Error al procesar datos: {str(e)}")
 
+    @staticmethod
+    def _procesar_datos_censo_cultivo(datos: Union[List[Dict], pd.DataFrame], filtros: Optional[Dict] = None) -> pd.DataFrame:
+        """Procesa los datos del censo de cultivos de Teruel
+        
+        Args:
+            datos: Datos a procesar en formato lista de diccionarios o DataFrame
+            filtros: Diccionario con los filtros a aplicar (opcional)
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Inicializar filtros si no se proporcionan
+        filtros = {} if filtros is None else filtros.copy()
+        
+        try:
+            if isinstance(datos, pd.DataFrame):
+                return datos
+            
+            if not isinstance(datos, list):
+                raise ValueError(f"Formato de datos inválido: {type(datos)}")
+            
+            logger.info(f"Procesando {len(datos)} registros del censo de cultivos")
+            
+            datos_procesados = []
+            for dato in datos:
+                try:
+                    nombre = dato.get('Nombre', '')
+                    valores = dato.get('Data', [])
+                    
+                    # Solo procesar datos de Teruel
+                    if not nombre.startswith('Teruel'):
+                        continue
+                    
+                    # Extraer información del nombre
+                    partes = [p.strip() for p in nombre.split(',')]
+                    if len(partes) < 3:
+                        continue
+                    
+                    tipo_explotacion = partes[1]
+                    tipo_cultivo = partes[2]
+                    
+                    # Determinar la medida
+                    if 'hectáreas' in nombre.lower() or 'ha.' in nombre.lower():
+                        medida = 'Superficie (ha.)'
+                    elif 'explotaciones' in nombre.lower():
+                        medida = 'Número de explotaciones'
+                    else:
+                        medida = partes[-1] if len(partes) > 3 else 'Valor absoluto'
+                    
+                    # Procesar valores
+                    for valor in valores:
+                        if valor.get('Valor') is not None and not valor.get('Secreto', False):
+                            registro = {
+                                'Provincia': 'Teruel',
+                                'Tipo_Explotacion': tipo_explotacion,
+                                'Tipo_Cultivo': tipo_cultivo,
+                                'Medida': medida,
+                                'Valor': float(valor.get('Valor', 0)),
+                                'Periodo': valor.get('NombrePeriodo', ''),
+                                'Unidad': valor.get('Unidad', {}).get('Nombre', '')
+                            }
+                            
+                            # Aplicar filtros
+                            incluir_registro = True
+                            for campo, valor_filtro in filtros.items():
+                                if campo in registro and valor_filtro:
+                                    if isinstance(valor_filtro, list):
+                                        if registro[campo] not in valor_filtro:
+                                            incluir_registro = False
+                                            break
+                                    elif registro[campo] != valor_filtro:
+                                        incluir_registro = False
+                                        break
+                            
+                            if incluir_registro:
+                                datos_procesados.append(registro)
+                except Exception as e:
+                    logger.error(f"Error procesando registro: {str(e)}")
+                    continue
+            
+            if not datos_procesados:
+                raise ValueError("No se encontraron datos válidos para procesar")
+            
+            logger.info(f"Se procesaron exitosamente {len(datos_procesados)} registros")
+            
+            # Crear DataFrame y convertir tipos de datos
+            df = pd.DataFrame(datos_procesados)
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            # Ordenar columnas
+            columnas_orden = ['Provincia', 'Tipo_Explotacion', 'Tipo_Cultivo', 'Medida', 'Valor', 'Periodo', 'Unidad']
+            df = df.reindex(columns=[col for col in columnas_orden if col in df.columns])
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error al procesar datos del censo de cultivos: {str(e)}")
+            raise ValueError(f"Error al procesar datos del censo de cultivos: {str(e)}")
     @staticmethod
     def _extraer_personalidad_juridica(nombre: str) -> str:
         """Extrae la personalidad jurídica del nombre del dato"""
