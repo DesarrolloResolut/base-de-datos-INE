@@ -53,21 +53,6 @@ class INEApiClient:
             'name': 'Censo Agrario por Tamaño',
             'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156',
             'default_params': {'nult': '4', 'det': '2'}
-        },
-        'tipos_cultivo': {
-            'name': 'Tipos de Cultivo',
-            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51157',
-            'default_params': {'nult': '4', 'det': '2', 'province': 'Teruel'}
-        },
-        'censo_cultivos': {
-            'name': 'Censo de Cultivos',
-            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51157',
-            'default_params': {'nult': '4', 'det': '2', 'province': 'Teruel'}
-        },
-        'tasa_empleo': {
-            'name': 'Tasa de Actividad, Paro y Empleo',
-            'url': 'https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/3996',
-            'default_params': {'nult': '4', 'det': '2'}
         }
     }
     
@@ -294,8 +279,8 @@ class INEApiClient:
             url = category_info['url']
             params = category_info['default_params'].copy()
             
-            # Aplicar filtro de Teruel para categorías de censo
-            if categoria in ['censo_agrario', 'censo_cultivo']:
+            # Aplicar filtro de Teruel para censo agrario
+            if categoria == 'censo_agrario':
                 params['name'] = 'Teruel'
                 logger.info(f"Aplicando filtro para datos de Teruel en {categoria}")
             
@@ -326,29 +311,8 @@ class INEApiClient:
                 logger.error(error_msg)
                 raise ValueError(error_msg)
             
-            # Log detallado de la estructura de datos
-            if categoria == 'tasa_empleo':
-                logger.info(f"Estructura de datos recibida para tasa_empleo:")
-                logger.info(f"Total de registros recibidos: {len(data)}")
-                
-                for item in data:
-                    # Validar campos requeridos
-                    if not all(key in item for key in ['Nombre', 'Data', 'COD']):
-                        missing_fields = [key for key in ['Nombre', 'Data', 'COD'] if key not in item]
-                        logger.warning(f"Campos faltantes en el registro: {missing_fields}")
-                        continue
-                    
-                    # Log detallado de cada registro
-                    logger.info(f"- Nombre: {item['Nombre']}")
-                    logger.info(f"  COD: {item['COD']}")
-                    logger.info(f"  Datos: {len(item['Data'])} registros")
-                    
-                    # Validar estructura de Data
-                    for valor in item['Data'][:2]:  # Mostrar primeros 2 valores como ejemplo
-                        if 'Valor' not in valor:
-                            logger.warning(f"Campo 'Valor' faltante en Data para {item['Nombre']}")
-                        else:
-                            logger.info(f"    Valor: {valor['Valor']}, Periodo: {valor.get('NombrePeriodo', 'N/A')}")
+            # Log básico de la estructura de datos
+            logger.info(f"Total de registros recibidos: {len(data)}")
             
             # Filtrar datos de Teruel para categorías de censo
             if categoria in ['censo_agrario', 'censo_cultivo']:
