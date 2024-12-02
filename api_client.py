@@ -53,11 +53,6 @@ class INEApiClient:
             'name': 'Censo Agrario por Tamaño',
             'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51156',
             'default_params': {'nult': '4', 'det': '2'}
-        },
-        'censo_cultivo': {
-            'name': 'Censo de Cultivos',
-            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/51178',
-            'default_params': {'nult': '4', 'det': '2'}
         }
     }
     
