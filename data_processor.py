@@ -6,8 +6,6 @@ from scipy import stats
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 class DataProcessor:
-    """Procesador de datos del INE"""
-    
     @staticmethod
     def json_to_dataframe(datos: Dict, categoria: str = "provincias") -> pd.DataFrame:
         """Convierte datos JSON a DataFrame según la categoría
@@ -534,71 +532,51 @@ class DataProcessor:
                     df['Personalidad_Juridica'] = 'Total'
                     df['Periodo'] = '2023'
                     df['Tipo_Valor'] = 'Valor absoluto'
-                    # Asegurar que existe la columna Metrica
                     if 'Tipo_Dato' in df.columns and 'Metrica' not in df.columns:
                         df['Metrica'] = df['Tipo_Dato']
                     return df
                 
-                # Procesar desde formato JSON
-                for dato in datos.to_dict('records'):
-                    nombre = dato.get('Nombre', '')
-                    if not nombre or 'Teruel' not in nombre:
-                        continue
-                    
-                    valor = dato.get('Valor', 0)
-                    partes = [p.strip() for p in nombre.split(',')]
+            # Procesar desde formato JSON o lista de diccionarios
+            for dato in (datos if isinstance(datos, list) else datos.to_dict('records')):
+                nombre = dato.get('Nombre', '')
+                if not nombre or 'Teruel' not in nombre:
+                    continue
+                
+                valor = dato.get('Valor', 0) if isinstance(dato, dict) else dato.get('Data', [{}])[0].get('Valor', 0)
+                partes = [p.strip() for p in nombre.split(',')]
+                
+                # Determinar si es dato de tamaño de explotación o de superficie
+                es_dato_tamano = any(term in nombre.lower() for term in ['de 0 a', 'de 1 a', 'de 2 a', 'de 5 a', 'más de'])
+                
+                if es_dato_tamano:
+                    # Procesar datos de tamaño de explotación
+                    rango_tamano = partes[2] if len(partes) > 2 else 'Total'
+                    personalidad = DataProcessor._extraer_personalidad_juridica(nombre)
+                    metrica = 'Número de explotaciones'
+                else:
+                    # Procesar datos de superficie
+                    rango_tamano = 'Total'
+                    personalidad = 'Total'
                     tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
-                    
-                    # Determinar la métrica
                     metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
-                              for term in ['hectáreas', 'ha.', 'superficie']) 
-                              else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
-                              else 'Otros')
-                    
-                    datos_procesados.append({
-                        'Provincia': 'Teruel',
-                        'Tipo_Explotacion': 'Ecológica',
-                        'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                        'Tipo_Cultivo': tipo_cultivo if tipo_cultivo else 'Total',
-                        'Personalidad_Juridica': 'Total',
-                        'Tipo_Dato': metrica,
-                        'Metrica': metrica,
-                        'Valor': valor,
-                        'Periodo': '2023',
-                        'Tipo_Valor': 'Valor absoluto'
-                    })
-            
-            # Si son datos en formato lista de diccionarios
-            else:
-                for dato in datos:
-                    nombre = dato.get('Nombre', '')
-                    data = dato.get('Data', [])
-                    
-                    if not nombre or not data or 'Teruel' not in nombre:
-                        continue
-                        
-                    valor = data[0].get('Valor', 0) if data else 0
-                    partes = [p.strip() for p in nombre.split(',')]
-                    tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
-                    
-                    # Determinar la métrica
-                    metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
-                              for term in ['hectáreas', 'ha.', 'superficie']) 
-                              else 'Nº explotaciones' if 'explotaciones' in nombre.lower() 
-                              else 'Otros')
-                    
-                    datos_procesados.append({
-                        'Provincia': 'Teruel',
-                        'Tipo_Explotacion': 'Ecológica',
-                        'Comarca': partes[1] if len(partes) > 1 else 'Total',
-                        'Tipo_Cultivo': tipo_cultivo if tipo_cultivo else 'Total',
-                        'Personalidad_Juridica': 'Total',
-                        'Tipo_Dato': metrica,
-                        'Metrica': metrica,
-                        'Valor': valor,
-                        'Periodo': '2023',
-                        'Tipo_Valor': 'Valor absoluto'
-                    })
+                            for term in ['hectáreas', 'ha.', 'superficie']) 
+                            else 'Número de explotaciones')
+                
+                registro = {
+                    'Provincia': 'Teruel',
+                    'Tipo_Explotacion': 'Ecológica',
+                    'Comarca': partes[1] if len(partes) > 1 else 'Total',
+                    'Personalidad_Juridica': personalidad,
+                    'Rango_Tamano': rango_tamano,
+                    'Tipo_Cultivo': tipo_cultivo if not es_dato_tamano else 'Total',
+                    'Tipo_Dato': metrica,
+                    'Metrica': metrica,
+                    'Valor': valor,
+                    'Periodo': '2023',
+                    'Tipo_Valor': 'Valor absoluto'
+                }
+                
+                datos_procesados.append(registro)
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
@@ -612,3 +590,31 @@ class DataProcessor:
             print(f"Estructura de datos recibida:")
             print(datos[:5] if isinstance(datos, list) else datos.head())
             raise ValueError(f"Error al procesar datos ecológicos: {str(e)}")
+
+    @staticmethod
+    def _extraer_personalidad_juridica(nombre: str) -> str:
+        """Extrae la personalidad jurídica del nombre del dato"""
+        nombre_lower = nombre.lower()
+        if 'persona física' in nombre_lower:
+            return 'Persona Física'
+        elif 'persona jurídica' in nombre_lower:
+            return 'Persona Jurídica'
+        elif 'sociedad mercantil' in nombre_lower:
+            return 'Sociedad Mercantil'
+        elif 'cooperativa' in nombre_lower:
+            return 'Cooperativa'
+        return 'Total'
+
+    @staticmethod
+    def filtrar_datos_por_tipo(df: pd.DataFrame, tipo: str = 'superficie') -> pd.DataFrame:
+        """Filtra los datos según el tipo (superficie o tamaño)"""
+        if tipo.lower() == 'superficie':
+            return df[
+                (df['Rango_Tamano'] == 'Total') & 
+                (df['Tipo_Cultivo'] != 'Total')
+            ].copy()
+        else:  # tipo == 'tamaño'
+            return df[
+                (df['Rango_Tamano'] != 'Total') & 
+                (df['Tipo_Cultivo'] == 'Total')
+            ].copy()
