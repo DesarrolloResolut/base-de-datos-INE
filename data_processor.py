@@ -532,91 +532,139 @@ class DataProcessor:
             datos: Lista de diccionarios con los datos de empleo
             
         Returns:
-            DataFrame con las tasas procesadas
+            DataFrame con las tasas procesadas con columnas:
+            - Indicador (Actividad/Paro/Empleo)
+            - Provincia
+            - Genero
+            - Periodo
+            - Valor
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
+            logger.info(f"Iniciando procesamiento de datos de empleo. Total registros: {len(datos)}")
+            
             if not isinstance(datos, list):
-                raise ValueError("Los datos deben ser una lista de diccionarios")
+                error_msg = f"Formato de datos inválido. Se esperaba lista, se recibió: {type(datos)}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
             registros = []
-            for dato in datos:
-                if not isinstance(dato, dict):
-                    continue
+            for i, dato in enumerate(datos):
+                try:
+                    if not isinstance(dato, dict):
+                        logger.warning(f"Registro {i} inválido: {type(dato)}")
+                        continue
 
-                nombre = dato.get('Nombre', '')
-                valores = dato.get('Data', [])
-                cod = dato.get('COD', '')
-                
-                if not nombre or not valores:
-                    continue
-                
-                # Extraer componentes del nombre
-                partes = [p.strip() for p in nombre.split('.')]
-                if len(partes) < 3:
-                    continue
-                
-                # Extraer tipo de tasa, provincia y género
-                tipo_tasa = partes[0].lower()
-                provincia = partes[1]
-                genero = partes[2]
-                
-                # Mapeo más preciso de indicadores
-                if 'tasa de actividad' in tipo_tasa:
-                    indicador = 'Actividad'
-                elif 'tasa de paro' in tipo_tasa:
-                    indicador = 'Paro'
-                elif 'tasa de empleo' in tipo_tasa:
-                    indicador = 'Empleo'
-                else:
-                    continue
+                    # Log de la estructura del registro
+                    logger.debug(f"Procesando registro {i}:")
+                    logger.debug(f"COD: {dato.get('COD', 'No disponible')}")
+                    logger.debug(f"Nombre: {dato.get('Nombre', 'No disponible')}")
+                    logger.debug(f"Número de valores en Data: {len(dato.get('Data', []))}")
+
+                    nombre = dato.get('Nombre', '')
+                    valores = dato.get('Data', [])
+                    cod = dato.get('COD', '')
                     
-                # Mapeo más preciso de géneros
-                if 'varones' in genero.lower():
-                    genero = 'Hombres'
-                elif 'mujeres' in genero.lower():
-                    genero = 'Mujeres'
-                elif 'ambos sexos' in genero.lower():
-                    genero = 'Total'
-                else:
-                    genero = 'Total'
-                
-                # Procesar valores trimestrales
-                for valor in valores:
-                    if not isinstance(valor, dict):
+                    if not nombre or not valores:
+                        logger.warning(f"Registro {i} incompleto - Nombre: {bool(nombre)}, Valores: {bool(valores)}")
                         continue
-                        
-                    periodo = valor.get('NombrePeriodo', '')
-                    valor_numerico = valor.get('Valor')
                     
-                    if not periodo or valor_numerico is None:
+                    # Extraer componentes del nombre
+                    partes = [p.strip() for p in nombre.split('.')]
+                    if len(partes) < 3:
+                        logger.warning(f"Nombre mal formado en registro {i}: {nombre}")
                         continue
+                    
+                    # Extraer tipo de tasa, provincia y género
+                    tipo_tasa = partes[0].lower()
+                    provincia = partes[1]
+                    genero = partes[2]
+                    
+                    logger.debug(f"Componentes extraídos - Tipo: {tipo_tasa}, Provincia: {provincia}, Género: {genero}")
+                    
+                    # Mapeo de indicadores
+                    if 'tasa de actividad' in tipo_tasa:
+                        indicador = 'Actividad'
+                    elif 'tasa de paro' in tipo_tasa:
+                        indicador = 'Paro'
+                    elif 'tasa de empleo' in tipo_tasa:
+                        indicador = 'Empleo'
+                    else:
+                        logger.warning(f"Tipo de tasa no reconocido en registro {i}: {tipo_tasa}")
+                        continue
+                    
+                    # Mapeo de géneros
+                    if 'varones' in genero.lower():
+                        genero = 'Hombres'
+                    elif 'mujeres' in genero.lower():
+                        genero = 'Mujeres'
+                    elif 'ambos sexos' in genero.lower():
+                        genero = 'Total'
+                    else:
+                        logger.warning(f"Género no reconocido, usando 'Total': {genero}")
+                        genero = 'Total'
+                    
+                    # Procesar valores
+                    for j, valor in enumerate(valores):
+                        if not isinstance(valor, dict):
+                            logger.warning(f"Valor inválido en registro {i}, posición {j}: {type(valor)}")
+                            continue
+                            
+                        periodo = valor.get('NombrePeriodo', '')
+                        valor_numerico = valor.get('Valor')
                         
-                    registros.append({
-                        'Indicador': indicador,
-                        'Provincia': provincia,
-                        'Genero': genero,
-                        'Periodo': periodo,
-                        'Valor': valor_numerico,
-                        'Codigo': cod
-                    })
+                        if not periodo or valor_numerico is None:
+                            logger.warning(f"Valor incompleto en registro {i}, posición {j}")
+                            continue
+                            
+                        registros.append({
+                            'Indicador': indicador,
+                            'Provincia': provincia,
+                            'Genero': genero,
+                            'Periodo': periodo,
+                            'Valor': valor_numerico
+                        })
+                        
+                        logger.debug(f"Valor procesado - Periodo: {periodo}, Valor: {valor_numerico}")
+                
+                except Exception as e:
+                    logger.error(f"Error procesando registro {i}: {str(e)}")
+                    continue
             
             if not registros:
-                raise ValueError("No se encontraron datos de empleo válidos para procesar")
+                error_msg = "No se encontraron datos de empleo válidos para procesar"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            logger.info(f"Total de registros procesados exitosamente: {len(registros)}")
             
             # Crear DataFrame
             df = pd.DataFrame(registros)
             
-            # Convertir tipos de datos con manejo de errores
+            # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-            df = df.dropna(subset=['Valor'])  # Eliminar filas con valores no numéricos
+            df = df.dropna(subset=['Valor'])
+            
+            # Verificar columnas requeridas
+            columnas_requeridas = ['Indicador', 'Provincia', 'Genero', 'Periodo', 'Valor']
+            columnas_faltantes = set(columnas_requeridas) - set(df.columns)
+            if columnas_faltantes:
+                error_msg = f"Faltan columnas requeridas: {columnas_faltantes}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             
             # Ordenar por período y tipo de indicador
             df = df.sort_values(['Periodo', 'Indicador', 'Genero'])
             
+            logger.info(f"DataFrame final creado con {len(df)} filas y {len(df.columns)} columnas")
             return df
             
         except Exception as e:
-            raise ValueError(f"Error al procesar datos de empleo: {str(e)}")
+            error_msg = f"Error al procesar datos de empleo: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
     @staticmethod
     def procesar_datos(datos: List[Dict], categoria: str, filtros: Optional[Dict] = None) -> pd.DataFrame:
         """Procesa los datos según la categoría especificada
