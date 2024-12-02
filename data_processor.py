@@ -548,19 +548,20 @@ class DataProcessor:
                 # Determinar si es dato de tamaño de explotación o de superficie
                 es_dato_tamano = any(term in nombre.lower() for term in ['de 0 a', 'de 1 a', 'de 2 a', 'de 5 a', 'más de'])
                 
-                if es_dato_tamano:
-                    # Procesar datos de tamaño de explotación
-                    rango_tamano = partes[2] if len(partes) > 2 else 'Total'
-                    personalidad = DataProcessor._extraer_personalidad_juridica(nombre)
-                    metrica = 'Número de explotaciones'
-                else:
-                    # Procesar datos de superficie
-                    rango_tamano = 'Total'
-                    personalidad = 'Total'
-                    tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
-                    metrica = ('Superficie (ha.)' if any(term in nombre.lower() 
-                            for term in ['hectáreas', 'ha.', 'superficie']) 
-                            else 'Número de explotaciones')
+                # Procesar solo datos de superficie de la API 51178
+                es_superficie = any(term in nombre.lower() for term in ['hectáreas', 'ha.', 'superficie'])
+                if not es_superficie:
+                    continue
+
+                # Extraer tipo de cultivo del tercer elemento
+                tipo_cultivo = partes[2].strip() if len(partes) > 2 else 'Total'
+                rango_tamano = 'Total'
+                personalidad = 'Total'
+                metrica = 'Superficie (ha.)'
+
+                # Verificar si es un dato válido de superficie
+                if tipo_cultivo == 'Total' or not es_superficie:
+                    continue
                 
                 registro = {
                     'Provincia': 'Teruel',
