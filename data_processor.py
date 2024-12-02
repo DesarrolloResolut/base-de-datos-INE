@@ -557,11 +557,17 @@ class DataProcessor:
                         logger.warning(f"Registro {i} inválido: {type(dato)}")
                         continue
 
-                    # Log de la estructura del registro
-                    logger.debug(f"Procesando registro {i}:")
-                    logger.debug(f"COD: {dato.get('COD', 'No disponible')}")
-                    logger.debug(f"Nombre: {dato.get('Nombre', 'No disponible')}")
-                    logger.debug(f"Número de valores en Data: {len(dato.get('Data', []))}")
+                    # Log detallado de la estructura del registro
+                    logger.info(f"Procesando registro {i}:")
+                    logger.info(f"Estructura completa del registro: {json.dumps(dato, indent=2)}")
+                    logger.info(f"COD: {dato.get('COD', 'No disponible')}")
+                    logger.info(f"Nombre: {dato.get('Nombre', 'No disponible')}")
+                    logger.info(f"Data: {json.dumps(dato.get('Data', []), indent=2)}")
+
+                    # Validación explícita de campos requeridos
+                    if 'Nombre' not in dato or 'Data' not in dato:
+                        logger.error(f"Registro {i} no contiene campos requeridos Nombre y/o Data")
+                        continue
 
                     nombre = dato.get('Nombre', '')
                     valores = dato.get('Data', [])
@@ -689,13 +695,14 @@ class DataProcessor:
         # Log detallado de la categoría antes de normalizar
         logger.info(f"Categoría recibida (tipo: {type(categoria)}): '{categoria}'")
         
-        # Normalizar la categoría manteniendo el formato exacto para tasa_empleo
-        categoria_original = categoria
-        categoria = categoria.lower().strip() if categoria else ''
+        # Log detallado de la categoría recibida
+        logger.info(f"Procesando categoría: '{categoria}'")
         
-        # Log detallado después de la normalización
-        logger.info(f"Categoría después de normalización: '{categoria}'")
-        logger.info(f"Categoría original: '{categoria_original}'")
+        # No normalizar la categoría para mantener el formato exacto
+        if not categoria:
+            error_msg = "La categoría no puede estar vacía"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Validar que la categoría no esté vacía
         if not categoria:
