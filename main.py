@@ -485,10 +485,19 @@ def main():
                         "Género:",
                         options=generos
                     )
+                    
+                    # Filtro de periodo
+                    periodos = sorted(df['Periodo'].unique().tolist(), reverse=True)
+                    periodo_seleccionado = st.multiselect(
+                        "Períodos:",
+                        options=periodos,
+                        default=periodos[:4]  # Últimos 4 trimestres por defecto
+                    )
                 
                 filtros = {
                     'Indicador': indicador_seleccionado,
-                    'Genero': genero_seleccionado
+                    'Genero': genero_seleccionado,
+                    'Periodo': periodo_seleccionado
                 }
             
             df_filtrado = DataProcessor.filtrar_datos(df, filtros)
@@ -559,6 +568,76 @@ def main():
                 st.plotly_chart(fig_barras, use_container_width=True)
                 
             # Removed censo_cultivo section as requested
+
+            elif categoria_seleccionada == "tasa_empleo":
+                # Visualizaciones para tasas de empleo
+                st.subheader("Análisis de Tasas de Empleo")
+                
+                # Crear pestañas para diferentes visualizaciones
+                tab_evolucion, tab_genero, tab_comparativa = st.tabs([
+                    "Evolución Temporal", "Análisis por Género", "Comparativa"
+                ])
+                
+                with tab_evolucion:
+                    st.subheader("Evolución Temporal de Tasas")
+                    # Gráfico de evolución temporal
+                    fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                        df,
+                        x='Periodo',
+                        y='Valor',
+                        color='Indicador',
+                        titulo=f"Evolución de {indicador_seleccionado}"
+                    )
+                    st.plotly_chart(fig_evolucion, use_container_width=True)
+                    
+                    # Métricas clave
+                    col1, col2, col3 = st.columns(3)
+                    ultimo_periodo = max(df['Periodo'])
+                    df_ultimo = df[df['Periodo'] == ultimo_periodo]
+                    
+                    with col1:
+                        valor_actual = df_ultimo['Valor'].mean()
+                        st.metric("Valor Actual", f"{valor_actual:.2f}%")
+                    with col2:
+                        valor_min = df['Valor'].min()
+                        st.metric("Mínimo", f"{valor_min:.2f}%")
+                    with col3:
+                        valor_max = df['Valor'].max()
+                        st.metric("Máximo", f"{valor_max:.2f}%")
+                
+                with tab_genero:
+                    st.subheader("Análisis por Género")
+                    # Gráfico de barras por género
+                    df_ultimo_periodo = df[df['Periodo'] == df['Periodo'].max()]
+                    fig_genero = DataVisualizer.crear_grafico_barras(
+                        df_ultimo_periodo,
+                        x='Genero',
+                        y='Valor',
+                        color='Indicador',
+                        titulo=f"Comparativa por Género ({df['Periodo'].max()})"
+                    )
+                    st.plotly_chart(fig_genero, use_container_width=True)
+                
+                with tab_comparativa:
+                    st.subheader("Análisis Comparativo")
+                    # Gráfico de dispersión para ver relaciones
+                    fig_comparativa = DataVisualizer.crear_grafico_barras(
+                        df,
+                        x='Periodo',
+                        y='Valor',
+                        color='Genero',
+                        titulo=f"Comparativa de {indicador_seleccionado} por Género y Periodo"
+                    )
+                    st.plotly_chart(fig_comparativa, use_container_width=True)
+                    
+                    # Tabla resumen
+                    st.subheader("Resumen Estadístico")
+                    df_resumen = df.groupby(['Indicador', 'Genero'])['Valor'].agg([
+                        ('Media', 'mean'),
+                        ('Mínimo', 'min'),
+                        ('Máximo', 'max')
+                    ]).round(2)
+                    st.dataframe(df_resumen)
 
             elif categoria_seleccionada == "censo_agrario":
                 try:
