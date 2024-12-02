@@ -68,6 +68,15 @@ def main():
         - Análisis por provincia y comarca
         - Indicadores específicos del sector agrario
         """)
+    elif categoria_seleccionada == "censo_cultivo":
+        st.markdown("""
+        Esta aplicación muestra los datos del Censo de Cultivos de Teruel, proporcionados por el Instituto Nacional de Estadística (INE).
+        Los datos incluyen:
+        - Tipos de cultivos y su distribución
+        - Superficie cultivada por tipo
+        - Número de explotaciones por cultivo
+        - Análisis de producción agrícola
+        """)
     
     try:
         # Cargar datos según la categoría seleccionada
@@ -354,6 +363,82 @@ def main():
                 )
                 st.plotly_chart(fig_barras, use_container_width=True)
                 
+            elif categoria_seleccionada == "censo_cultivo":
+                try:
+                    # Visualizaciones específicas para censo de cultivos
+                    st.subheader("Análisis del Censo de Cultivos de Teruel")
+                    
+                    if df.empty:
+                        st.warning("No hay datos disponibles para mostrar.")
+                        return
+
+                    # Tabs para diferentes visualizaciones
+                    tab_cultivos, tab_superficie, tab_comparativa = st.tabs([
+                        "Tipos de Cultivos", "Superficie Cultivada", "Análisis Comparativo"
+                    ])
+
+                    with tab_cultivos:
+                        st.subheader("Distribución por Tipo de Cultivo")
+                        # Gráfico de distribución de cultivos
+                        fig_cultivos = DataVisualizer.crear_grafico_barras(
+                            df,
+                            x='Tipo_Cultivo',
+                            y='Valor',
+                            color='Tipo_Explotacion',
+                            titulo="Distribución de Cultivos por Tipo de Explotación"
+                        )
+                        st.plotly_chart(fig_cultivos, use_container_width=True)
+
+                    with tab_superficie:
+                        st.subheader("Análisis de Superficie Cultivada")
+                        # Filtrar datos por superficie
+                        df_superficie = df[df['Medida'] == 'Superficie (ha.)'].copy()
+                        if not df_superficie.empty:
+                            # Gráfico de superficie por tipo de cultivo
+                            fig_superficie = DataVisualizer.crear_grafico_barras(
+                                df_superficie,
+                                x='Tipo_Cultivo',
+                                y='Valor',
+                                titulo="Superficie por Tipo de Cultivo (ha.)"
+                            )
+                            st.plotly_chart(fig_superficie, use_container_width=True)
+
+                            # Gráfico circular de distribución de superficie
+                            fig_distribucion = DataVisualizer.crear_grafico_pastel(
+                                df_superficie,
+                                names='Tipo_Cultivo',
+                                values='Valor',
+                                titulo="Distribución de Superficie por Tipo de Cultivo"
+                            )
+                            st.plotly_chart(fig_distribucion, use_container_width=True)
+
+                    with tab_comparativa:
+                        st.subheader("Análisis Comparativo")
+                        # Métricas generales
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            total_superficie = df_superficie['Valor'].sum() if 'df_superficie' in locals() else 0
+                            st.metric("Superficie Total (ha.)", f"{total_superficie:,.2f}")
+                        
+                        with col2:
+                            num_tipos_cultivo = len(df['Tipo_Cultivo'].unique())
+                            st.metric("Tipos de Cultivo", num_tipos_cultivo)
+
+                        # Gráfico de relación entre variables
+                        if 'Valor' in df.columns and 'Tipo_Cultivo' in df.columns:
+                            fig_relacion = DataVisualizer.crear_grafico_barras(
+                                df,
+                                x='Tipo_Cultivo',
+                                y='Valor',
+                                color='Medida',
+                                titulo="Comparativa de Métricas por Tipo de Cultivo"
+                            )
+                            st.plotly_chart(fig_relacion, use_container_width=True)
+
+                except Exception as e:
+                    st.error(f"Error al crear los gráficos para censo de cultivos: {str(e)}")
+
             elif categoria_seleccionada == "censo_agrario":
                 try:
                     # Visualizaciones específicas para censo agrario
