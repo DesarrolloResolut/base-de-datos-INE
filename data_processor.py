@@ -524,12 +524,15 @@ class DataProcessor:
 
     @staticmethod
     def procesar_datos_ecologicos(datos: Union[List[Dict], pd.DataFrame], filtros: Optional[Dict] = None) -> pd.DataFrame:
-        """Procesa los datos de superficie agrícola utilizada ecológica
+        """Procesa los datos del censo de cultivos
         
         Args:
             datos: Datos a procesar en formato lista de diccionarios o DataFrame
             filtros: Diccionario con los filtros a aplicar (opcional)
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
             # Inicializar filtros como diccionario vacío si no se proporciona
             if filtros is None:
@@ -537,29 +540,47 @@ class DataProcessor:
                 
             datos_procesados = []
             
+            # Verificar formato de datos
+            if isinstance(datos, pd.DataFrame):
+                return datos
+            
+            if not isinstance(datos, list):
+                raise ValueError(f"Formato de datos inválido: {type(datos)}")
+                
+            logger.info(f"Procesando {len(datos)} registros")
+            
             for dato in datos:
-                nombre = dato.get('Nombre', '')
-                valores = dato.get('Data', [])
-                
-                # Solo procesar datos de Teruel
-                if not nombre.startswith('Teruel'):
-                    continue
-                
-                # Extraer partes del nombre
-                partes = nombre.split(', ')
-                if len(partes) >= 3:
-                    tipo_explotacion = partes[1].strip()
-                    tipo_cultivo = partes[2].strip()
+                try:
+                    nombre = dato.get('Nombre', '')
+                    valores = dato.get('Data', [])
+                    
+                    # Solo procesar datos de Teruel
+                    if not nombre.startswith('Teruel'):
+                        continue
+                    
+                    # Extraer información del nombre
+                    partes = [p.strip() for p in nombre.split(',')]
+                    
+                    if len(partes) < 3:
+                        logger.warning(f"Formato de nombre inválido: {nombre}")
+                        continue
+                    
+                    # Extraer componentes del nombre
+                    tipo_explotacion = partes[1]
+                    tipo_cultivo = partes[2]
+                    medida = partes[-1] if len(partes) > 3 else 'Valor absoluto'
                     
                     # Procesar valores
                     for valor in valores:
-                        if valor.get('Valor') is not None:
+                        if valor.get('Valor') is not None and not valor.get('Secreto', False):
                             registro = {
-                                'Nombre': nombre,
+                                'Provincia': 'Teruel',
                                 'Tipo_Explotacion': tipo_explotacion,
                                 'Tipo_Cultivo': tipo_cultivo,
-                                'Valor': valor.get('Valor', 0),
-                                'Periodo': valor.get('NombrePeriodo', '')
+                                'Medida': medida,
+                                'Valor': float(valor.get('Valor', 0)),
+                                'Periodo': valor.get('NombrePeriodo', ''),
+                                'Unidad': valor.get('Unidad', {}).get('Nombre', '')
                             }
                             
                             # Aplicar filtros si existen
@@ -576,9 +597,14 @@ class DataProcessor:
                             
                             if incluir_registro:
                                 datos_procesados.append(registro)
+                except Exception as e:
+                    logger.error(f"Error procesando registro: {str(e)}")
+                    continue
             
             if not datos_procesados:
                 raise ValueError("No se encontraron datos válidos para procesar")
+            
+            logger.info(f"Se procesaron exitosamente {len(datos_procesados)} registros")
             
             df = pd.DataFrame(datos_procesados)
             
@@ -586,6 +612,10 @@ class DataProcessor:
             if 'Periodo' in df.columns:
                 df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            # Ordenar columnas para mejor visualización
+            columnas_orden = ['Provincia', 'Tipo_Explotacion', 'Tipo_Cultivo', 'Medida', 'Valor', 'Periodo', 'Unidad']
+            df = df.reindex(columns=[col for col in columnas_orden if col in df.columns])
             
             return df
             
