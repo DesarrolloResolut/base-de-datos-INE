@@ -530,53 +530,69 @@ class DataProcessor:
         try:
             registros = []
             for dato in datos:
-                nombre = dato.get('Nombre', '')
+                nombre = dato.get('Nombre', '').strip()
                 valores = dato.get('Data', [])
                 
-                # Extraer información del nombre
-                partes = nombre.split(',')
-                if len(partes) < 2:
+                if not nombre or not valores:
                     continue
                 
-                territorio = partes[0].strip()
-                # Identificar el tipo de tasa
-                nombre_lower = nombre.lower()
-                if 'tasa de actividad' in nombre_lower:
-                    tipo_tasa = 'Actividad'
-                elif 'tasa de paro' in nombre_lower:
-                    tipo_tasa = 'Paro'
-                elif 'tasa de empleo' in nombre_lower:
-                    tipo_tasa = 'Empleo'
-                else:
+                # Extraer información del nombre usando split('.')
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 3:
                     continue
                 
-                # Extraer género
-                if 'hombres' in nombre_lower:
+                # Extraer indicador (primer elemento)
+                indicador = partes[0].strip()
+                if not any(tasa in indicador.lower() for tasa in ['tasa de actividad', 'tasa de paro', 'tasa de empleo']):
+                    continue
+                
+                # Normalizar el indicador
+                if 'actividad' in indicador.lower():
+                    indicador = 'Tasa de actividad'
+                elif 'paro' in indicador.lower():
+                    indicador = 'Tasa de paro'
+                elif 'empleo' in indicador.lower():
+                    indicador = 'Tasa de empleo'
+                
+                # Extraer género (segundo elemento)
+                genero = partes[1].strip()
+                if 'hombres' in genero.lower():
                     genero = 'Hombres'
-                elif 'mujeres' in nombre_lower:
+                elif 'mujeres' in genero.lower():
                     genero = 'Mujeres'
                 else:
-                    genero = 'Total'
+                    genero = 'Ambos sexos'
                 
-                # Procesar valores
+                # Extraer región (tercer elemento)
+                region = partes[2].strip()
+                if not region:
+                    region = 'Total Nacional'
+                
+                # Procesar valores históricos
                 for valor in valores:
-                    registros.append({
-                        'Territorio': territorio,
-                        'Tipo_Tasa': tipo_tasa,
-                        'Genero': genero,
-                        'Periodo': valor.get('NombrePeriodo', ''),
-                        'Valor': valor.get('Valor', 0)
-                    })
+                    periodo = valor.get('NombrePeriodo', '')
+                    valor_numerico = valor.get('Valor')
+                    
+                    if periodo and valor_numerico is not None:
+                        registros.append({
+                            'Indicador': indicador,
+                            'Genero': genero,
+                            'Region': region,
+                            'Periodo': periodo,
+                            'Valor': valor_numerico
+                        })
             
             if not registros:
-                raise ValueError("No se encontraron datos de empleo")
+                raise ValueError("No se encontraron datos de empleo válidos para procesar")
             
             # Crear DataFrame
             df = pd.DataFrame(registros)
             
-            # Convertir tipos de datos
-            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            # Convertir el valor a numérico manteniendo decimales
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            # Ordenar por período
+            df = df.sort_values('Periodo', ascending=False)
             
             return df
             
