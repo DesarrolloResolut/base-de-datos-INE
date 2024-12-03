@@ -548,37 +548,36 @@ def main():
                 with tab_dist:
                     st.subheader("Distribución de Municipios por Rango de Habitantes")
                     
-                    # Filtrar datos para el último periodo
-                    ultimo_periodo = max(df['Periodo'])
-                    df_actual = df[df['Periodo'] == ultimo_periodo].groupby('Rango')['Valor'].sum().reset_index()
+                    # Usar las columnas existentes
+                    df_actual = df_filtrado[df_filtrado['Periodo'] == max(df_filtrado['Periodo'])]
                     
                     # Crear gráfico de barras para la distribución actual
                     fig_dist = DataVisualizer.crear_grafico_barras(
                         df_actual,
                         x='Rango',
                         y='Valor',
-                        titulo=f"Distribución de Municipios por Rango de Habitantes - {provincia_seleccionada} ({ultimo_periodo})"
+                        titulo=f"Distribución de Municipios por Rango - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_dist, use_container_width=True)
                     
-                    # Gráfico circular para mostrar proporciones (usando df_actual que ya tiene los valores agregados)
+                    # Gráfico circular para mostrar proporciones
                     fig_pie = DataVisualizer.crear_grafico_pastel(
                         df_actual,
                         names='Rango',
                         values='Valor',
-                        titulo=f"Proporción de Municipios por Rango - {provincia_seleccionada} ({ultimo_periodo})"
+                        titulo=f"Proporción de Municipios por Rango - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_pie, use_container_width=True)
                 
                 with tab_evol:
                     st.subheader("Evolución Temporal por Rango de Habitantes")
                     
-                    # Crear gráfico de líneas para la evolución temporal con valores agregados
-                    df_evol = df.copy()
+                    # Usar df_filtrado para la evolución temporal
+                    df_evol = df_filtrado.copy()
                     if rango_seleccionado != 'Total':
                         df_evol = df_evol[df_evol['Rango'] == rango_seleccionado]
-                    df_evol = df_evol.groupby(['Periodo', 'Rango'])['Valor'].sum().reset_index()
                     
+                    # Crear gráfico de líneas para la evolución temporal
                     fig_evol = DataVisualizer.crear_grafico_lineas(
                         df_evol,
                         x='Periodo',
@@ -590,7 +589,7 @@ def main():
                     
                     # Calcular y mostrar estadísticas de cambio
                     if rango_seleccionado != 'Total':
-                        df_rango = df[df['Rango'] == rango_seleccionado].sort_values('Periodo')
+                        df_rango = df_evol.sort_values('Periodo')
                         if len(df_rango) >= 2:
                             valor_inicial = df_rango.iloc[0]['Valor']
                             valor_final = df_rango.iloc[-1]['Valor']
@@ -607,8 +606,8 @@ def main():
                 with tab_comp:
                     st.subheader("Análisis Comparativo")
                     
-                    # Crear heatmap para comparar rangos y periodos
-                    pivot_df = df.pivot_table(
+                    # Crear heatmap usando df_filtrado para comparar rangos y periodos
+                    pivot_df = df_filtrado.pivot_table(
                         index='Periodo',
                         columns='Rango',
                         values='Valor',
