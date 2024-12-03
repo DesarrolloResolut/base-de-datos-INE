@@ -695,7 +695,7 @@ def main():
                         df,
                         x='Periodo',
                         y='Valor',
-                        color='Tipo_Tasa',
+                        color='Indicador',
                         titulo=f"Evolución temporal de {indicador_seleccionado}"
                     )
                     st.plotly_chart(fig_evolucion, use_container_width=True)
@@ -717,7 +717,7 @@ def main():
                     # Gráfico comparativo de tasas
                     fig_comparativa = DataVisualizer.crear_grafico_barras(
                         df[df['Periodo'] == df['Periodo'].max()],
-                        x='Tipo_Tasa',
+                        x='Indicador',
                         y='Valor',
                         color='Genero',
                         titulo="Comparativa de Tasas por Género"
