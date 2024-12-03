@@ -621,14 +621,24 @@ def main():
                     st.plotly_chart(fig_evol, use_container_width=True)
 
                 # Visualizaciones en pestañas
-                tab_dist, tab_evol, tab_comp = st.tabs([
-                    "Distribución",
+                tab_actual, tab_evol, tab_comp = st.tabs([
+                    "Situación Actual",
                     "Evolución Temporal",
-                    "Comparativa"
+                    "Comparativa Provincial"
                 ])
 
-                with tab_dist:
-                    st.subheader("Distribución de Municipios por Rango de Habitantes")
+                with tab_actual:
+                    st.subheader(f"Tasa de Nacimientos - Comparativa Provincial")
+                    
+                    # Gráfico de barras para comparación entre provincias
+                    df_actual = df_filtrado[df_filtrado['Periodo'] == periodo_seleccionado]
+                    fig_comp = DataVisualizer.crear_grafico_barras(
+                        df=df_actual,
+                        x='Provincia',
+                        y='Valor',
+                        titulo=f"Tasa de Nacimientos por Provincia - {periodo_seleccionado}"
+                    )
+                    st.plotly_chart(fig_comp, use_container_width=True)
                     df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
                     
                     # Ordenar los rangos correctamente
