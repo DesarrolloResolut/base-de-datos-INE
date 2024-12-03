@@ -877,24 +877,72 @@ def main():
                 
                 with tab_comparativa:
                     st.subheader("Análisis Comparativo")
-                    # Gráfico de dispersión para ver relaciones
-                    fig_comparativa = DataVisualizer.crear_grafico_barras(
-                        df,
-                        x='Periodo',
-                        y='Valor',
-                        color='Genero',
-                        titulo=f"Comparativa de {indicador_seleccionado} por Género y Periodo"
-                    )
-                    st.plotly_chart(fig_comparativa, use_container_width=True)
                     
-                    # Tabla resumen
-                    st.subheader("Resumen Estadístico")
-                    df_resumen = df.groupby(['Indicador', 'Genero'])['Valor'].agg([
-                        ('Media', 'mean'),
-                        ('Mínimo', 'min'),
-                        ('Máximo', 'max')
-                    ]).round(2)
-                    st.dataframe(df_resumen)
+                    # Selector de regiones
+                    regiones_disponibles = sorted(df['Region'].unique())
+                    regiones_seleccionadas = st.multiselect(
+                        "Seleccionar regiones para comparar",
+                        options=regiones_disponibles,
+                        default=regiones_disponibles[:2] if len(regiones_disponibles) > 1 else regiones_disponibles
+                    )
+                    
+                    if regiones_seleccionadas:
+                        # Filtrar datos por regiones seleccionadas
+                        df_regiones = df[df['Region'].isin(regiones_seleccionadas)]
+                        
+                        # Gráfico de evolución temporal por región
+                        fig_regiones = DataVisualizer.crear_grafico_lineas(
+                            df_regiones,
+                            x='Periodo',
+                            y='Valor',
+                            color='Region',
+                            titulo=f"Comparativa Regional - {indicador_seleccionado}"
+                        )
+                        st.plotly_chart(fig_regiones, use_container_width=True)
+                        
+                        # Gráfico de barras para último periodo
+                        df_ultimo_periodo = df_regiones[df_regiones['Periodo'] == df_regiones['Periodo'].max()]
+                        fig_barras_region = DataVisualizer.crear_grafico_barras(
+                            df_ultimo_periodo,
+                            x='Region',
+                            y='Valor',
+                            color='Genero',
+                            titulo=f"Comparativa Regional - Último periodo ({df_ultimo_periodo['Periodo'].iloc[0]})"
+                        )
+                        st.plotly_chart(fig_barras_region, use_container_width=True)
+                        
+                        # Tabla resumen por región
+                        st.subheader("Resumen Estadístico por Región")
+                        df_resumen = df_regiones.groupby(['Region', 'Genero'])['Valor'].agg([
+                            ('Media', 'mean'),
+                            ('Mínimo', 'min'),
+                            ('Máximo', 'max')
+                        ]).round(2)
+                        st.dataframe(df_resumen)
+                        
+                        # Análisis de diferencias regionales
+                        st.subheader("Análisis de Diferencias Regionales")
+                        if len(regiones_seleccionadas) > 1:
+                            for indicador in df_regiones['Indicador'].unique():
+                                df_ind = df_regiones[df_regiones['Indicador'] == indicador]
+                                ultimo_periodo = df_ind['Periodo'].max()
+                                df_ultimo = df_ind[df_ind['Periodo'] == ultimo_periodo]
+                                
+                                valores_regionales = df_ultimo.groupby('Region')['Valor'].mean()
+                                diferencia_max = valores_regionales.max() - valores_regionales.min()
+                                region_max = valores_regionales.idxmax()
+                                region_min = valores_regionales.idxmin()
+                                
+                                st.write(f"#### {indicador}")
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    st.metric("Diferencia máxima", f"{diferencia_max:.2f}%")
+                                with col2:
+                                    st.metric("Región más alta", f"{region_max} ({valores_regionales[region_max]:.2f}%)")
+                                with col3:
+                                    st.metric("Región más baja", f"{region_min} ({valores_regionales[region_min]:.2f}%)")
+                    else:
+                        st.warning("Por favor, seleccione al menos una región para comparar")
 
             elif categoria_seleccionada == "censo_agrario":
                 try:
