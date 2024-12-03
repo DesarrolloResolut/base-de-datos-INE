@@ -1190,14 +1190,20 @@ def main():
                 
                 # Gráfico de evolución temporal por género
                 st.subheader("Evolución Temporal por Género")
-                df_evolucion = df_empleo[df_empleo['Indicador'] == tipo_tasa]
-                fig_evolucion = DataVisualizer.crear_grafico_lineas(
-                    df_evolucion,
-                    x='Periodo',
-                    y='Valor',
-                    color='Genero',
-                    titulo=f"Evolución de la Tasa de {tipo_tasa} por Género"
-                )
+                df_evolucion = df_empleo[df_empleo['Indicador'] == tipo_tasa].copy()
+                
+                # Ordenar por período antes de crear el gráfico
+                df_evolucion = df_evolucion.sort_values('Periodo')
+                
+                # Validar que hay datos suficientes
+                if len(df_evolucion) > 0:
+                    fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                        df_evolucion,
+                        x='Periodo',
+                        y='Valor',
+                        color='Genero',
+                        titulo=f"Evolución de la Tasa de {tipo_tasa} por Género"
+                    )
                 st.plotly_chart(fig_evolucion, use_container_width=True)
                 
                 # Gráfico comparativo entre tasas
