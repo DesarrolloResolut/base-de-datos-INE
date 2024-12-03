@@ -529,7 +529,7 @@ def main():
                 df_filtrado = df[df['Provincia'] == provincia_seleccionada].copy()
                 if periodo_seleccionado:
                     df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(periodo_seleccionado)]
-                
+
                 # Tabla Resumen
                 st.subheader("Tabla Resumen")
                 df_resumen = df_filtrado.groupby('Rango').agg({
@@ -537,7 +537,7 @@ def main():
                 }).round(2)
                 df_resumen.columns = ['Cantidad', 'Media', 'Total']
                 st.dataframe(df_resumen)
-                
+
                 # Visualizaciones en pestañas
                 tab_dist, tab_evol, tab_comp = st.tabs([
                     "Distribución",
@@ -549,7 +549,7 @@ def main():
                     st.subheader("Distribución de Municipios por Rango de Habitantes")
                     df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
                     fig_dist = DataVisualizer.crear_grafico_barras(
-                        df_actual,
+                        data=df_actual,
                         x='Rango',
                         y='Valor',
                         titulo=f"Distribución por Rango - {provincia_seleccionada}"
@@ -559,7 +559,7 @@ def main():
                 with tab_evol:
                     st.subheader("Evolución Temporal por Rango de Habitantes")
                     fig_evol = DataVisualizer.crear_grafico_lineas(
-                        df_filtrado,
+                        data=df_filtrado,
                         x='Periodo',
                         y='Valor',
                         color='Rango',
@@ -576,7 +576,7 @@ def main():
                         aggfunc='sum'
                     )
                     fig_heat = DataVisualizer.crear_heatmap(
-                        pivot_df,
+                        df=pivot_df,
                         titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_heat, use_container_width=True, key="heat_mun")
