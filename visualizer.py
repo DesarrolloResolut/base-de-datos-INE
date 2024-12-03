@@ -338,3 +338,68 @@ class DataVisualizer:
         )
         
         return fig
+
+    @staticmethod
+    def crear_grafico_tendencia_nacimientos(df: pd.DataFrame,
+                                          provincia: str = None,
+                                          incluir_ma: bool = True) -> go.Figure:
+        """
+        Crea un gráfico de tendencia temporal para tasas de nacimientos
+        
+        Args:
+            df: DataFrame con los datos de nacimientos
+            provincia: Nombre de la provincia para filtrar (opcional)
+            incluir_ma: Incluir medias móviles en el gráfico
+            
+        Returns:
+            Figura de plotly con la visualización temporal
+        """
+        # Filtrar por provincia si se especifica
+        if provincia:
+            df = df[df['Provincia'] == provincia].copy()
+            
+        # Ordenar por período
+        df = df.sort_values('Periodo')
+        
+        # Crear figura base
+        fig = go.Figure()
+        
+        # Añadir línea principal de nacimientos
+        fig.add_trace(go.Scatter(
+            x=df['Periodo'],
+            y=df['Valor'],
+            name='Nacimientos',
+            mode='lines+markers'
+        ))
+        
+        if incluir_ma:
+            # Calcular y añadir medias móviles
+            df['MA_3'] = df['Valor'].rolling(window=3).mean()
+            df['MA_5'] = df['Valor'].rolling(window=5).mean()
+            
+            fig.add_trace(go.Scatter(
+                x=df['Periodo'],
+                y=df['MA_3'],
+                name='Media Móvil (3 años)',
+                line=dict(dash='dash')
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=df['Periodo'],
+                y=df['MA_5'],
+                name='Media Móvil (5 años)',
+                line=dict(dash='dot')
+            ))
+        
+        # Configurar layout
+        titulo = f"Tendencia Temporal de Nacimientos{' - ' + provincia if provincia else ''}"
+        fig.update_layout(
+            title=titulo,
+            template='plotly_white',
+            xaxis_title='Año',
+            yaxis_title='Número de Nacimientos',
+            hovermode='x unified',
+            showlegend=True
+        )
+        
+        return fig
