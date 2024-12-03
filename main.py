@@ -737,6 +737,22 @@ def main():
                 # Visualizaciones para tasas de empleo
                 st.subheader("Análisis de Tasas de Empleo")
                 
+                # Selector de regiones
+                st.subheader("Selección de Región")
+                regiones_disponibles = sorted(df['Region'].unique())
+                regiones_seleccionadas = st.multiselect(
+                    "Seleccionar regiones para comparar",
+                    options=regiones_disponibles,
+                    default=regiones_disponibles[:2] if len(regiones_disponibles) > 1 else regiones_disponibles
+                )
+                
+                # Filtrar datos por regiones seleccionadas
+                if regiones_seleccionadas:
+                    df = df[df['Region'].isin(regiones_seleccionadas)]
+                else:
+                    st.warning("Por favor, seleccione al menos una región para comparar")
+                    return
+                
                 # Mostrar tablas para cada tipo de tasa
                 for indicador in ['Tasa de actividad', 'Tasa de paro', 'Tasa de empleo']:
                     st.subheader(f"{indicador}")
@@ -748,7 +764,7 @@ def main():
                     
                     # Mostrar tabla con las columnas especificadas
                     st.dataframe(
-                        df_indicador[['Periodo', 'Genero', 'Valor']],
+                        df_indicador[['Region', 'Periodo', 'Genero', 'Valor']],
                         use_container_width=True
                     )
                 
@@ -877,14 +893,6 @@ def main():
                 
                 with tab_comparativa:
                     st.subheader("Análisis Comparativo")
-                    
-                    # Selector de regiones
-                    regiones_disponibles = sorted(df['Region'].unique())
-                    regiones_seleccionadas = st.multiselect(
-                        "Seleccionar regiones para comparar",
-                        options=regiones_disponibles,
-                        default=regiones_disponibles[:2] if len(regiones_disponibles) > 1 else regiones_disponibles
-                    )
                     
                     if regiones_seleccionadas:
                         # Filtrar datos por regiones seleccionadas
