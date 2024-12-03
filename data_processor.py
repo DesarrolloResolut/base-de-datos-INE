@@ -155,6 +155,7 @@ class DataProcessor:
 
     @staticmethod
     def _procesar_datos_municipios(datos):
+        """Procesa datos de municipios por rango de habitantes"""
         try:
             registros = []
             for dato in datos:
