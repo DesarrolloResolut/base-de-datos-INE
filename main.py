@@ -619,16 +619,6 @@ def main():
                         titulo=f"Evolución de la Tasa de Nacimientos - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_evol, use_container_width=True)
-
-                # Visualizaciones en pestañas
-                tab_actual, tab_evol, tab_comp = st.tabs([
-                    "Situación Actual",
-                    "Evolución Temporal",
-                    "Comparativa Provincial"
-                ])
-
-                with tab_actual:
-                    st.subheader(f"Tasa de Nacimientos - Comparativa Provincial")
                     
                     # Gráfico de barras para comparación entre provincias
                     df_actual = df_filtrado[df_filtrado['Periodo'] == periodo_seleccionado]
