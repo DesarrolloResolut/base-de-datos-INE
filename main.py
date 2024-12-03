@@ -630,6 +630,21 @@ def main():
                 # Visualizaciones para tasas de empleo
                 st.subheader("Análisis de Tasas de Empleo")
                 
+                # Mostrar tablas para cada tipo de tasa
+                for indicador in ['Tasa de actividad', 'Tasa de paro', 'Tasa de empleo']:
+                    st.subheader(f"{indicador}")
+                    df_indicador = df[df['Indicador'] == indicador]
+                    
+                    # Formatear los valores con 2 decimales
+                    df_indicador = df_indicador.copy()
+                    df_indicador['Valor'] = df_indicador['Valor'].round(2)
+                    
+                    # Mostrar tabla con las columnas especificadas
+                    st.dataframe(
+                        df_indicador[['Periodo', 'Genero', 'Valor']],
+                        use_container_width=True
+                    )
+                
                 # Crear pestañas para diferentes análisis
                 tab_evolucion, tab_comparativa, tab_genero = st.tabs([
                     "Evolución Temporal",
