@@ -547,11 +547,9 @@ def main():
                 
                 with tab_dist:
                     st.subheader("Distribución de Municipios por Rango de Habitantes")
-                    
-                    # Usar las columnas existentes
                     df_actual = df_filtrado[df_filtrado['Periodo'] == max(df_filtrado['Periodo'])]
                     
-                    # Crear gráfico de barras para la distribución actual
+                    # Gráfico de barras usando columnas existentes
                     fig_dist = DataVisualizer.crear_grafico_barras(
                         df_actual,
                         x='Rango',
@@ -559,60 +557,31 @@ def main():
                         titulo=f"Distribución de Municipios por Rango - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_dist, use_container_width=True)
-                    
-                    # Gráfico circular para mostrar proporciones
-                    fig_pie = DataVisualizer.crear_grafico_pastel(
-                        df_actual,
-                        names='Rango',
-                        values='Valor',
-                        titulo=f"Proporción de Municipios por Rango - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_pie, use_container_width=True)
                 
                 with tab_evol:
                     st.subheader("Evolución Temporal por Rango de Habitantes")
-                    
-                    # Usar df_filtrado para la evolución temporal
-                    df_evol = df_filtrado.copy()
-                    if rango_seleccionado != 'Total':
-                        df_evol = df_evol[df_evol['Rango'] == rango_seleccionado]
-                    
-                    # Crear gráfico de líneas para la evolución temporal
                     fig_evol = DataVisualizer.crear_grafico_lineas(
-                        df_evol,
+                        df_filtrado,
                         x='Periodo',
                         y='Valor',
-                        color='Rango' if rango_seleccionado == 'Total' else None,
-                        titulo=f"Evolución Temporal - {rango_seleccionado}"
+                        color='Rango',
+                        titulo=f"Evolución Temporal por Rango"
                     )
                     st.plotly_chart(fig_evol, use_container_width=True)
-                    
-                    # Calcular y mostrar estadísticas de cambio
-                    if rango_seleccionado != 'Total':
-                        df_rango = df_evol.sort_values('Periodo')
-                        if len(df_rango) >= 2:
-                            valor_inicial = df_rango.iloc[0]['Valor']
-                            valor_final = df_rango.iloc[-1]['Valor']
-                            cambio_porcentual = ((valor_final - valor_inicial) / valor_inicial) * 100
-                            
-                            col1, col2, col3 = st.columns(3)
-                            with col1:
-                                st.metric("Valor Inicial", f"{valor_inicial:.0f}")
-                            with col2:
-                                st.metric("Valor Final", f"{valor_final:.0f}")
-                            with col3:
-                                st.metric("Cambio %", f"{cambio_porcentual:.1f}%")
                 
                 with tab_comp:
                     st.subheader("Análisis Comparativo")
-                    
-                    # Crear heatmap usando df_filtrado para comparar rangos y periodos
                     pivot_df = df_filtrado.pivot_table(
                         index='Periodo',
                         columns='Rango',
                         values='Valor',
-                        aggfunc='sum'  # Agregar valores duplicados
+                        aggfunc='sum'
                     )
+                    fig_heat = DataVisualizer.crear_heatmap(
+                        pivot_df,
+                        titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
+                    )
+                    st.plotly_chart(fig_heat, use_container_width=True)
                     fig_heat = DataVisualizer.crear_heatmap(
                         pivot_df,
                         titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
