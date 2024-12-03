@@ -574,6 +574,43 @@ def main():
         
         # Mostrar datos en tabla
         st.header("Datos")
+        
+        # Sección de exportación
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Exportar a Excel"):
+                # Generar nombre de archivo con timestamp
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"datos_ine_{timestamp}.xlsx"
+                resultado = exportar_a_excel(df, filename)
+                if "exitosamente" in resultado:
+                    with open(filename, 'rb') as f:
+                        st.download_button(
+                            label="Descargar Excel",
+                            data=f,
+                            file_name=filename,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                else:
+                    st.error(resultado)
+        
+        with col2:
+            if st.button("Exportar a CSV"):
+                # Generar nombre de archivo con timestamp
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"datos_ine_{timestamp}.csv"
+                resultado = exportar_a_csv(df, filename)
+                if "exitosamente" in resultado:
+                    with open(filename, 'rb') as f:
+                        st.download_button(
+                            label="Descargar CSV",
+                            data=f,
+                            file_name=filename,
+                            mime="text/csv"
+                        )
+                else:
+                    st.error(resultado)
+        
         st.dataframe(df)
         
         # Visualizaciones
