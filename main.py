@@ -598,15 +598,19 @@ def main():
                 )
                 st.plotly_chart(fig_actual, use_container_width=True)
 
-                # Gráfico de líneas para evolución temporal
-                st.subheader("Evolución Temporal")
-                fig_evol = DataVisualizer.crear_grafico_lineas(
+                # Visualización de tendencias temporales
+                st.subheader("Análisis de Tendencias Temporales")
+                
+                # Checkbox para mostrar/ocultar medias móviles
+                incluir_ma = st.checkbox("Mostrar medias móviles", value=True)
+                
+                # Crear gráfico de tendencias
+                fig_tendencia = DataVisualizer.crear_grafico_tendencia_nacimientos(
                     df=df_filtrado,
-                    x='Periodo',
-                    y='Valor',
-                    titulo=f"Evolución de la Tasa de Nacimientos - {provincia_seleccionada}"
+                    provincia=provincia_seleccionada,
+                    incluir_ma=incluir_ma
                 )
-                st.plotly_chart(fig_evol, use_container_width=True)
+                st.plotly_chart(fig_tendencia, use_container_width=True)
 
                 # Opciones de exportación
                 col1, col2 = st.columns(2)
