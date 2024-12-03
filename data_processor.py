@@ -645,7 +645,7 @@ class DataProcessor:
             "provincias": DataProcessor._procesar_datos_provincias,
             "municipios_habitantes": DataProcessor._procesar_datos_municipios,
             "censo_agrario": DataProcessor._procesar_datos_censo_agrario,
-            "empleo": DataProcessor._procesar_datos_empleo
+            "tasa_empleo": DataProcessor._procesar_datos_empleo
         }
         
         # Log de categorías válidas disponibles
