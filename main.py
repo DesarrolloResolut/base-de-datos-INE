@@ -727,7 +727,7 @@ def main():
                     # Tabla comparativa
                     st.subheader("Resumen Comparativo")
                     df_resumen = df.pivot_table(
-                        index=['Tipo_Tasa', 'Genero'],
+                        index=['Indicador', 'Genero'],
                         values='Valor',
                         aggfunc=['mean', 'min', 'max']
                     ).round(2)
