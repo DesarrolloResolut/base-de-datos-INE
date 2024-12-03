@@ -525,6 +525,19 @@ def main():
                     'Genero': genero_seleccionado
                 }
             elif categoria_seleccionada == "municipios_habitantes":
+                # Filtrar datos según la provincia y periodo seleccionados
+                df_filtrado = df[df['Provincia'] == provincia_seleccionada]
+                if periodo_seleccionado:
+                    df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(periodo_seleccionado)]
+                
+                # Tabla Resumen
+                st.subheader("Tabla Resumen")
+                df_resumen = df_filtrado.groupby('Rango').agg({
+                    'Valor': ['count', 'mean', 'sum']
+                }).round(2)
+                df_resumen.columns = ['Cantidad', 'Media', 'Total']
+                st.dataframe(df_resumen)
+                
                 # Crear pestañas para diferentes visualizaciones
                 tab_dist, tab_evol, tab_comp = st.tabs([
                     "Distribución",
