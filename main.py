@@ -525,11 +525,108 @@ def main():
                     'Genero': genero_seleccionado
                 }
             elif categoria_seleccionada == "municipios_habitantes":
+                # Crear pestañas para diferentes visualizaciones
+                tab_dist, tab_evol, tab_comp = st.tabs([
+                    "Distribución",
+                    "Evolución Temporal",
+                    "Comparativa"
+                ])
+                
+                with tab_dist:
+                    st.subheader("Distribución de Municipios por Rango de Habitantes")
+                    
+                    # Filtrar datos para el último periodo
+                    ultimo_periodo = max(df['Periodo'])
+                    df_actual = df[df['Periodo'] == ultimo_periodo]
+                    
+                    # Crear gráfico de barras para la distribución actual
+                    fig_dist = DataVisualizer.crear_grafico_barras(
+                        df_actual,
+                        x='Rango',
+                        y='Valor',
+                        titulo=f"Distribución de Municipios por Rango de Habitantes - {provincia_seleccionada} ({ultimo_periodo})"
+                    )
+                    st.plotly_chart(fig_dist, use_container_width=True)
+                    
+                    # Gráfico circular para mostrar proporciones
+                    fig_pie = DataVisualizer.crear_grafico_pastel(
+                        df_actual,
+                        names='Rango',
+                        values='Valor',
+                        titulo=f"Proporción de Municipios por Rango - {provincia_seleccionada} ({ultimo_periodo})"
+                    )
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                
+                with tab_evol:
+                    st.subheader("Evolución Temporal por Rango de Habitantes")
+                    
+                    # Crear gráfico de líneas para la evolución temporal
+                    fig_evol = DataVisualizer.crear_grafico_lineas(
+                        df[df['Rango'] == rango_seleccionado] if rango_seleccionado != 'Total' else df,
+                        x='Periodo',
+                        y='Valor',
+                        color='Rango' if rango_seleccionado == 'Total' else None,
+                        titulo=f"Evolución Temporal - {rango_seleccionado}"
+                    )
+                    st.plotly_chart(fig_evol, use_container_width=True)
+                    
+                    # Calcular y mostrar estadísticas de cambio
+                    if rango_seleccionado != 'Total':
+                        df_rango = df[df['Rango'] == rango_seleccionado].sort_values('Periodo')
+                        if len(df_rango) >= 2:
+                            valor_inicial = df_rango.iloc[0]['Valor']
+                            valor_final = df_rango.iloc[-1]['Valor']
+                            cambio_porcentual = ((valor_final - valor_inicial) / valor_inicial) * 100
+                            
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Valor Inicial", f"{valor_inicial:.0f}")
+                            with col2:
+                                st.metric("Valor Final", f"{valor_final:.0f}")
+                            with col3:
+                                st.metric("Cambio %", f"{cambio_porcentual:.1f}%")
+                
+                with tab_comp:
+                    st.subheader("Análisis Comparativo")
+                    
+                    # Crear heatmap para comparar rangos y periodos
+                    pivot_df = df.pivot(index='Periodo', columns='Rango', values='Valor')
+                    fig_heat = DataVisualizer.crear_heatmap(
+                        pivot_df,
+                        titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
+                    )
+                    st.plotly_chart(fig_heat, use_container_width=True)
+                
+                # Aplicar filtros para los datos
                 filtros = {
                     'Provincia': provincia_seleccionada,
                     'Periodo': periodo_seleccionado,
                     'Rango': [rango_seleccionado] if rango_seleccionado != 'Total' else df['Rango'].unique().tolist()
                 }
+                
+                # Mostrar tabla resumen
+                st.subheader("Tabla Resumen")
+                df_resumen = df_filtrado.pivot_table(
+                    index='Periodo',
+                    columns='Rango',
+                    values='Valor',
+                    aggfunc='sum'
+                ).round(0)
+                st.dataframe(df_resumen)
+                
+                # Añadir opciones de exportación
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Exportar a Excel"):
+                        nombre_archivo = f"municipios_por_habitantes_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                        exportar_a_excel(df_resumen, nombre_archivo)
+                        st.success(f"Datos exportados a {nombre_archivo}")
+                
+                with col2:
+                    if st.button("Exportar a CSV"):
+                        nombre_archivo = f"municipios_por_habitantes_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                        exportar_a_csv(df_resumen, nombre_archivo)
+                        st.success(f"Datos exportados a {nombre_archivo}")
             elif categoria_seleccionada == "censo_agrario":
                 filtros = {
                     'Provincia': provincia_seleccionada,
