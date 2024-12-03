@@ -525,6 +525,12 @@ def main():
                     'Genero': genero_seleccionado
                 }
             elif categoria_seleccionada == "municipios_habitantes":
+                # Verificar columnas necesarias
+                columnas_requeridas = ['Provincia', 'Rango', 'Periodo', 'Valor']
+                if not all(col in df.columns for col in columnas_requeridas):
+                    st.error(f"Error al cargar los datos: Faltan columnas requeridas: {[col for col in columnas_requeridas if col not in df.columns]}")
+                    return
+
                 # Sección de municipios por habitantes
                 df_filtrado = df[df['Provincia'] == provincia_seleccionada].copy()
                 if periodo_seleccionado:
