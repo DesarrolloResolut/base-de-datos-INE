@@ -573,14 +573,18 @@ class DataProcessor:
                     periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
-                    if periodo and valor_numerico is not None:
-                        registros.append({
-                            'Indicador': indicador,
-                            'Genero': genero,
-                            'Region': region,
-                            'Periodo': periodo,
-                            'Valor': valor_numerico
-                        })
+                    # Validar que el período y valor existan y no sean nulos
+                    if not periodo or valor_numerico is None:
+                        continue
+                        
+                    # Crear registro con los datos procesados
+                    registros.append({
+                        'Indicador': indicador,
+                        'Genero': genero,
+                        'Region': region,
+                        'Periodo': periodo,
+                        'Valor': float(valor_numerico)  # Asegurar que el valor sea float
+                    })
             
             if not registros:
                 raise ValueError("No se encontraron datos de empleo válidos para procesar")
