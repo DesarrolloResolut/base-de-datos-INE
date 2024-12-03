@@ -549,7 +549,7 @@ def main():
                     st.subheader("Distribución de Municipios por Rango de Habitantes")
                     df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
                     fig_dist = DataVisualizer.crear_grafico_barras(
-                        data=df_actual,
+                        df=df_actual,
                         x='Rango',
                         y='Valor',
                         titulo=f"Distribución por Rango - {provincia_seleccionada}"
@@ -559,7 +559,7 @@ def main():
                 with tab_evol:
                     st.subheader("Evolución Temporal por Rango de Habitantes")
                     fig_evol = DataVisualizer.crear_grafico_lineas(
-                        data=df_filtrado,
+                        df=df_filtrado,
                         x='Periodo',
                         y='Valor',
                         color='Rango',
