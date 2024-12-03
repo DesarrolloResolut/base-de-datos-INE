@@ -533,14 +533,58 @@ def main():
                     'Periodo': periodo_seleccionado,
                     'Genero': genero_seleccionado
                 }
-                df_filtrado = DataProcessor.aplicar_filtros(df, filtros)
+                df_filtrado = DataProcessor.filtrar_datos(df, filtros)
             elif categoria_seleccionada == "municipios_habitantes":
-                # Usar aplicar_filtros para mantener consistencia
+                # Usar filtrar_datos para mantener consistencia
                 filtros = {
                     'Municipio': provincia_seleccionada,
                     'Periodo': periodo_seleccionado
                 }
-                df_filtrado = DataProcessor.aplicar_filtros(df, filtros)
+                df_filtrado = DataProcessor.filtrar_datos(df, filtros)
+
+            elif categoria_seleccionada == "tasa_nacimientos":
+                # Filtros para tasa de nacimientos
+                filtros = {
+                    'Provincia': provincia_seleccionada,
+                    'Periodo': periodo_seleccionado
+                }
+                df_filtrado = DataProcessor.filtrar_datos(df, filtros)
+
+                if df_filtrado.empty:
+                    st.warning("No hay datos disponibles para los filtros seleccionados.")
+                    return
+
+                # Visualizaciones en pestañas
+                tab_actual, tab_evol = st.tabs([
+                    "Situación Actual",
+                    "Evolución Temporal"
+                ])
+
+                with tab_actual:
+                    st.subheader(f"Tasa de Nacimientos - {provincia_seleccionada}")
+                    
+                    # Gráfico de barras actual
+                    df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
+                    fig_actual = DataVisualizer.crear_grafico_barras(
+                        df=df_actual,
+                        x='Provincia',
+                        y='Valor',
+                        titulo=f"Tasa de Nacimientos - {provincia_seleccionada}"
+                    )
+                    st.plotly_chart(fig_actual, use_container_width=True)
+
+                with tab_evol:
+                    st.subheader("Evolución Temporal de la Tasa de Nacimientos")
+                    
+                    # Gráfico de líneas para evolución temporal
+                    fig_evol = DataVisualizer.crear_grafico_lineas(
+                        df=df_filtrado,
+                        x='Periodo',
+                        y='Valor',
+                        color='Provincia',
+                        titulo=f"Evolución de la Tasa de Nacimientos - {provincia_seleccionada}"
+                    )
+                    st.plotly_chart(fig_evol, use_container_width=True)
 
                 if df_filtrado.empty:
                     st.warning("No hay datos disponibles para los filtros seleccionados.")
