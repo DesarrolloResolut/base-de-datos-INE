@@ -543,67 +543,9 @@ def main():
                 }).round(2)
                 df_resumen.columns = ['Cantidad', 'Media', 'Total']
                 st.dataframe(df_resumen)
-
-                # Visualizaciones
-                tab_dist, tab_evol, tab_comp = st.tabs(["Distribución", "Evolución Temporal", "Comparativa"])
-
-                with tab_dist:
-                    st.subheader("Distribución por Rango de Habitantes")
-                    ultimo_periodo = df_filtrado['Periodo'].max()
-                    df_actual = df_filtrado[df_filtrado['Periodo'] == ultimo_periodo]
-                    
-                    fig_dist = DataVisualizer.crear_grafico_barras(
-                        df_actual,
-                        x='Rango',
-                        y='Valor',
-                        titulo=f"Distribución de Municipios - {provincia_seleccionada} ({ultimo_periodo})"
-                    )
-                    st.plotly_chart(fig_dist, use_container_width=True, key="dist_plot")
-
-                with tab_evol:
-                    st.subheader("Evolución Temporal")
-                    fig_evol = DataVisualizer.crear_grafico_lineas(
-                        df_filtrado,
-                        x='Periodo',
-                        y='Valor',
-                        color='Rango',
-                        titulo=f"Evolución Temporal - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_evol, use_container_width=True, key="evol_plot")
-
-                with tab_comp:
-                    st.subheader("Comparativa")
-                    pivot_df = df_filtrado.pivot_table(
-                        index='Periodo',
-                        columns='Rango',
-                        values='Valor',
-                        aggfunc='sum'
-                    )
-                    fig_heat = DataVisualizer.crear_heatmap(
-                        pivot_df,
-                        titulo=f"Comparativa por Periodo - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_heat, use_container_width=True, key="heat_plot")
                 
-                # Aplicar filtros para los datos
-                filtros = {
-                    'Provincia': provincia_seleccionada,
-                    'Periodo': periodo_seleccionado,
-                    'Rango': [rango_seleccionado] if rango_seleccionado != 'Total' else df['Rango'].unique().tolist()
-                }
-                
-                # Mostrar tabla resumen
-                st.subheader("Tabla Resumen")
-                df_resumen = df_filtrado.pivot_table(
-                    index='Periodo',
-                    columns='Rango',
-                    values='Valor',
-                    aggfunc='sum'
-                ).round(0)
-                st.dataframe(df_resumen)
-                
-                # Añadir opciones de exportación
-                col1, col2 = st.columns(2)
+                # Opciones de exportación
+                col1, col2, col3 = st.columns(3)
                 with col1:
                     if st.button("Exportar a Excel"):
                         nombre_archivo = f"municipios_por_habitantes_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
@@ -615,6 +557,12 @@ def main():
                         nombre_archivo = f"municipios_por_habitantes_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
                         exportar_a_csv(df_resumen, nombre_archivo)
                         st.success(f"Datos exportados a {nombre_archivo}")
+                
+                with col3:
+                    if st.button("Exportar a PDF"):
+                        nombre_archivo = f"municipios_por_habitantes_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                        ReportGenerator.generar_informe_pdf(df_resumen, nombre_archivo, f"Informe de Municipios por Habitantes - {provincia_seleccionada}")
+                        st.success(f"Informe exportado a {nombre_archivo}")
             elif categoria_seleccionada == "censo_agrario":
                 filtros = {
                     'Provincia': provincia_seleccionada,
