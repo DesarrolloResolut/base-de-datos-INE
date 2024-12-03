@@ -338,14 +338,24 @@ class DataProcessor:
             raise ValueError(f"Error al calcular correlaciones: {str(e)}")
 
     @staticmethod
-    def analisis_series_temporales(df: pd.DataFrame, columna_tiempo: str, columna_valor: str) -> Dict:
-        """Realiza análisis de series temporales"""
+    def analisis_series_temporales(df: pd.DataFrame, columna_tiempo: str, columna_valor: str, periodo_estacional: int = 4) -> Dict:
+        """Realiza análisis de series temporales avanzado
+        
+        Args:
+            df: DataFrame con los datos
+            columna_tiempo: Nombre de la columna temporal
+            columna_valor: Nombre de la columna con valores
+            periodo_estacional: Número de períodos en un ciclo estacional (default 4 para datos trimestrales)
+            
+        Returns:
+            Diccionario con resultados del análisis
+        """
         try:
             # Preparar serie temporal
             serie = df.sort_values(columna_tiempo).set_index(columna_tiempo)[columna_valor]
             
             # Descomposición de la serie
-            descomposicion = seasonal_decompose(serie, period=1)
+            descomposicion = seasonal_decompose(serie, period=periodo_estacional)
             
             # Análisis de tendencia
             x = np.arange(len(serie))
@@ -353,6 +363,26 @@ class DataProcessor:
             
             # Calcular tasas de cambio
             tasas_cambio = serie.pct_change().dropna()
+            
+            # Calcular medias móviles
+            ma_corto = serie.rolling(window=2).mean()  # Media móvil corta
+            ma_medio = serie.rolling(window=4).mean()  # Media móvil media
+            ma_largo = serie.rolling(window=8).mean()  # Media móvil larga
+            
+            # Calcular tasas de crecimiento
+            tasa_crecimiento_interanual = serie.pct_change(periods=4) * 100  # Cambio respecto al mismo trimestre del año anterior
+            tasa_crecimiento_trimestral = serie.pct_change() * 100  # Cambio respecto al trimestre anterior
+            
+            # Test de estacionariedad (Dickey-Fuller aumentado)
+            from statsmodels.tsa.stattools import adfuller
+            adf_test = adfuller(serie.dropna())
+            
+            # Análisis de estacionalidad
+            indices_estacionales = {}
+            if len(serie) >= periodo_estacional:
+                for i in range(periodo_estacional):
+                    estacion_valores = serie.iloc[i::periodo_estacional]
+                    indices_estacionales[f'T{i+1}'] = estacion_valores.mean()
             
             return {
                 'descomposicion': {
@@ -367,9 +397,28 @@ class DataProcessor:
                     'p_valor': p_value,
                     'error_std': std_err
                 },
+                'medias_moviles': {
+                    'corto_plazo': ma_corto,
+                    'medio_plazo': ma_medio,
+                    'largo_plazo': ma_largo
+                },
+                'tasas_crecimiento': {
+                    'interanual': tasa_crecimiento_interanual,
+                    'trimestral': tasa_crecimiento_trimestral
+                },
+                'estacionalidad': {
+                    'indices': indices_estacionales
+                },
+                'estacionariedad': {
+                    'adf_estadistico': adf_test[0],
+                    'p_valor': adf_test[1],
+                    'valores_criticos': adf_test[4]
+                },
                 'tasas_cambio': {
                     'media': tasas_cambio.mean(),
-                    'desv_std': tasas_cambio.std()
+                    'desv_std': tasas_cambio.std(),
+                    'max': tasas_cambio.max(),
+                    'min': tasas_cambio.min()
                 }
             }
         except Exception as e:
