@@ -548,25 +548,26 @@ def main():
                     st.error("Error: El DataFrame no contiene la columna 'Provincia'")
                     return
 
-                # Selector de provincia
-                provincias = sorted(df['Provincia'].unique())
-                if not provincias:
-                    st.error("No hay datos de provincias disponibles")
-                    return
+                with st.sidebar:
+                    # Selector de provincia
+                    provincias = sorted(df['Provincia'].unique())
+                    if not provincias:
+                        st.error("No hay datos de provincias disponibles")
+                        return
 
-                provincia_seleccionada = st.selectbox(
-                    "Seleccione Provincia:",
-                    options=provincias,
-                    index=0
-                )
+                    provincia_seleccionada = st.selectbox(
+                        "Seleccione Provincia:",
+                        options=provincias,
+                        index=0
+                    )
 
-                # Selector de período
-                periodos = sorted(df['Periodo'].unique())
-                periodo_seleccionado = st.selectbox(
-                    "Seleccione Período:",
-                    options=periodos,
-                    index=len(periodos)-1 if periodos else 0
-                )
+                    # Selector de período
+                    periodos = sorted(df['Periodo'].unique())
+                    periodo_seleccionado = st.selectbox(
+                        "Seleccione Período:",
+                        options=periodos,
+                        index=len(periodos)-1 if periodos else 0
+                    )
 
                 # Aplicar filtros
                 filtros = {
@@ -579,6 +580,14 @@ def main():
                     st.warning("No hay datos disponibles para los filtros seleccionados.")
                     return
 
+                # Tabla Resumen
+                st.subheader("Tabla Resumen")
+                df_resumen = df_filtrado.groupby('Provincia').agg({
+                    'Valor': ['mean', 'min', 'max']
+                }).round(2)
+                df_resumen.columns = ['Tasa Media', 'Tasa Mínima', 'Tasa Máxima']
+                st.dataframe(df_resumen)
+
                 # Visualizaciones en pestañas
                 tab_actual, tab_evol = st.tabs([
                     "Situación Actual",
@@ -589,12 +598,12 @@ def main():
                     st.subheader(f"Tasa de Nacimientos - {provincia_seleccionada}")
                     
                     # Gráfico de barras actual
-                    df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
+                    df_actual = df_filtrado[df_filtrado['Periodo'] == periodo_seleccionado]
                     fig_actual = DataVisualizer.crear_grafico_barras(
                         df=df_actual,
                         x='Provincia',
                         y='Valor',
-                        titulo=f"Tasa de Nacimientos - {provincia_seleccionada}"
+                        titulo=f"Tasa de Nacimientos - {provincia_seleccionada} ({periodo_seleccionado})"
                     )
                     st.plotly_chart(fig_actual, use_container_width=True)
 
@@ -610,18 +619,6 @@ def main():
                         titulo=f"Evolución de la Tasa de Nacimientos - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_evol, use_container_width=True)
-
-                if df_filtrado.empty:
-                    st.warning("No hay datos disponibles para los filtros seleccionados.")
-                    return
-
-                # Tabla Resumen con nombres de columnas correctos
-                st.subheader("Tabla Resumen")
-                df_resumen = df_filtrado.groupby('Rango').agg({
-                    'Valor': ['count', 'mean', 'sum']
-                }).round(2)
-                df_resumen.columns = ['Cantidad de Municipios', 'Media de Habitantes', 'Total de Habitantes']
-                st.dataframe(df_resumen)
 
                 # Visualizaciones en pestañas
                 tab_dist, tab_evol, tab_comp = st.tabs([
