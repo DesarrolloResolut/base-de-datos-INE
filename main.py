@@ -80,6 +80,15 @@ def main():
         - Tasas de empleo por género
         - Evolución temporal de los indicadores
         """)
+    elif categoria_seleccionada == "tasa_nacimientos":
+        st.markdown("""
+        Esta aplicación muestra la tasa de nacimientos por provincia, proporcionada por el Instituto Nacional de Estadística (INE).
+        Los datos incluyen:
+        - Tasa de nacimientos por provincia
+        - Evolución temporal de nacimientos
+        - Distribución por edad de la madre
+        - Análisis de estacionalidad
+        """)
     
     
     try:
