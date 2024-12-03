@@ -31,7 +31,7 @@ class DataProcessor:
 
     @staticmethod
     def _procesar_datos_provincia(datos: Dict) -> pd.DataFrame:
-        """Procesa datos de provincia incluyendo indicador y región"""
+        """Procesa datos de provincia incluyendo indicador, región y género"""
         try:
             registros = []
             for dato in datos:
@@ -50,15 +50,19 @@ class DataProcessor:
                 # Extraer región (provincia)
                 region = partes[0].strip()
                 
-                # Determinar indicador basado en el código y nombre
+                # Determinar indicador y género basado en el código y nombre
                 if cod == 'DPOP160':  # Total
-                    indicador = 'Población total'
+                    indicador = 'Población'
+                    genero = 'Total'
                 elif cod == 'DPOP161':  # Hombres
-                    indicador = 'Población masculina'
+                    indicador = 'Población'
+                    genero = 'Hombre'
                 elif cod == 'DPOP162':  # Mujeres
-                    indicador = 'Población femenina'
+                    indicador = 'Población'
+                    genero = 'Mujer'
                 else:
                     indicador = 'Población'
+                    genero = 'Total'
                 
                 # Procesar valores históricos
                 for valor in valores:
@@ -71,6 +75,7 @@ class DataProcessor:
                     registros.append({
                         'Indicador': indicador,
                         'Region': region,
+                        'Genero': genero,
                         'Periodo': periodo,
                         'Valor': float(valor_numerico)
                     })
