@@ -549,17 +549,21 @@ def main():
                     return
 
                 with st.sidebar:
-                    # Selector de provincia
+                    # Selector de provincias (múltiple)
                     provincias = sorted(df['Provincia'].unique())
                     if not provincias:
                         st.error("No hay datos de provincias disponibles")
                         return
 
-                    provincia_seleccionada = st.selectbox(
-                        "Seleccione Provincia:",
+                    provincias_seleccionadas = st.multiselect(
+                        "Seleccione Provincias:",
                         options=provincias,
-                        index=0
+                        default=[provincias[0]] if provincias else None
                     )
+
+                    if not provincias_seleccionadas:
+                        st.warning("Por favor, seleccione al menos una provincia")
+                        return
 
                     # Selector de período
                     periodos = sorted(df['Periodo'].unique())
@@ -570,47 +574,91 @@ def main():
                     )
 
                 # Aplicar filtros
-                filtros = {
-                    'Provincia': provincia_seleccionada,
-                    'Periodo': periodo_seleccionado
-                }
-                df_filtrado = DataProcessor.filtrar_datos(df, filtros)
-
+                df_filtrado = df[df['Provincia'].isin(provincias_seleccionadas)].copy()
+                
                 if df_filtrado.empty:
                     st.warning("No hay datos disponibles para los filtros seleccionados.")
                     return
+                    
+                # Crear pestañas para diferentes vistas
+                tab_individual, tab_comparativa = st.tabs(["Vista Individual", "Comparativa"])
 
-                # Tabla Resumen
-                st.subheader("Tabla Resumen")
-                df_resumen = df_filtrado.groupby('Provincia').agg({
-                    'Valor': ['mean', 'min', 'max']
-                }).round(2)
-                df_resumen.columns = ['Tasa Media', 'Tasa Mínima', 'Tasa Máxima']
-                st.dataframe(df_resumen)
+                with tab_individual:
+                    # Vista individual por provincia
+                    provincia_actual = st.selectbox(
+                        "Seleccione una provincia para ver en detalle:",
+                        options=provincias_seleccionadas
+                    )
+                    
+                    df_provincia = df_filtrado[df_filtrado['Provincia'] == provincia_actual]
+                    
+                    # Tabla Resumen
+                    st.subheader("Tabla Resumen")
+                    df_resumen = df_provincia.groupby('Provincia').agg({
+                        'Valor': ['mean', 'min', 'max']
+                    }).round(2)
+                    df_resumen.columns = ['Tasa Media', 'Tasa Mínima', 'Tasa Máxima']
+                    st.dataframe(df_resumen)
 
-                # Gráfico de barras actual
-                st.subheader(f"Tasa de Nacimientos - {provincia_seleccionada}")
-                fig_actual = DataVisualizer.crear_grafico_barras(
-                    df=df_filtrado,
-                    x='Periodo',
-                    y='Valor',
-                    titulo=f"Tasa de Nacimientos - {provincia_seleccionada}"
-                )
-                st.plotly_chart(fig_actual, use_container_width=True)
+                    # Gráfico de barras actual
+                    st.subheader(f"Tasa de Nacimientos - {provincia_actual}")
+                    fig_actual = DataVisualizer.crear_grafico_barras(
+                        df=df_provincia,
+                        x='Periodo',
+                        y='Valor',
+                        titulo=f"Tasa de Nacimientos - {provincia_actual}"
+                    )
+                    st.plotly_chart(fig_actual, use_container_width=True)
 
-                # Visualización de tendencias temporales
-                st.subheader("Análisis de Tendencias Temporales")
+                    # Visualización de tendencias temporales
+                    st.subheader("Análisis de Tendencias Temporales")
+                    
+                    # Checkbox para mostrar/ocultar medias móviles
+                    incluir_ma = st.checkbox("Mostrar medias móviles", value=True)
+                    
+                    # Crear gráfico de tendencias
+                    fig_tendencia = DataVisualizer.crear_grafico_tendencia_nacimientos(
+                        df=df_provincia,
+                        provincia=provincia_actual,
+                        incluir_ma=incluir_ma
+                    )
+                    st.plotly_chart(fig_tendencia, use_container_width=True)
                 
-                # Checkbox para mostrar/ocultar medias móviles
-                incluir_ma = st.checkbox("Mostrar medias móviles", value=True)
-                
-                # Crear gráfico de tendencias
-                fig_tendencia = DataVisualizer.crear_grafico_tendencia_nacimientos(
-                    df=df_filtrado,
-                    provincia=provincia_seleccionada,
-                    incluir_ma=incluir_ma
-                )
-                st.plotly_chart(fig_tendencia, use_container_width=True)
+                with tab_comparativa:
+                    st.subheader("Comparativa entre Provincias")
+                    
+                    # Tabla comparativa
+                    df_comp = df_filtrado.groupby('Provincia').agg({
+                        'Valor': ['mean', 'min', 'max', 'std']
+                    }).round(2)
+                    df_comp.columns = ['Media', 'Mínima', 'Máxima', 'Desv. Estándar']
+                    st.dataframe(df_comp)
+                    
+                    # Gráfico comparativo
+                    fig_comp = DataVisualizer.crear_grafico_comparativo_provincias(
+                        df=df_filtrado,
+                        provincias=provincias_seleccionadas
+                    )
+                    st.plotly_chart(fig_comp, use_container_width=True)
+                    
+                    # Gráfico de cajas para comparar distribuciones
+                    fig_box = go.Figure()
+                    for provincia in provincias_seleccionadas:
+                        df_prov = df_filtrado[df_filtrado['Provincia'] == provincia]
+                        fig_box.add_trace(go.Box(
+                            y=df_prov['Valor'],
+                            name=provincia,
+                            boxpoints='all',
+                            jitter=0.3,
+                            pointpos=-1.8
+                        ))
+                    
+                    fig_box.update_layout(
+                        title='Distribución de Tasas de Nacimiento por Provincia',
+                        yaxis_title='Tasa de Nacimientos',
+                        template='plotly_white'
+                    )
+                    st.plotly_chart(fig_box, use_container_width=True)
 
                 # Opciones de exportación
                 col1, col2 = st.columns(2)

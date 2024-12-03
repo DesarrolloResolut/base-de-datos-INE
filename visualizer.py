@@ -403,3 +403,50 @@ class DataVisualizer:
         )
         
         return fig
+
+    @staticmethod
+    def crear_grafico_comparativo_provincias(df: pd.DataFrame,
+                                           provincias: list = None,
+                                           metrica: str = 'Valor') -> go.Figure:
+        """
+        Crea un gráfico comparativo entre provincias
+        
+        Args:
+            df: DataFrame con los datos de nacimientos
+            provincias: Lista de provincias a comparar
+            metrica: Nombre de la columna con los valores a comparar
+            
+        Returns:
+            Figura de plotly con la comparación entre provincias
+        """
+        if provincias:
+            df = df[df['Provincia'].isin(provincias)].copy()
+            
+        # Ordenar por período
+        df = df.sort_values(['Periodo', 'Provincia'])
+        
+        # Crear figura base
+        fig = go.Figure()
+        
+        # Añadir una línea por provincia
+        for provincia in df['Provincia'].unique():
+            df_prov = df[df['Provincia'] == provincia]
+            
+            fig.add_trace(go.Scatter(
+                x=df_prov['Periodo'],
+                y=df_prov[metrica],
+                name=provincia,
+                mode='lines+markers'
+            ))
+        
+        # Configurar layout
+        fig.update_layout(
+            title='Comparativa entre Provincias',
+            template='plotly_white',
+            xaxis_title='Año',
+            yaxis_title='Tasa de Nacimientos',
+            hovermode='x unified',
+            showlegend=True
+        )
+        
+        return fig
