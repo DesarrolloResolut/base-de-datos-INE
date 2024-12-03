@@ -316,3 +316,25 @@ class DataVisualizer:
         )
         
         return fig
+
+    @staticmethod
+    def crear_heatmap(df, titulo=''):
+        """Crea un mapa de calor usando los datos proporcionados"""
+        import plotly.graph_objects as go
+        
+        fig = go.Figure(data=go.Heatmap(
+            z=df.values,
+            x=df.columns,
+            y=df.index,
+            colorscale='Viridis'
+        ))
+        
+        fig.update_layout(
+            title=titulo,
+            xaxis_title='Rango de Habitantes',
+            yaxis_title='Periodo',
+            height=500,
+            template='plotly_white'
+        )
+        
+        return fig
