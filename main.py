@@ -607,40 +607,20 @@ def main():
                     titulo=f"Evolución de la Tasa de Nacimientos - {provincia_seleccionada}"
                 )
                 st.plotly_chart(fig_evol, use_container_width=True)
-                        titulo=f"Evolución Temporal por Rango - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_evol, use_container_width=True, key="evol_mun")
 
-                with tab_comp:
-                    st.subheader("Análisis Comparativo")
-                    # Crear tabla pivote ordenada
-                    df_filtrado['Rango'] = pd.Categorical(df_filtrado['Rango'], categories=orden_rangos, ordered=True)
-                    pivot_df = df_filtrado.pivot_table(
-                        index='Periodo',
-                        columns='Rango',
-                        values='Valor',
-                        aggfunc='sum'
-                    )
-                    # Reordenar las columnas según el orden definido
-                    pivot_df = pivot_df[orden_rangos]
-                    
-                    fig_heat = DataVisualizer.crear_heatmap(
-                        df=pivot_df,
-                        titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_heat, use_container_width=True, key="heat_mun")
-                
                 # Opciones de exportación
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
                     if st.button("Exportar a Excel"):
-                        nombre_archivo = f"municipios_por_habitantes_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                        exportar_a_excel(df_resumen, nombre_archivo)
-                        st.success(f"Datos exportados a {nombre_archivo}")
+                        nombre_archivo = f"tasa_nacimientos_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                        mensaje = exportar_a_excel(df_filtrado, nombre_archivo)
+                        st.success(mensaje)
                 
                 with col2:
                     if st.button("Exportar a CSV"):
-                        nombre_archivo = f"municipios_por_habitantes_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                        nombre_archivo = f"tasa_nacimientos_{provincia_seleccionada}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                        mensaje = exportar_a_csv(df_filtrado, nombre_archivo)
+                        st.success(mensaje)
                         exportar_a_csv(df_resumen, nombre_archivo)
                         st.success(f"Datos exportados a {nombre_archivo}")
                 
