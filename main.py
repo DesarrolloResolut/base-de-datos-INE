@@ -630,6 +630,84 @@ def main():
                 # Visualizaciones para tasas de empleo
                 st.subheader("Análisis de Tasas de Empleo")
                 
+                # Crear pestañas para diferentes análisis
+                tab_evolucion, tab_comparativa, tab_genero = st.tabs([
+                    "Evolución Temporal",
+                    "Comparativa de Tasas",
+                    "Análisis por Género"
+                ])
+                
+                with tab_evolucion:
+                    # Gráfico de evolución temporal
+                    fig_evolucion = DataVisualizer.crear_grafico_lineas(
+                        df,
+                        x='Periodo',
+                        y='Valor',
+                        color='Tipo_Tasa',
+                        titulo=f"Evolución temporal de {indicador_seleccionado}"
+                    )
+                    st.plotly_chart(fig_evolucion, use_container_width=True)
+                    
+                    # Métricas de evolución
+                    st.subheader("Métricas de Evolución")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        ultimo_valor = df[df['Periodo'] == df['Periodo'].max()]['Valor'].iloc[0]
+                        st.metric("Último valor", f"{ultimo_valor:.2f}%")
+                    with col2:
+                        valor_medio = df['Valor'].mean()
+                        st.metric("Media del período", f"{valor_medio:.2f}%")
+                    with col3:
+                        variacion = ultimo_valor - df[df['Periodo'] == df['Periodo'].min()]['Valor'].iloc[0]
+                        st.metric("Variación en el período", f"{variacion:+.2f}%")
+                
+                with tab_comparativa:
+                    # Gráfico comparativo de tasas
+                    fig_comparativa = DataVisualizer.crear_grafico_barras(
+                        df[df['Periodo'] == df['Periodo'].max()],
+                        x='Tipo_Tasa',
+                        y='Valor',
+                        color='Genero',
+                        titulo="Comparativa de Tasas por Género"
+                    )
+                    st.plotly_chart(fig_comparativa, use_container_width=True)
+                    
+                    # Tabla comparativa
+                    st.subheader("Resumen Comparativo")
+                    df_resumen = df.pivot_table(
+                        index=['Tipo_Tasa', 'Genero'],
+                        values='Valor',
+                        aggfunc=['mean', 'min', 'max']
+                    ).round(2)
+                    df_resumen.columns = ['Media', 'Mínimo', 'Máximo']
+                    st.dataframe(df_resumen)
+                
+                with tab_genero:
+                    # Gráfico de dispersión por género
+                    fig_genero = DataVisualizer.crear_grafico_dispersion(
+                        df,
+                        x='Periodo',
+                        y='Valor',
+                        color='Genero',
+                        titulo=f"Distribución por Género - {indicador_seleccionado}"
+                    )
+                    st.plotly_chart(fig_genero, use_container_width=True)
+                    
+                    # Análisis de brecha de género
+                    st.subheader("Análisis de Brecha de Género")
+                    df_ultimo_periodo = df[df['Periodo'] == df['Periodo'].max()]
+                    hombres = df_ultimo_periodo[df_ultimo_periodo['Genero'] == 'Hombres']['Valor'].iloc[0]
+                    mujeres = df_ultimo_periodo[df_ultimo_periodo['Genero'] == 'Mujeres']['Valor'].iloc[0]
+                    brecha = hombres - mujeres
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Tasa Hombres", f"{hombres:.2f}%")
+                    with col2:
+                        st.metric("Tasa Mujeres", f"{mujeres:.2f}%")
+                    with col3:
+                        st.metric("Brecha de Género", f"{brecha:+.2f}%")
+                
                 # Crear pestañas para diferentes visualizaciones
                 tab_evolucion, tab_genero, tab_comparativa = st.tabs([
                     "Evolución Temporal", "Análisis por Género", "Comparativa"
