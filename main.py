@@ -570,6 +570,61 @@ def main():
     if st.session_state.datos_actuales is not None:
         df = st.session_state.datos_actuales
         
+        # Análisis de tendencias temporales para datos de empleo
+        if categoria_seleccionada == "tasa_empleo":
+            st.subheader("Análisis de Tendencias Temporales")
+            
+            # Realizar análisis de series temporales
+            for indicador in df['Indicador'].unique():
+                df_indicador = df[df['Indicador'] == indicador].copy()
+                df_indicador = df_indicador.sort_values('Periodo')
+                
+                try:
+                    resultados = DataProcessor.analisis_series_temporales(
+                        df_indicador,
+                        columna_tiempo='Periodo',
+                        columna_valor='Valor',
+                        periodo_estacional=4  # Datos trimestrales
+                    )
+                    
+                    # Crear gráfico de series temporales
+                    fig = DataVisualizer.crear_grafico_series_temporales(
+                        resultados,
+                        df_indicador['Valor'],
+                        titulo=f'Análisis Temporal - {indicador}'
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Mostrar estadísticas
+                    st.write(f"### Estadísticas de {indicador}")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Tendencia", f"{resultados['tendencia']['coeficiente']:.4f}")
+                    with col2:
+                        st.metric("R²", f"{resultados['tendencia']['r_cuadrado']:.4f}")
+                    with col3:
+                        st.metric("P-valor", f"{resultados['tendencia']['p_valor']:.4f}")
+                    
+                    # Mostrar tasas de crecimiento
+                    st.write("#### Tasas de Crecimiento")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Tasa interanual", 
+                                f"{resultados['tasas_crecimiento']['interanual'].mean():.2f}%")
+                    with col2:
+                        st.metric("Tasa trimestral", 
+                                f"{resultados['tasas_crecimiento']['trimestral'].mean():.2f}%")
+                    
+                    # Test de estacionariedad
+                    st.write("#### Análisis de Estacionariedad")
+                    if resultados['estacionariedad']['p_valor'] < 0.05:
+                        st.success("La serie es estacionaria (p-valor < 0.05)")
+                    else:
+                        st.warning("La serie no es estacionaria (p-valor >= 0.05)")
+                    
+                except Exception as e:
+                    st.error(f"Error al analizar tendencias para {indicador}: {str(e)}")
+
         if df.empty:
             st.warning("No hay datos disponibles para mostrar.")
             return
