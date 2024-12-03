@@ -161,6 +161,7 @@ class DataProcessor:
             for dato in datos:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
+                cod = dato.get('COD', '')
                 
                 # Ignorar datos nacionales
                 if nombre.startswith('Total Nacional'):
@@ -175,9 +176,26 @@ class DataProcessor:
                 nombre_provincia = ' '.join(partes[0].strip().split()[1:])
                 rango = partes[1].strip()
                 
+                # Determinar indicador y género basado en el código y nombre
+                if cod == 'DPOP160':  # Total
+                    indicador = 'Población'
+                    genero = 'Total'
+                elif cod == 'DPOP161':  # Hombres
+                    indicador = 'Población'
+                    genero = 'Hombre'
+                elif cod == 'DPOP162':  # Mujeres
+                    indicador = 'Población'
+                    genero = 'Mujer'
+                else:
+                    indicador = 'Población'
+                    genero = 'Total'
+                
                 # Procesar valores usando NombrePeriodo como año
                 for valor in valores:
                     registros.append({
+                        'Indicador': indicador,
+                        'Region': nombre_provincia,
+                        'Genero': genero,
                         'Provincia': nombre_provincia,
                         'Codigo': codigo_provincia,
                         'Rango': rango,
