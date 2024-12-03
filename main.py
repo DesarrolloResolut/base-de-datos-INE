@@ -89,8 +89,17 @@ def main():
             if not datos:
                 st.error(f"No se pudieron obtener los datos de {INEApiClient.CATEGORIES[categoria_seleccionada]['name']}.")
                 return
+            
+            # Usar método específico para datos de provincia
+            if categoria_seleccionada == 'provincias':
+                df = DataProcessor._procesar_datos_provincia(datos)
+                # Verificar columnas requeridas
+                if 'Indicador' not in df.columns or 'Region' not in df.columns:
+                    st.error("Error: Faltan columnas requeridas en los datos de provincia")
+                    return
+            else:
+                df = DataProcessor.json_to_dataframe(datos, categoria=categoria_seleccionada)
                 
-            df = DataProcessor.json_to_dataframe(datos, categoria=categoria_seleccionada)
             if df.empty:
                 st.error("No hay datos disponibles para mostrar.")
                 return
