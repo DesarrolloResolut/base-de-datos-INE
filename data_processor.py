@@ -170,13 +170,13 @@ class DataProcessor:
                 if len(partes) < 2:
                     continue
                     
-                municipio = partes[0].strip()
+                provincia = partes[0].strip()
                 rango = partes[1].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
                     registros.append({
-                        'Municipio': municipio,
+                        'Provincia': provincia,
                         'Rango': rango,
                         'Periodo': valor.get('NombrePeriodo', ''),
                         'Valor': valor.get('Valor', 0)
