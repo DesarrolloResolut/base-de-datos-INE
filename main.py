@@ -1,3 +1,5 @@
+from datetime import datetime
+from utils import exportar_a_excel, exportar_a_csv
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -736,7 +738,7 @@ def main():
                 
                 with tab_genero:
                     # Gráfico de dispersión por género
-                    fig_genero = DataVisualizer.crear_grafico_dispersion(
+                    fig_genero = DataVisualizer.crear_grafico_barras(
                         df,
                         x='Periodo',
                         y='Valor',
@@ -1259,6 +1261,30 @@ def main():
                             st.metric("Máximo", f"{stats['max']:.2f}")
             except Exception as e:
                 st.error(f"Error al calcular estadísticas: {str(e)}")
+        
+        # Exportar datos
+        st.header("Exportar Datos")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("Exportar a Excel"):
+                try:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"datos_{categoria_seleccionada}_{timestamp}.xlsx"
+                    mensaje = exportar_a_excel(df, filename)
+                    st.success(f"{mensaje}: {filename}")
+                except Exception as e:
+                    st.error(f"Error al exportar a Excel: {str(e)}")
+        
+        with col2:
+            if st.button("Exportar a CSV"):
+                try:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"datos_{categoria_seleccionada}_{timestamp}.csv"
+                    mensaje = exportar_a_csv(df, filename)
+                    st.success(f"{mensaje}: {filename}")
+                except Exception as e:
+                    st.error(f"Error al exportar a CSV: {str(e)}")
         
         # Análisis Avanzado
         st.header("Análisis Avanzado")
