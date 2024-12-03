@@ -543,7 +543,32 @@ def main():
                 df_filtrado = DataProcessor.filtrar_datos(df, filtros)
 
             elif categoria_seleccionada == "tasa_nacimientos":
-                # Filtros para tasa de nacimientos
+                # Verificar que el DataFrame tenga la columna Provincia
+                if 'Provincia' not in df.columns:
+                    st.error("Error: El DataFrame no contiene la columna 'Provincia'")
+                    return
+
+                # Selector de provincia
+                provincias = sorted(df['Provincia'].unique())
+                if not provincias:
+                    st.error("No hay datos de provincias disponibles")
+                    return
+
+                provincia_seleccionada = st.selectbox(
+                    "Seleccione Provincia:",
+                    options=provincias,
+                    index=0
+                )
+
+                # Selector de período
+                periodos = sorted(df['Periodo'].unique())
+                periodo_seleccionado = st.selectbox(
+                    "Seleccione Período:",
+                    options=periodos,
+                    index=len(periodos)-1 if periodos else 0
+                )
+
+                # Aplicar filtros
                 filtros = {
                     'Provincia': provincia_seleccionada,
                     'Periodo': periodo_seleccionado
