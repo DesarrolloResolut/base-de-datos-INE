@@ -537,7 +537,7 @@ def main():
                     
                     # Filtrar datos para el último periodo
                     ultimo_periodo = max(df['Periodo'])
-                    df_actual = df[df['Periodo'] == ultimo_periodo]
+                    df_actual = df[df['Periodo'] == ultimo_periodo].groupby('Rango')['Valor'].sum().reset_index()
                     
                     # Crear gráfico de barras para la distribución actual
                     fig_dist = DataVisualizer.crear_grafico_barras(
@@ -548,7 +548,7 @@ def main():
                     )
                     st.plotly_chart(fig_dist, use_container_width=True)
                     
-                    # Gráfico circular para mostrar proporciones
+                    # Gráfico circular para mostrar proporciones (usando df_actual que ya tiene los valores agregados)
                     fig_pie = DataVisualizer.crear_grafico_pastel(
                         df_actual,
                         names='Rango',
@@ -560,9 +560,14 @@ def main():
                 with tab_evol:
                     st.subheader("Evolución Temporal por Rango de Habitantes")
                     
-                    # Crear gráfico de líneas para la evolución temporal
+                    # Crear gráfico de líneas para la evolución temporal con valores agregados
+                    df_evol = df.copy()
+                    if rango_seleccionado != 'Total':
+                        df_evol = df_evol[df_evol['Rango'] == rango_seleccionado]
+                    df_evol = df_evol.groupby(['Periodo', 'Rango'])['Valor'].sum().reset_index()
+                    
                     fig_evol = DataVisualizer.crear_grafico_lineas(
-                        df[df['Rango'] == rango_seleccionado] if rango_seleccionado != 'Total' else df,
+                        df_evol,
                         x='Periodo',
                         y='Valor',
                         color='Rango' if rango_seleccionado == 'Total' else None,
@@ -590,7 +595,12 @@ def main():
                     st.subheader("Análisis Comparativo")
                     
                     # Crear heatmap para comparar rangos y periodos
-                    pivot_df = df.pivot(index='Periodo', columns='Rango', values='Valor')
+                    pivot_df = df.pivot_table(
+                        index='Periodo',
+                        columns='Rango',
+                        values='Valor',
+                        aggfunc='sum'  # Agregar valores duplicados
+                    )
                     fig_heat = DataVisualizer.crear_heatmap(
                         pivot_df,
                         titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
