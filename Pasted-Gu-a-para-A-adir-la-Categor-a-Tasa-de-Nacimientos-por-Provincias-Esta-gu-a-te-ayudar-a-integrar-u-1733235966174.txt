@@ -1,0 +1,115 @@
+Guía para Añadir la Categoría "Tasa de Nacimientos por Provincias"
+Esta guía te ayudará a integrar una nueva categoría en tu aplicación: "Tasa de Nacimientos por Provincias". El objetivo es mostrar la tasa de natalidad por cada provincia a partir de los datos proporcionados por la API.
+
+1. Preparación
+API:
+URL: https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/1470?nult=4&det=2
+
+Estructura de los datos:
+
+Nombre: Describe el indicador y la provincia. Ejemplo: "Fecundidad. Albacete."
+Unidad: Describe la métrica usada. Ejemplo: "Nacidos por mil habitantes".
+Data: Contiene los valores, años y períodos.
+Objetivo:
+
+Extraer y mostrar:
+Provincia: Parte del campo Nombre (ejemplo: Albacete).
+Tasa de Nacimientos: Del campo Valor en Data.
+Año: Del campo Anyo.
+Unidad: Siempre "Nacidos por mil habitantes".
+2. Pasos para Integrar la Nueva Categoría
+Paso 1: Crear la Nueva Categoría
+Añade una entrada en la lista de categorías de tu aplicación:
+
+Nombre de Categoría: Tasa de Nacimientos por Provincias.
+Filtros Disponibles:
+Provincia: Selector dinámico basado en las provincias disponibles en la API.
+Año: Selector de año para filtrar los datos (ejemplo: 2020, 2021, etc.).
+Paso 2: Consumir la API
+Sigue estos pasos para procesar la información de la API:
+
+Descargar los Datos desde la API: Utiliza una herramienta o librería para consumir la API y convertir los datos en una estructura manipulable (JSON o DataFrame).
+
+Procesar el Campo Nombre:
+
+Divide el texto del campo Nombre para extraer:
+Indicador: (Fecundidad).
+Provincia: Ejemplo, Albacete.
+Filtrar el Campo Data:
+
+Obtén el valor de natalidad (Valor) asociado a un año específico (Anyo).
+Ignora entradas donde Secreto sea true para evitar datos ocultos.
+Estructurar los Datos:
+
+Crea un objeto o DataFrame con columnas como:
+Provincia
+Año
+Indicador
+Valor
+Paso 3: Mostrar los Datos
+Implementa una visualización que permita:
+
+Filtrar por Provincia y Año.
+Mostrar los valores en una tabla o gráfico dinámico.
+3. Ejemplo de Consumo de la API
+python
+Copiar código
+import requests
+import pandas as pd
+
+# URL de la API
+url = "https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/1470?nult=4&det=2"
+
+# Consumir datos de la API
+response = requests.get(url)
+datos = response.json()
+
+# Convertir datos en DataFrame
+df = pd.DataFrame(datos)
+
+# Procesar el campo 'Nombre' para extraer Provincia e Indicador
+df[['Indicador', 'Provincia']] = df['Nombre'].str.extract(r'^(.*?)\. (.*?)\.')
+
+# Expandir el campo 'Data' en filas
+df_exploded = df.explode('Data')
+
+# Extraer los valores relevantes de 'Data'
+df_exploded['Año'] = df_exploded['Data'].apply(lambda x: x['Anyo'] if isinstance(x, dict) else None)
+df_exploded['NombrePeriodo'] = df_exploded['Data'].apply(lambda x: x['NombrePeriodo'] if isinstance(x, dict) else None)
+df_exploded['Valor'] = df_exploded['Data'].apply(lambda x: x['Valor'] if isinstance(x, dict) and not x['Secreto'] else None)
+
+# Filtrar datos por una provincia específica (ejemplo: Albacete) y un año específico (ejemplo: 2020)
+provincia_filtro = "Albacete"
+año_filtro = 2020
+
+df_filtrado = df_exploded[(df_exploded['Provincia'] == provincia_filtro) & (df_exploded['Año'] == año_filtro)]
+
+# Mostrar resultados
+print(df_filtrado[['Provincia', 'Año', 'Indicador', 'Valor']])
+Salida Esperada
+Provincia	Año	Indicador	Valor
+Albacete	2020	Fecundidad	7.17
+4. Integración en la App
+Front-End:
+
+Añade una sección en la interfaz para la nueva categoría.
+Implementa filtros dinámicos (por provincia y año).
+Muestra los resultados en una tabla o gráfico.
+Back-End:
+
+Agrega una función para consumir y procesar los datos de la API.
+Asegúrate de filtrar correctamente por provincia y año antes de devolver los resultados al cliente.
+Testing:
+
+Prueba con distintas provincias y años para verificar que los datos se filtran y se muestran correctamente.
+Maneja casos donde no haya datos disponibles (Secreto: true).
+5. Notas Adicionales
+Mantenimiento: Actualiza periódicamente la URL si la API cambia.
+Errores: Maneja errores en la conexión a la API o datos vacíos para mejorar la experiencia del usuario.
+Esta guía te permitirá integrar eficientemente la categoría "Tasa de Nacimientos por Provincias" en tu aplicación.
+
+
+
+
+
+
