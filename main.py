@@ -525,17 +525,11 @@ def main():
                     'Genero': genero_seleccionado
                 }
             elif categoria_seleccionada == "municipios_habitantes":
-                # Solo verificar las columnas necesarias para municipios por habitantes
-                columnas_requeridas = ['Provincia', 'Rango', 'Periodo', 'Valor']
-                if not all(col in df.columns for col in columnas_requeridas):
-                    st.error("Error: Los datos deben contener las columnas: Provincia, Rango, Periodo y Valor")
-                    return
-
                 # Sección de municipios por habitantes
                 df_filtrado = df[df['Provincia'] == provincia_seleccionada].copy()
                 if periodo_seleccionado:
                     df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(periodo_seleccionado)]
-
+                
                 # Tabla Resumen
                 st.subheader("Tabla Resumen")
                 df_resumen = df_filtrado.groupby('Rango').agg({
