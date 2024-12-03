@@ -532,10 +532,8 @@ def main():
 
                 # Tabla Resumen
                 st.subheader("Tabla Resumen")
-                df_resumen = df_filtrado.groupby('Rango')['Valor'].agg({
-                    'count': 'count',
-                    'mean': 'mean',
-                    'sum': 'sum'
+                df_resumen = df_filtrado.groupby('Rango').agg({
+                    'Valor': ['count', 'mean', 'sum']
                 }).round(2)
                 df_resumen.columns = ['Cantidad', 'Media', 'Total']
                 st.dataframe(df_resumen)
