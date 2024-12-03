@@ -556,7 +556,7 @@ def main():
                         y='Valor',
                         titulo=f"Distribución de Municipios por Rango - {provincia_seleccionada}"
                     )
-                    st.plotly_chart(fig_dist, use_container_width=True)
+                    st.plotly_chart(fig_dist, use_container_width=True, key="dist_chart")
                 
                 with tab_evol:
                     st.subheader("Evolución Temporal por Rango de Habitantes")
@@ -567,7 +567,7 @@ def main():
                         color='Rango',
                         titulo=f"Evolución Temporal por Rango"
                     )
-                    st.plotly_chart(fig_evol, use_container_width=True)
+                    st.plotly_chart(fig_evol, use_container_width=True, key="evol_chart")
                 
                 with tab_comp:
                     st.subheader("Análisis Comparativo")
@@ -581,12 +581,7 @@ def main():
                         pivot_df,
                         titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
                     )
-                    st.plotly_chart(fig_heat, use_container_width=True)
-                    fig_heat = DataVisualizer.crear_heatmap(
-                        pivot_df,
-                        titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_heat, use_container_width=True)
+                    st.plotly_chart(fig_heat, use_container_width=True, key="heat_chart")
                 
                 # Aplicar filtros para los datos
                 filtros = {
