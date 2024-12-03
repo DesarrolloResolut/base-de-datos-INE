@@ -580,7 +580,7 @@ def main():
         # Sección de exportación
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Exportar a Excel"):
+            if st.button("Exportar a Excel", key="btn_excel_1"):
                 # Generar nombre de archivo con timestamp
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"datos_ine_{timestamp}.xlsx"
@@ -591,13 +591,14 @@ def main():
                             label="Descargar Excel",
                             data=f,
                             file_name=filename,
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key="download_excel_1"
                         )
                 else:
                     st.error(resultado)
         
         with col2:
-            if st.button("Exportar a CSV"):
+            if st.button("Exportar a CSV", key="btn_csv_1"):
                 # Generar nombre de archivo con timestamp
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"datos_ine_{timestamp}.csv"
@@ -608,7 +609,8 @@ def main():
                             label="Descargar CSV",
                             data=f,
                             file_name=filename,
-                            mime="text/csv"
+                            mime="text/csv",
+                            key="download_csv_1"
                         )
                 else:
                     st.error(resultado)
@@ -1267,7 +1269,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("Exportar a Excel"):
+            if st.button("Exportar a Excel", key="btn_excel_2"):
                 try:
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"datos_{categoria_seleccionada}_{timestamp}.xlsx"
@@ -1277,7 +1279,7 @@ def main():
                     st.error(f"Error al exportar a Excel: {str(e)}")
         
         with col2:
-            if st.button("Exportar a CSV"):
+            if st.button("Exportar a CSV", key="btn_csv_2"):
                 try:
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"datos_{categoria_seleccionada}_{timestamp}.csv"
