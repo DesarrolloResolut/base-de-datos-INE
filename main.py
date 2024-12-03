@@ -524,6 +524,8 @@ def main():
                     'Periodo': periodo_seleccionado,
                     'Genero': genero_seleccionado
                 }
+                # Procesamiento para provincias
+                df_filtrado = DataProcessor.aplicar_filtros(df, filtros)
             elif categoria_seleccionada == "municipios_habitantes":
                 # Sección de municipios por habitantes
                 df_filtrado = df[df['Provincia'] == provincia_seleccionada].copy()
