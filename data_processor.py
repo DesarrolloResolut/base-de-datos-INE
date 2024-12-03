@@ -769,6 +769,22 @@ class DataProcessor:
         }
         
         # Log de categorías válidas disponibles
+
+    @staticmethod
+    def aplicar_filtros(df, filtros):
+        df_filtrado = df.copy()
+        
+        if filtros.get('Municipio'):
+            df_filtrado = df_filtrado[df_filtrado['Municipio'] == filtros['Municipio']]
+        
+        if filtros.get('Periodo'):
+            df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(filtros['Periodo'])]
+            
+        if filtros.get('Genero'):
+            df_filtrado = df_filtrado[df_filtrado['Genero'].isin(filtros['Genero'])]
+            
+        return df_filtrado
+
         logger.info(f"Categorías válidas disponibles: {', '.join(categorias_validas.keys())}")
         
         # Validar si la categoría es válida
