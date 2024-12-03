@@ -619,6 +619,17 @@ def main():
         
         # Visualizaciones
         st.header("Visualizaciones")
+
+        # Validaciones generales antes de crear gráficos
+        if df.empty:
+            st.warning("No hay datos disponibles para mostrar")
+            return
+
+        # Validar que existan las columnas necesarias
+        required_columns = ['Indicador', 'Genero', 'Region', 'Periodo', 'Valor']
+        if not all(col in df.columns for col in required_columns):
+            st.error(f"Faltan columnas requeridas: {[col for col in required_columns if col not in df.columns]}")
+            return
         
         try:
             if categoria_seleccionada == "sectores_manufactureros":
@@ -1128,8 +1139,19 @@ def main():
                 # Visualización de tasas de actividad, paro y empleo
                 st.subheader("Tasas de Actividad, Paro y Empleo")
                 
+                # Validar que existan las columnas necesarias
+                required_columns = ['Indicador', 'Genero', 'Region', 'Periodo', 'Valor']
+                if not all(col in df.columns for col in required_columns):
+                    st.error(f"Faltan columnas requeridas: {[col for col in required_columns if col not in df.columns]}")
+                    return
+
                 # Procesar datos de empleo
                 df_empleo = DataProcessor.procesar_datos(df, "tasa_empleo")
+                
+                # Validar que hay datos después del procesamiento
+                if df_empleo.empty:
+                    st.warning("No hay datos disponibles para mostrar")
+                    return
                 
                 # Filtros
                 col1, col2, col3 = st.columns(3)

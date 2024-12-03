@@ -83,22 +83,32 @@ def format_nombre_tabla(tabla: Dict) -> str:
 def exportar_a_excel(df: pd.DataFrame, filename: str) -> str:
     """Exporta DataFrame a Excel con manejo robusto de errores"""
     try:
-        # Verificar columnas requeridas
-        columnas_requeridas = ['Municipio', 'Genero', 'Valor']
-        columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
-        if columnas_faltantes:
-            raise ValueError(f"Faltan las columnas requeridas: {', '.join(columnas_faltantes)}")
+        if df.empty:
+            raise ValueError("No hay datos para exportar")
         
         # Crear una copia del DataFrame y limpiar datos
         df_export = df.copy()
         df_export = df_export.fillna('')  # Manejar valores nulos
         
-        # Exportar a Excel
-        df_export.to_excel(
-            filename,
-            index=False,
-            engine='openpyxl'
-        )
+        # Procesar nombres de columnas para mejor visualización
+        df_export.columns = [col.replace('_', ' ').title() for col in df_export.columns]
+        
+        # Exportar a Excel con formato mejorado
+        with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+            df_export.to_excel(
+                writer,
+                index=False,
+                sheet_name='Datos INE'
+            )
+            # Ajustar anchos de columna
+            worksheet = writer.sheets['Datos INE']
+            for idx, col in enumerate(df_export.columns):
+                max_length = max(
+                    df_export[col].astype(str).apply(len).max(),
+                    len(str(col))
+                ) + 2
+                worksheet.column_dimensions[chr(65 + idx)].width = min(max_length, 50)
+        
         return "Datos exportados exitosamente a Excel"
     except ValueError as ve:
         return f"Error de validación: {str(ve)}"
@@ -110,23 +120,25 @@ def exportar_a_excel(df: pd.DataFrame, filename: str) -> str:
 def exportar_a_csv(df: pd.DataFrame, filename: str) -> str:
     """Exporta DataFrame a CSV con manejo robusto de errores"""
     try:
-        # Verificar columnas requeridas
-        columnas_requeridas = ['Municipio', 'Genero', 'Valor']
-        columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
-        if columnas_faltantes:
-            raise ValueError(f"Faltan las columnas requeridas: {', '.join(columnas_faltantes)}")
+        if df.empty:
+            raise ValueError("No hay datos para exportar")
         
         # Crear una copia del DataFrame y limpiar datos
         df_export = df.copy()
         df_export = df_export.fillna('')  # Manejar valores nulos
         
-        # Exportar a CSV
+        # Procesar nombres de columnas para mejor visualización
+        df_export.columns = [col.replace('_', ' ').title() for col in df_export.columns]
+        
+        # Exportar a CSV con codificación y formato mejorados
         df_export.to_csv(
             filename,
             index=False,
             encoding='utf-8-sig',  # UTF-8 con BOM para mejor compatibilidad
-            sep=',',
-            quoting=1  # QUOTE_ALL para mejor manejo de campos especiales
+            sep=';',  # Usar punto y coma para mejor compatibilidad con Excel en español
+            quoting=1,  # QUOTE_ALL para mejor manejo de campos especiales
+            decimal=',',  # Usar coma como separador decimal (formato español)
+            date_format='%d/%m/%Y'  # Formato de fecha español
         )
         return "Datos exportados exitosamente a CSV"
     except ValueError as ve:
