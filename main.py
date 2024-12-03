@@ -525,44 +525,50 @@ def main():
                     'Genero': genero_seleccionado
                 }
             elif categoria_seleccionada == "municipios_habitantes":
-                # Sección de visualizaciones de municipios por habitantes
-                df_filtrado = df[df['Provincia'] == provincia_seleccionada]
+                # Sección de municipios por habitantes
+                df_filtrado = df[df['Provincia'] == provincia_seleccionada].copy()
                 if periodo_seleccionado:
                     df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(periodo_seleccionado)]
 
                 # Tabla Resumen
                 st.subheader("Tabla Resumen")
-                df_resumen = df_filtrado.groupby('Rango')['Valor'].agg(['count', 'mean', 'sum']).round(2)
+                df_resumen = df_filtrado.groupby('Rango')['Valor'].agg({
+                    'count': 'count',
+                    'mean': 'mean',
+                    'sum': 'sum'
+                }).round(2)
                 df_resumen.columns = ['Cantidad', 'Media', 'Total']
                 st.dataframe(df_resumen)
 
-                # Visualizaciones en pestañas
+                # Visualizaciones
                 tab_dist, tab_evol, tab_comp = st.tabs(["Distribución", "Evolución Temporal", "Comparativa"])
 
                 with tab_dist:
-                    st.subheader("Distribución de Municipios por Rango de Habitantes")
-                    df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
+                    st.subheader("Distribución por Rango de Habitantes")
+                    ultimo_periodo = df_filtrado['Periodo'].max()
+                    df_actual = df_filtrado[df_filtrado['Periodo'] == ultimo_periodo]
+                    
                     fig_dist = DataVisualizer.crear_grafico_barras(
                         df_actual,
                         x='Rango',
                         y='Valor',
-                        titulo=f"Distribución por Rango - {provincia_seleccionada}"
+                        titulo=f"Distribución de Municipios - {provincia_seleccionada} ({ultimo_periodo})"
                     )
-                    st.plotly_chart(fig_dist, use_container_width=True, key="dist_chart")
+                    st.plotly_chart(fig_dist, use_container_width=True, key="dist_plot")
 
                 with tab_evol:
-                    st.subheader("Evolución Temporal por Rango de Habitantes")
+                    st.subheader("Evolución Temporal")
                     fig_evol = DataVisualizer.crear_grafico_lineas(
                         df_filtrado,
                         x='Periodo',
                         y='Valor',
                         color='Rango',
-                        titulo=f"Evolución Temporal por Rango"
+                        titulo=f"Evolución Temporal - {provincia_seleccionada}"
                     )
-                    st.plotly_chart(fig_evol, use_container_width=True, key="evol_chart")
+                    st.plotly_chart(fig_evol, use_container_width=True, key="evol_plot")
 
                 with tab_comp:
-                    st.subheader("Análisis Comparativo")
+                    st.subheader("Comparativa")
                     pivot_df = df_filtrado.pivot_table(
                         index='Periodo',
                         columns='Rango',
@@ -573,7 +579,7 @@ def main():
                         pivot_df,
                         titulo=f"Comparativa por Periodo - {provincia_seleccionada}"
                     )
-                    st.plotly_chart(fig_heat, use_container_width=True, key="heat_chart")
+                    st.plotly_chart(fig_heat, use_container_width=True, key="heat_plot")
                 
                 # Aplicar filtros para los datos
                 filtros = {
