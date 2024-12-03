@@ -90,8 +90,28 @@ def exportar_a_excel(df: pd.DataFrame, filename: str) -> str:
         df_export = df.copy()
         df_export = df_export.fillna('')  # Manejar valores nulos
         
-        # Procesar nombres de columnas para mejor visualización
-        df_export.columns = [col.replace('_', ' ').title() for col in df_export.columns]
+        # Ordenar por período (más reciente primero)
+        if 'Periodo' in df_export.columns:
+            df_export = df_export.sort_values('Periodo', ascending=False)
+            
+        # Mapeo de nombres de columnas al español
+        columnas_esp = {
+            'Indicador': 'Indicador',
+            'Genero': 'Género',
+            'Region': 'Región',
+            'Periodo': 'Período',
+            'Valor': 'Valor (%)'
+        }
+        
+        # Renombrar columnas si existen
+        df_export.columns = [columnas_esp.get(col, col.replace('_', ' ').title()) 
+                           for col in df_export.columns]
+        
+        # Formatear valores numéricos
+        if 'Valor (%)' in df_export.columns:
+            df_export['Valor (%)'] = df_export['Valor (%)'].apply(
+                lambda x: f'{float(x):.2f}' if pd.notnull(x) else ''
+            )
         
         # Exportar a Excel con formato mejorado
         with pd.ExcelWriter(filename, engine='openpyxl') as writer:
@@ -127,8 +147,28 @@ def exportar_a_csv(df: pd.DataFrame, filename: str) -> str:
         df_export = df.copy()
         df_export = df_export.fillna('')  # Manejar valores nulos
         
-        # Procesar nombres de columnas para mejor visualización
-        df_export.columns = [col.replace('_', ' ').title() for col in df_export.columns]
+        # Ordenar por período (más reciente primero)
+        if 'Periodo' in df_export.columns:
+            df_export = df_export.sort_values('Periodo', ascending=False)
+            
+        # Mapeo de nombres de columnas al español
+        columnas_esp = {
+            'Indicador': 'Indicador',
+            'Genero': 'Género',
+            'Region': 'Región',
+            'Periodo': 'Período',
+            'Valor': 'Valor (%)'
+        }
+        
+        # Renombrar columnas si existen
+        df_export.columns = [columnas_esp.get(col, col.replace('_', ' ').title()) 
+                           for col in df_export.columns]
+        
+        # Formatear valores numéricos
+        if 'Valor (%)' in df_export.columns:
+            df_export['Valor (%)'] = df_export['Valor (%)'].apply(
+                lambda x: f'{float(x):.2f}' if pd.notnull(x) else ''
+            )
         
         # Exportar a CSV con codificación y formato mejorados
         df_export.to_csv(
