@@ -169,15 +169,13 @@ class DataProcessor:
                 if len(partes) < 2:
                     continue
                     
-                region = partes[0].strip()
+                municipio = partes[0].strip()
                 rango = partes[1].strip()
                 
-                # Agregar columnas requeridas
+                # Procesar valores históricos
                 for valor in valores:
                     registros.append({
-                        'Indicador': 'Población',  # Indicador fijo para datos de población
-                        'Region': region,
-                        'Genero': 'Total',  # Por defecto, ya que estos datos son totales
+                        'Municipio': municipio,
                         'Rango': rango,
                         'Periodo': valor.get('NombrePeriodo', ''),
                         'Valor': valor.get('Valor', 0)
