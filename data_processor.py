@@ -154,57 +154,37 @@ class DataProcessor:
             raise ValueError(f"Error al procesar datos demográficos: {str(e)}")
 
     @staticmethod
-    def _procesar_datos_municipios(datos: Dict) -> pd.DataFrame:
-        """Procesa datos de municipios por rango de habitantes"""
+    def _procesar_datos_municipios(datos):
         try:
             registros = []
             for dato in datos:
                 nombre = dato.get('Nombre', '')
                 valores = dato.get('Data', [])
-                cod = dato.get('COD', '')
                 
-                # Ignorar datos nacionales
-                if nombre.startswith('Total Nacional'):
+                if not nombre or not valores:
                     continue
                     
-                # Extraer provincia y rango
+                # Extraer información del nombre
                 partes = nombre.split(',')
                 if len(partes) < 2:
                     continue
                     
-                codigo_provincia = partes[0].strip().split()[0]
-                nombre_provincia = ' '.join(partes[0].strip().split()[1:])
+                region = partes[0].strip()
                 rango = partes[1].strip()
                 
-                # Determinar indicador y género basado en el código y nombre
-                if cod == 'DPOP160':  # Total
-                    indicador = 'Población'
-                    genero = 'Total'
-                elif cod == 'DPOP161':  # Hombres
-                    indicador = 'Población'
-                    genero = 'Hombre'
-                elif cod == 'DPOP162':  # Mujeres
-                    indicador = 'Población'
-                    genero = 'Mujer'
-                else:
-                    indicador = 'Población'
-                    genero = 'Total'
-                
-                # Procesar valores usando NombrePeriodo como año
+                # Agregar columnas requeridas
                 for valor in valores:
                     registros.append({
-                        'Indicador': indicador,
-                        'Region': nombre_provincia,
-                        'Genero': genero,
-                        'Provincia': nombre_provincia,
-                        'Codigo': codigo_provincia,
+                        'Indicador': 'Población',  # Indicador fijo para datos de población
+                        'Region': region,
+                        'Genero': 'Total',  # Por defecto, ya que estos datos son totales
                         'Rango': rango,
                         'Periodo': valor.get('NombrePeriodo', ''),
                         'Valor': valor.get('Valor', 0)
                     })
             
             if not registros:
-                raise ValueError("No se encontraron datos de municipios")
+                raise ValueError("No se encontraron datos de municipios válidos")
                 
             # Crear DataFrame
             df = pd.DataFrame(registros)
@@ -214,6 +194,7 @@ class DataProcessor:
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             
             return df
+            
         except Exception as e:
             raise ValueError(f"Error al procesar datos de municipios: {str(e)}")
             
