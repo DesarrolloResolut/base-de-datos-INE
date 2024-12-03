@@ -588,86 +588,25 @@ def main():
                 df_resumen.columns = ['Tasa Media', 'Tasa Mínima', 'Tasa Máxima']
                 st.dataframe(df_resumen)
 
-                # Visualizaciones en pestañas
-                tab_actual, tab_evol = st.tabs([
-                    "Situación Actual",
-                    "Evolución Temporal"
-                ])
+                # Gráfico de barras actual
+                st.subheader(f"Tasa de Nacimientos - {provincia_seleccionada}")
+                fig_actual = DataVisualizer.crear_grafico_barras(
+                    df=df_filtrado,
+                    x='Periodo',
+                    y='Valor',
+                    titulo=f"Tasa de Nacimientos - {provincia_seleccionada}"
+                )
+                st.plotly_chart(fig_actual, use_container_width=True)
 
-                with tab_actual:
-                    st.subheader(f"Tasa de Nacimientos - {provincia_seleccionada}")
-                    
-                    # Gráfico de barras actual
-                    df_actual = df_filtrado[df_filtrado['Periodo'] == periodo_seleccionado]
-                    fig_actual = DataVisualizer.crear_grafico_barras(
-                        df=df_actual,
-                        x='Provincia',
-                        y='Valor',
-                        titulo=f"Tasa de Nacimientos - {provincia_seleccionada} ({periodo_seleccionado})"
-                    )
-                    st.plotly_chart(fig_actual, use_container_width=True)
-
-                with tab_evol:
-                    st.subheader("Evolución Temporal de la Tasa de Nacimientos")
-                    
-                    # Gráfico de líneas para evolución temporal
-                    fig_evol = DataVisualizer.crear_grafico_lineas(
-                        df=df_filtrado,
-                        x='Periodo',
-                        y='Valor',
-                        color='Provincia',
-                        titulo=f"Evolución de la Tasa de Nacimientos - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_evol, use_container_width=True)
-                    
-                    # Gráfico de barras para comparación entre provincias
-                    df_actual = df_filtrado[df_filtrado['Periodo'] == periodo_seleccionado]
-                    fig_comp = DataVisualizer.crear_grafico_barras(
-                        df=df_actual,
-                        x='Provincia',
-                        y='Valor',
-                        titulo=f"Tasa de Nacimientos por Provincia - {periodo_seleccionado}"
-                    )
-                    st.plotly_chart(fig_comp, use_container_width=True)
-                    df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
-                    
-                    # Ordenar los rangos correctamente
-                    orden_rangos = [
-                        'Total',
-                        'Menos de 101 habitantes',
-                        'De 101 a 500',
-                        'De 501 a 1.000',
-                        'De 1.001 a 2.000',
-                        'De 2.001 a 5.000',
-                        'De 5.001 a 10.000',
-                        'De 10.001 a 20.000',
-                        'De 20.001 a 50.000',
-                        'De 50.001 a 100.000',
-                        'De 100.001 a 500.000',
-                        'Más de 500.000'
-                    ]
-                    df_actual['Rango'] = pd.Categorical(df_actual['Rango'], categories=orden_rangos, ordered=True)
-                    df_actual = df_actual.sort_values('Rango')
-                    
-                    fig_dist = DataVisualizer.crear_grafico_barras(
-                        df=df_actual,
-                        x='Rango',
-                        y='Valor',
-                        titulo=f"Distribución por Rango de Habitantes - {provincia_seleccionada}"
-                    )
-                    st.plotly_chart(fig_dist, use_container_width=True, key="dist_mun")
-
-                with tab_evol:
-                    st.subheader("Evolución Temporal por Rango de Habitantes")
-                    # Ordenar los rangos para la evolución temporal
-                    df_filtrado['Rango'] = pd.Categorical(df_filtrado['Rango'], categories=orden_rangos, ordered=True)
-                    df_filtrado = df_filtrado.sort_values(['Periodo', 'Rango'])
-                    
-                    fig_evol = DataVisualizer.crear_grafico_lineas(
-                        df=df_filtrado,
-                        x='Periodo',
-                        y='Valor',
-                        color='Rango',
+                # Gráfico de líneas para evolución temporal
+                st.subheader("Evolución Temporal")
+                fig_evol = DataVisualizer.crear_grafico_lineas(
+                    df=df_filtrado,
+                    x='Periodo',
+                    y='Valor',
+                    titulo=f"Evolución de la Tasa de Nacimientos - {provincia_seleccionada}"
+                )
+                st.plotly_chart(fig_evol, use_container_width=True)
                         titulo=f"Evolución Temporal por Rango - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_evol, use_container_width=True, key="evol_mun")
