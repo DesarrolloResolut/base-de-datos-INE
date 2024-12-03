@@ -774,13 +774,14 @@ class DataProcessor:
     def aplicar_filtros(df, filtros):
         df_filtrado = df.copy()
         
-        if filtros.get('Municipio'):
-            df_filtrado = df_filtrado[df_filtrado['Municipio'] == filtros['Municipio']]
+        # Verificar qué columnas están disponibles antes de aplicar filtros
+        if 'Provincia' in df.columns and filtros.get('Municipio'):
+            df_filtrado = df_filtrado[df_filtrado['Provincia'] == filtros['Municipio']]
         
-        if filtros.get('Periodo'):
+        if 'Periodo' in df.columns and filtros.get('Periodo'):
             df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(filtros['Periodo'])]
             
-        if filtros.get('Genero'):
+        if 'Genero' in df.columns and filtros.get('Genero'):
             df_filtrado = df_filtrado[df_filtrado['Genero'].isin(filtros['Genero'])]
             
         return df_filtrado
