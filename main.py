@@ -544,6 +544,49 @@ def main():
                 df_resumen.columns = ['Cantidad', 'Media', 'Total']
                 st.dataframe(df_resumen)
                 
+                # Visualizaciones en pestañas
+                tab_dist, tab_evol, tab_comp = st.tabs([
+                    "Distribución",
+                    "Evolución Temporal",
+                    "Comparativa"
+                ])
+
+                with tab_dist:
+                    st.subheader("Distribución de Municipios por Rango de Habitantes")
+                    df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
+                    fig_dist = DataVisualizer.crear_grafico_barras(
+                        df_actual,
+                        x='Rango',
+                        y='Valor',
+                        titulo=f"Distribución por Rango - {provincia_seleccionada}"
+                    )
+                    st.plotly_chart(fig_dist, use_container_width=True, key="dist_mun")
+
+                with tab_evol:
+                    st.subheader("Evolución Temporal por Rango de Habitantes")
+                    fig_evol = DataVisualizer.crear_grafico_lineas(
+                        df_filtrado,
+                        x='Periodo',
+                        y='Valor',
+                        color='Rango',
+                        titulo=f"Evolución Temporal por Rango - {provincia_seleccionada}"
+                    )
+                    st.plotly_chart(fig_evol, use_container_width=True, key="evol_mun")
+
+                with tab_comp:
+                    st.subheader("Análisis Comparativo")
+                    pivot_df = df_filtrado.pivot_table(
+                        index='Periodo',
+                        columns='Rango',
+                        values='Valor',
+                        aggfunc='sum'
+                    )
+                    fig_heat = DataVisualizer.crear_heatmap(
+                        pivot_df,
+                        titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
+                    )
+                    st.plotly_chart(fig_heat, use_container_width=True, key="heat_mun")
+                
                 # Opciones de exportación
                 col1, col2, col3 = st.columns(3)
                 with col1:
