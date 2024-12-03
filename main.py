@@ -526,17 +526,23 @@ def main():
                 }
                 df_filtrado = DataProcessor.aplicar_filtros(df, filtros)
             elif categoria_seleccionada == "municipios_habitantes":
-                # Procesamiento directo sin usar aplicar_filtros
-                df_filtrado = df[df['Provincia'] == provincia_seleccionada].copy()
-                if periodo_seleccionado:
-                    df_filtrado = df_filtrado[df_filtrado['Periodo'].isin(periodo_seleccionado)]
+                # Usar aplicar_filtros para mantener consistencia
+                filtros = {
+                    'Municipio': provincia_seleccionada,
+                    'Periodo': periodo_seleccionado
+                }
+                df_filtrado = DataProcessor.aplicar_filtros(df, filtros)
 
-                # Tabla Resumen
+                if df_filtrado.empty:
+                    st.warning("No hay datos disponibles para los filtros seleccionados.")
+                    return
+
+                # Tabla Resumen con nombres de columnas correctos
                 st.subheader("Tabla Resumen")
                 df_resumen = df_filtrado.groupby('Rango').agg({
                     'Valor': ['count', 'mean', 'sum']
                 }).round(2)
-                df_resumen.columns = ['Cantidad', 'Media', 'Total']
+                df_resumen.columns = ['Cantidad de Municipios', 'Media de Habitantes', 'Total de Habitantes']
                 st.dataframe(df_resumen)
 
                 # Visualizaciones en pestañas
@@ -549,16 +555,39 @@ def main():
                 with tab_dist:
                     st.subheader("Distribución de Municipios por Rango de Habitantes")
                     df_actual = df_filtrado[df_filtrado['Periodo'] == df_filtrado['Periodo'].max()]
+                    
+                    # Ordenar los rangos correctamente
+                    orden_rangos = [
+                        'Total',
+                        'Menos de 101 habitantes',
+                        'De 101 a 500',
+                        'De 501 a 1.000',
+                        'De 1.001 a 2.000',
+                        'De 2.001 a 5.000',
+                        'De 5.001 a 10.000',
+                        'De 10.001 a 20.000',
+                        'De 20.001 a 50.000',
+                        'De 50.001 a 100.000',
+                        'De 100.001 a 500.000',
+                        'Más de 500.000'
+                    ]
+                    df_actual['Rango'] = pd.Categorical(df_actual['Rango'], categories=orden_rangos, ordered=True)
+                    df_actual = df_actual.sort_values('Rango')
+                    
                     fig_dist = DataVisualizer.crear_grafico_barras(
                         df=df_actual,
                         x='Rango',
                         y='Valor',
-                        titulo=f"Distribución por Rango - {provincia_seleccionada}"
+                        titulo=f"Distribución por Rango de Habitantes - {provincia_seleccionada}"
                     )
                     st.plotly_chart(fig_dist, use_container_width=True, key="dist_mun")
 
                 with tab_evol:
                     st.subheader("Evolución Temporal por Rango de Habitantes")
+                    # Ordenar los rangos para la evolución temporal
+                    df_filtrado['Rango'] = pd.Categorical(df_filtrado['Rango'], categories=orden_rangos, ordered=True)
+                    df_filtrado = df_filtrado.sort_values(['Periodo', 'Rango'])
+                    
                     fig_evol = DataVisualizer.crear_grafico_lineas(
                         df=df_filtrado,
                         x='Periodo',
@@ -570,12 +599,17 @@ def main():
 
                 with tab_comp:
                     st.subheader("Análisis Comparativo")
+                    # Crear tabla pivote ordenada
+                    df_filtrado['Rango'] = pd.Categorical(df_filtrado['Rango'], categories=orden_rangos, ordered=True)
                     pivot_df = df_filtrado.pivot_table(
                         index='Periodo',
                         columns='Rango',
                         values='Valor',
                         aggfunc='sum'
                     )
+                    # Reordenar las columnas según el orden definido
+                    pivot_df = pivot_df[orden_rangos]
+                    
                     fig_heat = DataVisualizer.crear_heatmap(
                         df=pivot_df,
                         titulo=f"Comparativa de Rangos por Periodo - {provincia_seleccionada}"
