@@ -30,6 +30,70 @@ class DataProcessor:
             raise ValueError(f"Error al procesar datos: {str(e)}")
 
     @staticmethod
+    def _procesar_datos_provincia(datos: Dict) -> pd.DataFrame:
+        """Procesa datos de provincia incluyendo indicador y región"""
+        try:
+            registros = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '').strip()
+                valores = dato.get('Data', [])
+                cod = dato.get('COD', '')
+                
+                if not nombre or not valores:
+                    continue
+                
+                # Extraer partes del nombre (formato típico: "Albacete. Total. Total habitantes. Personas.")
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 2:
+                    continue
+                
+                # Extraer región (provincia)
+                region = partes[0].strip()
+                
+                # Determinar indicador basado en el código y nombre
+                if cod == 'DPOP160':  # Total
+                    indicador = 'Población total'
+                elif cod == 'DPOP161':  # Hombres
+                    indicador = 'Población masculina'
+                elif cod == 'DPOP162':  # Mujeres
+                    indicador = 'Población femenina'
+                else:
+                    indicador = 'Población'
+                
+                # Procesar valores históricos
+                for valor in valores:
+                    periodo = valor.get('NombrePeriodo', '')
+                    valor_numerico = valor.get('Valor')
+                    
+                    if not periodo or valor_numerico is None:
+                        continue
+                    
+                    registros.append({
+                        'Indicador': indicador,
+                        'Region': region,
+                        'Periodo': periodo,
+                        'Valor': float(valor_numerico)
+                    })
+            
+            if not registros:
+                raise ValueError("No se encontraron datos de provincia válidos para procesar")
+            
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
+            
+            # Convertir tipos de datos
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            
+            # Ordenar por período
+            df = df.sort_values('Periodo', ascending=False)
+            
+            return df
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos de provincia: {str(e)}")
+
+    @staticmethod
     def _procesar_datos_demografia(datos: Dict) -> pd.DataFrame:
         """Procesa datos demográficos"""
         try:
