@@ -1,0 +1,126 @@
+Guía para Añadir la Categoría "Tasa de Defunciones por Provincias"
+Esta guía te permitirá integrar la categoría Tasa de Defunciones por Provincias a tu aplicación, obteniendo datos directamente desde la API del INE.
+
+1. Información General
+URL de la API:
+https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/1482?nult=4&det=2
+
+Estructura del JSON:
+La API devuelve datos sobre la mortalidad en distintas provincias. Los campos clave son:
+
+Nombre: Contiene el indicador y la provincia. Ejemplo: "Mortalidad. Albacete."
+Unidad: Describe la métrica. Ejemplo: "Defunciones por mil habitantes"
+Data: Lista de registros con:
+Año (Anyo): Ejemplo: 2023
+NombrePeriodo: Ejemplo: 2023
+Valor: Ejemplo: 9.58 (tasa de defunciones)
+Secreto: Indica si el dato está disponible (ignorar valores con Secreto: true).
+2. Requisitos del Proyecto
+Objetivo:
+Extraer y mostrar los datos de defunciones por provincias. Para cada provincia se necesitan:
+
+Provincia: Extraída del campo Nombre.
+Indicador: Siempre "Defunciones por mil habitantes".
+Año: Extraído de Anyo.
+Valor: Extraído del campo Valor.
+Filtros:
+
+Provincia: Seleccionable por el usuario.
+Año: Selector de rango o específico.
+3. Pasos para Integrar la Nueva Categoría
+Paso 1: Crear la Nueva Categoría
+Añade una nueva categoría en la configuración de tu aplicación:
+
+Nombre: Tasa de Defunciones por Provincias.
+Filtros Disponibles:
+Provincia: Selector basado en los valores únicos extraídos de Nombre.
+Año: Selector dinámico basado en los valores disponibles en Data.
+Paso 2: Consumir la API
+Solicitar y Procesar Datos desde la API
+Utiliza herramientas como requests para obtener los datos de la API y procesarlos en una estructura manipulable (JSON o DataFrame).
+
+Procesar el Campo Nombre:
+Extraer del campo Nombre:
+
+Indicador: El texto antes del punto. Ejemplo: "Mortalidad".
+Provincia: El texto después del punto. Ejemplo: "Albacete".
+Filtrar los Registros en Data:
+
+Mantener solo registros donde Secreto sea false.
+Extraer:
+Año: De Anyo.
+NombrePeriodo: Ejemplo: 2023.
+Valor: Tasa de defunciones.
+Estructurar los Datos:
+Crear una estructura o DataFrame con las columnas:
+
+Provincia
+Indicador
+Año
+Valor
+4. Código Ejemplo
+El siguiente código muestra cómo procesar los datos:
+
+python
+Copiar código
+import requests
+import pandas as pd
+
+# URL de la API
+url = "https://servicios.ine.es/wstempus/jsCache/ES/DATOS_TABLA/1482?nult=4&det=2"
+
+# Consumir datos de la API
+response = requests.get(url)
+datos = response.json()
+
+# Convertir datos en DataFrame
+df = pd.DataFrame(datos)
+
+# Procesar el campo 'Nombre' para extraer Provincia e Indicador
+df[['Indicador', 'Provincia']] = df['Nombre'].str.extract(r'^(.*?)\. (.*?)\.')
+
+# Expandir el campo 'Data' en filas
+df_exploded = df.explode('Data')
+
+# Extraer los valores relevantes de 'Data'
+df_exploded['Año'] = df_exploded['Data'].apply(lambda x: x['Anyo'] if isinstance(x, dict) else None)
+df_exploded['NombrePeriodo'] = df_exploded['Data'].apply(lambda x: x['NombrePeriodo'] if isinstance(x, dict) else None)
+df_exploded['Valor'] = df_exploded['Data'].apply(lambda x: x['Valor'] if isinstance(x, dict) and not x['Secreto'] else None)
+
+# Filtrar datos por una provincia específica (ejemplo: Albacete) y un año específico (ejemplo: 2023)
+provincia_filtro = "Albacete"
+año_filtro = 2023
+
+df_filtrado = df_exploded[(df_exploded['Provincia'] == provincia_filtro) & (df_exploded['Año'] == año_filtro)]
+
+# Mostrar resultados
+print(df_filtrado[['Provincia', 'Año', 'Indicador', 'Valor']])
+Salida Esperada:
+
+Provincia	Año	Indicador	Valor
+Albacete	2023	Mortalidad	9.58
+5. Integración en la App
+Front-End:
+Nueva Sección:
+
+Añade un nuevo módulo para la categoría Tasa de Defunciones por Provincias.
+Implementa filtros dinámicos:
+Provincia: Selector basado en las provincias disponibles.
+Año: Selector con rango de años.
+Visualización:
+
+Muestra los datos en una tabla dinámica o gráficos (línea, barras, etc.).
+Back-End:
+Nueva Función para Consumir la API:
+Implementa una función específica para obtener, procesar y filtrar los datos de la API de defunciones.
+Formato de salida: JSON estructurado con Provincia, Indicador, Año y Valor.
+Testing:
+Pruebas:
+Asegúrate de que los datos se muestran correctamente para diferentes provincias y años.
+Verifica que los filtros funcionan según lo esperado.
+6. Notas Adicionales
+Actualización: Monitoriza los cambios en la API del INE para mantener la URL actualizada.
+Manejo de Errores:
+Si no hay datos para una provincia o año, muestra un mensaje claro al usuario.
+Ignora datos con Secreto: true.
+Esta guía proporciona todos los pasos necesarios para integrar correctamente la categoría Tasa de Defunciones por Provincias en tu aplicación.
