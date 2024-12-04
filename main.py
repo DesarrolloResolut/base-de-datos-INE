@@ -111,6 +111,8 @@ def main():
                 if 'Indicador' not in df.columns or 'Region' not in df.columns:
                     st.error("Error: Faltan columnas requeridas en los datos de provincia")
                     return
+            elif categoria_seleccionada == 'tasa_defunciones':
+                df = DataProcessor._procesar_datos_defunciones(datos)
             else:
                 df = DataProcessor.json_to_dataframe(datos, categoria=categoria_seleccionada)
                 
