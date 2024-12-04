@@ -444,3 +444,14 @@ class DataProcessor:
             
         except Exception as e:
             raise ValueError(f"Error al procesar datos de provincia: {str(e)}")
+
+    @staticmethod
+    def obtener_municipios(df: pd.DataFrame) -> List[str]:
+        """Obtiene lista única de municipios del DataFrame"""
+        try:
+            if 'Municipio' in df.columns:
+                return sorted(df['Municipio'].unique().tolist())
+            return []
+        except Exception as e:
+            print(f"Error al obtener municipios: {str(e)}")
+            return []
