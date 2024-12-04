@@ -594,10 +594,7 @@ def main():
                     
                     # Tabla Resumen
                     st.subheader("Tabla Resumen")
-                    df_resumen = df_provincia.groupby('Provincia').agg({
-                        'Valor': ['mean', 'min', 'max']
-                    }).round(2)
-                    df_resumen.columns = ['Tasa Media', 'Tasa Mínima', 'Tasa Máxima']
+                    df_resumen = df_provincia[['Provincia', 'Valor']].copy()
                     st.dataframe(df_resumen)
 
                     # Gráfico de barras actual
