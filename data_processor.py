@@ -325,36 +325,47 @@ class DataProcessor:
                 valores = dato.get('Data', [])
                 
                 if not nombre or not valores:
+                    logger.warning(f"Dato sin nombre o valores: {dato}")
                     continue
                 
                 # Extraer partes del nombre
-                partes = [p.strip() for p in nombre.split('.')]
+                partes = [p.strip() for p in nombre.split(',')]
                 if len(partes) < 2:
+                    logger.warning(f"Nombre sin suficientes partes: {nombre}")
                     continue
                 
-                # Extraer provincia
+                # Extraer provincia y otros datos
                 provincia = partes[0].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('NombrePeriodo', '')
+                    # Intentar obtener el período de diferentes campos
+                    periodo = valor.get('Anyo', valor.get('NombrePeriodo', ''))
                     valor_numerico = valor.get('Valor')
                     
                     if not periodo or valor_numerico is None or valor_numerico == "":
+                        logger.warning(f"Valor sin período o valor numérico: {valor}")
                         continue
                         
                     # Si el valor está marcado como secreto, lo saltamos
                     if valor.get('Secreto', False):
+                        logger.info(f"Omitiendo valor secreto para {provincia}, período {periodo}")
                         continue
                     
-                    registros.append({
-                        'Provincia': provincia,
-                        'Tipo': 'Defunciones',
-                        'Periodo': periodo,
-                        'Valor': float(valor_numerico)
-                    })
+                    try:
+                        valor_float = float(valor_numerico)
+                        registros.append({
+                            'Provincia': provincia,
+                            'Tipo': 'Defunciones',
+                            'Periodo': str(periodo),
+                            'Valor': valor_float
+                        })
+                    except (ValueError, TypeError) as e:
+                        logger.warning(f"Error al convertir valor numérico: {valor_numerico}, error: {str(e)}")
+                        continue
             
             if not registros:
+                logger.error("No se encontraron datos de defunciones válidos para procesar")
                 raise ValueError("No se encontraron datos de defunciones válidos")
             
             # Crear DataFrame
@@ -365,11 +376,12 @@ class DataProcessor:
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
             # Filtrar filas con valores nulos
-            df = df.dropna(subset=['Valor'])
+            df = df.dropna(subset=['Valor', 'Periodo'])
             
             # Ordenar por período
             df = df.sort_values('Periodo', ascending=False)
             
+            logger.info(f"Procesados {len(df)} registros de defunciones")
             return df
             
         except Exception as e:
