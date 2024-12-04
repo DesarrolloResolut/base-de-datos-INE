@@ -60,44 +60,38 @@ class DataProcessor:
                 
                 if not nombre or not valores:
                     continue
-                    
+                
                 # Extraer provincia y tipo de dato
                 partes = [p.strip() for p in nombre.split('.')]
                 if len(partes) < 2:
                     continue
-                    
+                
                 provincia = partes[0]
                 tipo_dato = partes[-1]
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('Anyo', '')
+                    periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
                     if not periodo or valor_numerico is None:
                         continue
-                        
+                    
                     registros.append({
                         'Provincia': provincia,
                         'Tipo': tipo_dato,
-                        'Periodo': periodo,
+                        'Periodo': str(periodo),
                         'Valor': float(valor_numerico)
                     })
-                    
+            
             if not registros:
                 raise ValueError("No se encontraron datos demográficos válidos")
-                
-            # Crear DataFrame
-            df = pd.DataFrame(registros)
             
-            # Convertir tipos de datos
+            df = pd.DataFrame(registros)
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
-            # Ordenar por período
-            df = df.sort_values('Periodo', ascending=False)
-            
-            return df
+            return df.sort_values('Periodo', ascending=False)
             
         except Exception as e:
             raise ValueError(f"Error al procesar datos demográficos: {str(e)}")
@@ -327,12 +321,16 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer provincia del nombre
-                provincia = nombre.split('.')[0].strip()
+                # Extraer provincia y tipo de dato
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 2:
+                    continue
+                
+                provincia = partes[0]
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('Anyo', '')
+                    periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
                     if not periodo or valor_numerico is None:
@@ -348,10 +346,7 @@ class DataProcessor:
             if not registros:
                 raise ValueError("No se encontraron datos de defunciones válidos")
             
-            # Crear DataFrame con las columnas específicas
             df = pd.DataFrame(registros)
-            
-            # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
