@@ -613,7 +613,9 @@ def main():
                     
                     # Tabla Resumen
                     st.subheader("Tabla Resumen")
-                    df_resumen = df_provincia[['Provincia', 'Valor']].copy()
+                    df_resumen = df_provincia[['Provincia', 'Valor', 'Periodo']].copy()
+                    # Renombrar la columna 'Periodo' a 'Año' para mejor claridad
+                    df_resumen = df_resumen.rename(columns={'Periodo': 'Año'})
                     st.dataframe(df_resumen)
 
                     # Gráfico de barras actual
