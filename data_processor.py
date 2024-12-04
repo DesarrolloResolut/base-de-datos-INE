@@ -455,3 +455,14 @@ class DataProcessor:
         except Exception as e:
             print(f"Error al obtener municipios: {str(e)}")
             return []
+
+    @staticmethod
+    def obtener_periodos(df: pd.DataFrame) -> List[str]:
+        """Obtiene lista única de períodos del DataFrame"""
+        try:
+            if 'Periodo' in df.columns:
+                return sorted(df['Periodo'].unique().tolist())
+            return []
+        except Exception as e:
+            print(f"Error al obtener periodos: {str(e)}")
+            return []
