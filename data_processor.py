@@ -327,8 +327,13 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer provincia del nombre
-                provincia = nombre.split('.')[0].strip()
+                # Extraer partes del nombre usando punto como separador
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 2:
+                    continue
+                
+                # Extraer provincia (primer elemento antes del punto)
+                provincia = partes[0].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
@@ -339,17 +344,17 @@ class DataProcessor:
                         continue
                     
                     registros.append({
-                        'Provincia': provincia,
-                        'Tipo': 'Defunciones',
-                        'Periodo': periodo,
-                        'Valor': float(valor_numerico)
+                        'Provincia': provincia,  # Extraído del nombre
+                        'Tipo': 'Defunciones',  # Valor fijo
+                        'Periodo': valor.get('NombrePeriodo', ''),  # Usar NombrePeriodo como en _procesar_datos_nacimientos
+                        'Valor': float(valor.get('Valor', 0))  # Convertir a float
                     })
             
             if not registros:
                 raise ValueError("No se encontraron datos de defunciones válidos")
             
-            # Crear DataFrame
-            df = pd.DataFrame(registros)
+            # Crear DataFrame con columnas específicas
+            df = pd.DataFrame(registros, columns=['Provincia', 'Tipo', 'Periodo', 'Valor'])
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
