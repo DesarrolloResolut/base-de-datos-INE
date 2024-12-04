@@ -327,43 +327,35 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer partes del nombre usando punto como separador
-                partes = [p.strip() for p in nombre.split('.')]
-                if len(partes) < 2:
-                    continue
-                
-                # Extraer provincia (primer elemento antes del punto)
-                provincia = partes[0].strip()
+                # Extraer provincia del nombre
+                provincia = nombre.split('.')[0].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('NombrePeriodo', '')
+                    periodo = valor.get('Anyo', '')
                     valor_numerico = valor.get('Valor')
                     
                     if not periodo or valor_numerico is None:
                         continue
                     
                     registros.append({
-                        'Provincia': provincia,  # Extraído del nombre
-                        'Tipo': 'Defunciones',  # Valor fijo
-                        'Periodo': valor.get('NombrePeriodo', ''),  # Usar NombrePeriodo como en _procesar_datos_nacimientos
-                        'Valor': float(valor.get('Valor', 0))  # Convertir a float
+                        'Provincia': provincia,
+                        'Tipo': 'Defunciones',
+                        'Periodo': str(periodo),
+                        'Valor': float(valor_numerico)
                     })
             
             if not registros:
                 raise ValueError("No se encontraron datos de defunciones válidos")
             
-            # Crear DataFrame con columnas específicas
-            df = pd.DataFrame(registros, columns=['Provincia', 'Tipo', 'Periodo', 'Valor'])
+            # Crear DataFrame con las columnas específicas
+            df = pd.DataFrame(registros)
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
-            # Ordenar por período
-            df = df.sort_values('Periodo', ascending=False)
-            
-            return df
+            return df.sort_values('Periodo', ascending=False)
             
         except Exception as e:
             raise ValueError(f"Error al procesar datos de defunciones: {str(e)}")
