@@ -105,6 +105,21 @@ class DataProcessor:
         """Procesa datos de municipios por habitantes"""
         try:
             registros = []
+            rangos_habitantes = [
+                'Total',
+                'Menos de 101 habitantes',
+                'De 101 a 500',
+                'De 501 a 1.000',
+                'De 1.001 a 2.000',
+                'De 2.001 a 5.000',
+                'De 5.001 a 10.000',
+                'De 10.001 a 20.000',
+                'De 20.001 a 50.000',
+                'De 50.001 a 100.000',
+                'De 100.001 a 500.000',
+                'Más de 500.000'
+            ]
+            
             for dato in datos:
                 nombre = dato.get('Nombre', '').strip()
                 valores = dato.get('Data', [])
@@ -112,8 +127,8 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer partes del nombre
-                partes = [p.strip() for p in nombre.split('.')]
+                # Extraer partes del nombre y limpiar espacios
+                partes = [p.strip() for p in nombre.split(',') if p.strip()]
                 if len(partes) < 2:
                     continue
                 
@@ -121,15 +136,15 @@ class DataProcessor:
                 provincia = partes[0]
                 rango = 'Total'  # Valor por defecto
                 
-                # Buscar el rango en las partes del nombre
-                for parte in partes:
-                    if 'De' in parte and 'habitantes' in parte:
-                        rango = parte.strip()
+                # Buscar el rango en el nombre completo
+                for rango_valido in rangos_habitantes:
+                    if rango_valido in nombre:
+                        rango = rango_valido
                         break
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('Periodo', '')
+                    periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
                     if not periodo or valor_numerico is None:
@@ -152,8 +167,10 @@ class DataProcessor:
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
-            # Ordenar por período
-            df = df.sort_values('Periodo', ascending=False)
+            # Ordenar por período y rango (manteniendo el orden específico de los rangos)
+            df['Rango_Order'] = df['Rango_Habitantes'].map({rango: i for i, rango in enumerate(rangos_habitantes)})
+            df = df.sort_values(['Periodo', 'Provincia', 'Rango_Order'], ascending=[False, True, True])
+            df = df.drop('Rango_Order', axis=1)
             
             return df
             
@@ -234,7 +251,7 @@ class DataProcessor:
 
     @staticmethod
     def _procesar_datos_empleo(datos: Dict) -> pd.DataFrame:
-        """Procesa datos de tasas de empleo"""
+        """Procesa datos de tasas de empleo, actividad y paro"""
         try:
             registros = []
             for dato in datos:
@@ -244,17 +261,34 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer partes del nombre
-                partes = [p.strip() for p in nombre.split('.')]
+                # Extraer partes del nombre y limpiar espacios
+                partes = [p.strip() for p in nombre.split('.') if p.strip()]
                 if len(partes) < 2:
                     continue
                 
-                # Extraer provincia
+                # Extraer información relevante
+                tipo_tasa = None
+                if 'Tasa de actividad' in nombre:
+                    tipo_tasa = 'Actividad'
+                elif 'Tasa de paro' in nombre:
+                    tipo_tasa = 'Paro'
+                elif 'Tasa de empleo' in nombre:
+                    tipo_tasa = 'Empleo'
+                else:
+                    continue
+                
+                # Extraer provincia y género
                 provincia = partes[0]
+                genero = 'Ambos sexos'  # Valor por defecto
+                
+                for parte in partes:
+                    if parte in ['Hombres', 'Mujeres', 'Ambos sexos']:
+                        genero = parte
+                        break
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('Periodo', '')
+                    periodo = valor.get('NombrePeriodo', '')  # Usar NombrePeriodo para obtener el formato correcto (e.g., "2023T4")
                     valor_numerico = valor.get('Valor')
                     
                     if not periodo or valor_numerico is None:
@@ -262,7 +296,8 @@ class DataProcessor:
                     
                     registros.append({
                         'Provincia': provincia,
-                        'Tipo': 'Empleo',
+                        'Tipo_Tasa': tipo_tasa,
+                        'Genero': genero,
                         'Periodo': periodo,
                         'Valor': float(valor_numerico)
                     })
@@ -275,10 +310,9 @@ class DataProcessor:
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
-            # Ordenar por período
-            df = df.sort_values('Periodo', ascending=False)
+            # Ordenar por período, provincia y tipo de tasa
+            df = df.sort_values(['Periodo', 'Provincia', 'Tipo_Tasa'], ascending=[False, True, True])
             
             return df
             
@@ -403,14 +437,19 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer partes del nombre
-                partes = [p.strip() for p in nombre.split('.')]
-                if len(partes) < 2:
+                # Extraer partes del nombre y limpiar espacios
+                partes = [p.strip() for p in nombre.split('.') if p.strip()]
+                if not partes:
                     continue
                 
                 # Extraer información relevante
-                region = partes[0]  # Primera parte es la región/provincia
-                indicador = 'Total habitantes'  # Indicador por defecto
+                provincia = partes[0]  # Primera parte es la provincia
+                genero = 'Total'
+                if len(partes) > 1:
+                    for parte in partes[1:]:
+                        if parte.upper() in ['HOMBRE', 'MUJER']:
+                            genero = parte.upper()
+                            break
                 
                 # Procesar valores históricos
                 for valor in valores:
@@ -421,8 +460,8 @@ class DataProcessor:
                         continue
                     
                     registros.append({
-                        'Region': region,
-                        'Indicador': indicador,
+                        'Provincia': provincia,
+                        'Genero': genero,
                         'Periodo': periodo,
                         'Valor': float(valor_numerico)
                     })
@@ -437,8 +476,8 @@ class DataProcessor:
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
-            # Ordenar por período
-            df = df.sort_values('Periodo', ascending=False)
+            # Ordenar por período y provincia
+            df = df.sort_values(['Periodo', 'Provincia'], ascending=[False, True])
             
             return df
             
