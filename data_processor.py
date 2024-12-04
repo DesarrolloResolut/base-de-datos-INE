@@ -1,73 +1,71 @@
+from typing import Union, List, Dict
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional
-from datetime import datetime
-import logging
 import json
-from sklearn.preprocessing import MinMaxScaler
-
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from typing import Dict, List, Optional
+from scipy import stats
+from statsmodels.tsa.seasonal import seasonal_decompose
 
 class DataProcessor:
-    """Procesador de datos del INE"""
-    
     @staticmethod
-    def procesar_datos(datos: List[Dict], categoria: str, filtros: Optional[Dict] = None) -> pd.DataFrame:
+    def json_to_dataframe(datos: Dict, categoria: str = "provincias", filtros: Dict = None) -> pd.DataFrame:
         """Convierte datos JSON a DataFrame según la categoría
         Args:
             datos: Datos en formato JSON
-            categoria: Categoría de datos ('provincias', 'municipios_habitantes', 'censo_agrario', 'tasa_empleo', 'tasa_nacimientos', 'tasa_defunciones')
+            categoria: Categoría de datos ('provincias', 'municipios_habitantes', 'censo_agrario', 'tasa_empleo', 'tasa_nacimientos')
             filtros: Diccionario de filtros a aplicar (opcional)
         """
         try:
-            # Mapeo de categorías a funciones de procesamiento
             categorias_validas = {
-                "provincias": DataProcessor._procesar_datos_provincia,
+                "provincias": DataProcessor._procesar_datos_demografia,
                 "municipios_habitantes": DataProcessor._procesar_datos_municipios,
                 "censo_agrario": DataProcessor._procesar_datos_censo_agrario,
                 "tasa_empleo": DataProcessor._procesar_datos_empleo,
-                "tasa_nacimientos": DataProcessor._procesar_datos_nacimientos,
-                "tasa_defunciones": DataProcessor._procesar_datos_defunciones
+                "tasa_nacimientos": DataProcessor._procesar_datos_nacimientos
             }
             
             if categoria not in categorias_validas:
                 raise ValueError(f"Categoría no válida: {categoria}")
                 
-            # Procesar datos según la categoría
-            df = categorias_validas[categoria](datos)
-            
-            # Aplicar filtros si existen
-            if filtros:
-                df = DataProcessor._aplicar_filtros(df, filtros)
-                
-            return df
+            return categorias_validas[categoria](datos)
             
         except Exception as e:
-            error_msg = f"Error al procesar datos: {str(e)}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(f"Error al procesar datos: {str(e)}")
 
     @staticmethod
     def _procesar_datos_provincia(datos: Dict) -> pd.DataFrame:
-        """Procesa datos demográficos por provincia"""
+        """Procesa datos de provincia incluyendo indicador, región y género"""
         try:
             registros = []
             for dato in datos:
                 nombre = dato.get('Nombre', '').strip()
                 valores = dato.get('Data', [])
+                cod = dato.get('COD', '')
                 
                 if not nombre or not valores:
                     continue
                 
-                # Extraer provincia y tipo de dato
+                # Extraer partes del nombre (formato típico: "Albacete. Total. Total habitantes. Personas.")
                 partes = [p.strip() for p in nombre.split('.')]
                 if len(partes) < 2:
                     continue
                 
-                provincia = partes[0]
-                tipo_dato = partes[-1]
+                # Extraer región (provincia)
+                region = partes[0].strip()
+                
+                # Determinar indicador y género basado en el código y nombre
+                if cod == 'DPOP160':  # Total
+                    indicador = 'Población'
+                    genero = 'Total'
+                elif cod == 'DPOP161':  # Hombres
+                    indicador = 'Población'
+                    genero = 'Hombre'
+                elif cod == 'DPOP162':  # Mujeres
+                    indicador = 'Población'
+                    genero = 'Mujer'
+                else:
+                    indicador = 'Población'
+                    genero = 'Total'
                 
                 # Procesar valores históricos
                 for valor in valores:
@@ -78,117 +76,16 @@ class DataProcessor:
                         continue
                     
                     registros.append({
-                        'Provincia': provincia,
-                        'Tipo': tipo_dato,
-                        'Periodo': str(periodo),
-                        'Valor': float(valor_numerico)
-                    })
-            
-            if not registros:
-                raise ValueError("No se encontraron datos demográficos válidos")
-            
-            df = pd.DataFrame(registros)
-            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
-            
-            return df.sort_values('Periodo', ascending=False)
-            
-        except Exception as e:
-            raise ValueError(f"Error al procesar datos demográficos: {str(e)}")
-
-    @staticmethod
-    def _procesar_datos_municipios(datos: Dict) -> pd.DataFrame:
-        """Procesa datos por municipio"""
-        try:
-            registros = []
-            for dato in datos:
-                nombre = dato.get('Nombre', '').strip()
-                valores = dato.get('Data', [])
-                
-                if not nombre or not valores:
-                    continue
-                
-                # Extraer municipio y provincia
-                partes = nombre.split('.')
-                if len(partes) < 2:
-                    continue
-                    
-                municipio = partes[0].strip()
-                provincia = partes[1].strip() if len(partes) > 1 else "No especificada"
-                
-                # Procesar valores históricos
-                for valor in valores:
-                    periodo = valor.get('Anyo', '')
-                    valor_numerico = valor.get('Valor')
-                    
-                    if not periodo or valor_numerico is None:
-                        continue
-                        
-                    registros.append({
-                        'Municipio': municipio,
-                        'Provincia': provincia,
-                        'Periodo': periodo,
-                        'Habitantes': float(valor_numerico)
-                    })
-                    
-            if not registros:
-                raise ValueError("No se encontraron datos de municipios válidos")
-                
-            # Crear DataFrame
-            df = pd.DataFrame(registros)
-            
-            # Convertir tipos de datos
-            df['Habitantes'] = pd.to_numeric(df['Habitantes'], errors='coerce')
-            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
-            
-            # Ordenar por período y habitantes
-            df = df.sort_values(['Periodo', 'Habitantes'], ascending=[False, False])
-            
-            return df
-            
-        except Exception as e:
-            raise ValueError(f"Error al procesar datos de municipios: {str(e)}")
-
-    @staticmethod
-    def _procesar_datos_censo_agrario(datos: Dict) -> pd.DataFrame:
-        """Procesa datos del censo agrario"""
-        try:
-            registros = []
-            for dato in datos:
-                nombre = dato.get('Nombre', '').strip()
-                valores = dato.get('Data', [])
-                
-                if not nombre or not valores:
-                    continue
-                    
-                # Extraer componentes del nombre
-                partes = nombre.split('.')
-                if len(partes) < 3:
-                    continue
-                    
-                provincia = partes[0].strip()
-                comarca = partes[1].strip()
-                tipo_dato = partes[2].strip()
-                
-                # Procesar valores
-                for valor in valores:
-                    periodo = valor.get('Anyo', '')
-                    valor_numerico = valor.get('Valor')
-                    
-                    if not periodo or valor_numerico is None:
-                        continue
-                        
-                    registros.append({
-                        'Provincia': provincia,
-                        'Comarca': comarca,
-                        'Tipo_Dato': tipo_dato,
+                        'Indicador': indicador,
+                        'Region': region,
+                        'Genero': genero,
                         'Periodo': periodo,
                         'Valor': float(valor_numerico)
                     })
-                    
+            
             if not registros:
-                raise ValueError("No se encontraron datos del censo agrario válidos")
-                
+                raise ValueError("No se encontraron datos de provincia válidos para procesar")
+            
             # Crear DataFrame
             df = pd.DataFrame(registros)
             
@@ -197,7 +94,150 @@ class DataProcessor:
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
             # Ordenar por período
-            df = df.sort_values(['Periodo', 'Provincia', 'Comarca'], ascending=[False, True, True])
+            df = df.sort_values('Periodo', ascending=False)
+            
+            return df
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos de provincia: {str(e)}")
+
+    @staticmethod
+    def _procesar_datos_demografia(datos: Dict) -> pd.DataFrame:
+        """Procesa datos demográficos"""
+        try:
+            registros = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
+                cod = dato.get('COD', '')
+                
+                # Procesar datos según el código
+                if cod == 'DPOP160':  # Total
+                    genero = 'Total'
+                    municipio = 'Total'
+                elif cod == 'DPOP161':  # Hombres
+                    genero = 'HOMBRE'
+                    municipio = 'Total'
+                elif cod == 'DPOP162':  # Mujeres
+                    genero = 'MUJER'
+                    municipio = 'Total'
+                else:
+                    # Procesar otros datos municipales
+                    partes = nombre.split('.')
+                    municipio = partes[0].strip() if len(partes) > 1 else nombre.split(',')[0].strip()
+                    if 'Hombres' in nombre:
+                        genero = 'HOMBRE'
+                    elif 'Mujeres' in nombre:
+                        genero = 'MUJER'
+                    else:
+                        genero = 'Total'
+                
+                # Procesar valores
+                for valor in valores:
+                    registros.append({
+                        'Municipio': municipio,
+                        'Periodo': valor.get('NombrePeriodo', ''),
+                        'Valor': valor.get('Valor', 0),
+                        'Genero': genero
+                    })
+            
+            if not registros:
+                raise ValueError("No se encontraron datos demográficos")
+                
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
+            
+            # Convertir tipos de datos
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            return df
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos demográficos: {str(e)}")
+
+    @staticmethod
+    def _procesar_datos_municipios(datos):
+        """Procesa datos de municipios por rango de habitantes"""
+        try:
+            registros = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
+                
+                if not nombre or not valores:
+                    continue
+                    
+                # Extraer información del nombre
+                partes = nombre.split(',')
+                if len(partes) < 2:
+                    continue
+                    
+                provincia = partes[0].strip()
+                rango = partes[1].strip()
+                
+                # Procesar valores históricos
+                for valor in valores:
+                    registros.append({
+                        'Provincia': provincia,
+                        'Rango': rango,
+                        'Periodo': valor.get('NombrePeriodo', ''),
+                        'Valor': valor.get('Valor', 0)
+                    })
+            
+            if not registros:
+                raise ValueError("No se encontraron datos de municipios válidos")
+                
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
+            
+            # Convertir tipos de datos
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            
+            return df
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos de municipios: {str(e)}")
+            
+    @staticmethod
+    def _procesar_datos_censo_agrario(datos: Dict, tipo_censo: str = 'explotaciones_tamano', batch_size: int = 1000, timeout: int = 30) -> pd.DataFrame:
+        """Procesa datos del censo agrario de manera optimizada"""
+        try:
+            registros = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '')
+                valores = dato.get('Data', [])
+                
+                if not nombre or not valores:
+                    continue
+                    
+                # Extraer información del nombre
+                partes = nombre.split('.')
+                if len(partes) < 2:
+                    continue
+                    
+                provincia = partes[0].strip()
+                tipo_dato = partes[1].strip()
+                
+                # Procesar valores históricos
+                for valor in valores:
+                    registros.append({
+                        'Provincia': provincia,
+                        'Tipo_Dato': tipo_dato,
+                        'Periodo': valor.get('NombrePeriodo', ''),
+                        'Valor': valor.get('Valor', 0)
+                    })
+            
+            if not registros:
+                raise ValueError("No se encontraron datos del censo agrario válidos")
+                
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
+            
+            # Convertir tipos de datos
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             
             return df
             
@@ -206,7 +246,7 @@ class DataProcessor:
 
     @staticmethod
     def _procesar_datos_empleo(datos: Dict) -> pd.DataFrame:
-        """Procesa datos de empleo"""
+        """Procesa datos de empleo (tasas de actividad, paro y empleo)"""
         try:
             registros = []
             for dato in datos:
@@ -215,41 +255,67 @@ class DataProcessor:
                 
                 if not nombre or not valores:
                     continue
-                    
-                # Extraer componentes del nombre
-                partes = nombre.split('.')
-                if len(partes) < 2:
+                
+                # Extraer información del nombre usando split('.')
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 3:
                     continue
-                    
-                tipo_tasa = partes[0].strip()
-                provincia = partes[1].strip()
+                
+                # Extraer indicador (primer elemento)
+                indicador = partes[0].strip()
+                if not any(tasa in indicador.lower() for tasa in ['tasa de actividad', 'tasa de paro', 'tasa de empleo']):
+                    continue
+                
+                # Normalizar el indicador
+                if 'actividad' in indicador.lower():
+                    indicador = 'Tasa de actividad'
+                elif 'paro' in indicador.lower():
+                    indicador = 'Tasa de paro'
+                elif 'empleo' in indicador.lower():
+                    indicador = 'Tasa de empleo'
+                
+                # Extraer género (segundo elemento)
+                genero = partes[1].strip()
+                if 'hombres' in genero.lower():
+                    genero = 'Hombres'
+                elif 'mujeres' in genero.lower():
+                    genero = 'Mujeres'
+                else:
+                    genero = 'Ambos sexos'
+                
+                # Extraer región (tercer elemento)
+                region = partes[2].strip()
+                if not region:
+                    region = 'Total Nacional'
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('Periodo', '')
+                    periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
                     if not periodo or valor_numerico is None:
                         continue
-                        
+                    
                     registros.append({
-                        'Provincia': provincia,
-                        'Tipo_Tasa': tipo_tasa,
+                        'Indicador': indicador,
+                        'Genero': genero,
+                        'Region': region,
                         'Periodo': periodo,
                         'Valor': float(valor_numerico)
                     })
-                    
+            
             if not registros:
                 raise ValueError("No se encontraron datos de empleo válidos")
-                
+            
             # Crear DataFrame
             df = pd.DataFrame(registros)
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
             # Ordenar por período
-            df = df.sort_values(['Periodo', 'Provincia'], ascending=[False, True])
+            df = df.sort_values('Periodo', ascending=False)
             
             return df
             
@@ -273,8 +339,15 @@ class DataProcessor:
                 if len(partes) < 2:
                     continue
                 
-                # Extraer provincia
+                # Extraer provincia y tipo
                 provincia = partes[0].strip()
+                
+                # Determinar tipo de dato basado en el nombre
+                tipo_dato = 'Nacimientos'
+                if 'defunción' in nombre.lower():
+                    tipo_dato = 'Defunciones'
+                elif 'crecimiento' in nombre.lower():
+                    tipo_dato = 'Crecimiento Vegetativo'
                 
                 # Procesar valores históricos
                 for valor in valores:
@@ -286,7 +359,7 @@ class DataProcessor:
                     
                     registros.append({
                         'Provincia': provincia,
-                        'Tipo': 'Nacimientos',
+                        'Tipo': tipo_dato,
                         'Periodo': periodo,
                         'Valor': float(valor_numerico)
                     })
@@ -308,105 +381,6 @@ class DataProcessor:
             
         except Exception as e:
             raise ValueError(f"Error al procesar datos de nacimientos: {str(e)}")
-
-    @staticmethod
-    def _procesar_datos_defunciones(datos: Dict) -> pd.DataFrame:
-        """Procesa datos de tasas de defunciones por provincia"""
-        try:
-            registros = []
-            for dato in datos:
-                nombre = dato.get('Nombre', '').strip()
-                valores = dato.get('Data', [])
-                
-                if not nombre or not valores:
-                    continue
-                
-                # Extraer provincia y tipo de dato
-                partes = [p.strip() for p in nombre.split('.')]
-                if len(partes) < 2:
-                    continue
-                
-                provincia = partes[0]
-                
-                # Procesar valores históricos
-                for valor in valores:
-                    periodo = valor.get('NombrePeriodo', '')
-                    valor_numerico = valor.get('Valor')
-                    
-                    if not periodo or valor_numerico is None:
-                        continue
-                    
-                    registros.append({
-                        'Provincia': provincia,
-                        'Tipo': 'Defunciones',
-                        'Periodo': str(periodo),
-                        'Valor': float(valor_numerico)
-                    })
-            
-            if not registros:
-                raise ValueError("No se encontraron datos de defunciones válidos")
-            
-            df = pd.DataFrame(registros)
-            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
-            
-            return df.sort_values('Periodo', ascending=False)
-            
-        except Exception as e:
-            raise ValueError(f"Error al procesar datos de defunciones: {str(e)}")
-
-    @staticmethod
-    def _aplicar_filtros(df: pd.DataFrame, filtros: Dict) -> pd.DataFrame:
-        """Aplica filtros al DataFrame"""
-        try:
-            df_filtrado = df.copy()
-            
-            # Aplicar cada filtro
-            for columna, valor in filtros.items():
-                if columna in df_filtrado.columns:
-                    if isinstance(valor, (list, tuple)):
-                        df_filtrado = df_filtrado[df_filtrado[columna].isin(valor)]
-                    else:
-                        df_filtrado = df_filtrado[df_filtrado[columna] == valor]
-                        
-            return df_filtrado
-            
-        except Exception as e:
-            raise ValueError(f"Error al aplicar filtros: {str(e)}")
-
-    @staticmethod
-    def calcular_estadisticas(df: pd.DataFrame, columna: str) -> Dict:
-        """Calcula estadísticas básicas de una columna numérica"""
-        try:
-            if columna not in df.columns:
-                raise ValueError(f"Columna {columna} no encontrada en el DataFrame")
-                
-            return {
-                'media': df[columna].mean(),
-                'mediana': df[columna].median(),
-                'desviacion': df[columna].std(),
-                'minimo': df[columna].min(),
-                'maximo': df[columna].max()
-            }
-            
-        except Exception as e:
-            raise ValueError(f"Error al calcular estadísticas: {str(e)}")
-
-    @staticmethod
-    def normalizar_valores(df: pd.DataFrame, columna: str) -> pd.DataFrame:
-        """Normaliza los valores de una columna usando Min-Max scaling"""
-        try:
-            if columna not in df.columns:
-                raise ValueError(f"Columna {columna} no encontrada en el DataFrame")
-                
-            df_norm = df.copy()
-            scaler = MinMaxScaler()
-            df_norm[f"{columna}_normalizado"] = scaler.fit_transform(df_norm[[columna]])
-            
-            return df_norm
-            
-        except Exception as e:
-            raise ValueError(f"Error al normalizar valores: {str(e)}")
 
     @staticmethod
     def obtener_municipios(df: pd.DataFrame) -> List[str]:
@@ -437,6 +411,23 @@ class DataProcessor:
             
         except Exception as e:
             raise ValueError(f"Error al filtrar datos: {str(e)}")
+
+    @staticmethod
+    def calcular_estadisticas(df: pd.DataFrame, columna: str) -> Dict:
+        """Calcula estadísticas básicas para una columna"""
+        try:
+            if columna not in df.columns:
+                raise ValueError(f"Columna {columna} no encontrada en el DataFrame")
+                
+            return {
+                'media': df[columna].mean(),
+                'mediana': df[columna].median(),
+                'desv_std': df[columna].std(),
+                'min': df[columna].min(),
+                'max': df[columna].max()
+            }
+        except Exception as e:
+            raise ValueError(f"Error al calcular estadísticas: {str(e)}")
 
     @staticmethod
     def calcular_correlaciones(df: pd.DataFrame, columnas: List[str]) -> pd.DataFrame:
@@ -728,7 +719,7 @@ class DataProcessor:
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('Periodo', '')
+                    periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
                     # Validar que el período y valor existan y no sean nulos
@@ -799,5 +790,4 @@ class DataProcessor:
                 return df_filtrado[
                     (df_filtrado['Rango_Tamano'] != 'Total') & 
                     (df_filtrado['Tipo_Cultivo'] == 'Total')
-
                 ].copy()

@@ -63,11 +63,6 @@ class INEApiClient:
             'name': 'Tasa de Nacimientos por Provincias',
             'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/6545',
             'default_params': {'nult': '4', 'det': '2'}
-        },
-        'tasa_defunciones': {
-            'name': 'Tasa de Defunciones por Provincias',
-            'url': 'https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/30322',
-            'default_params': {'nult': '4', 'det': '2'}
         }
     }
     
