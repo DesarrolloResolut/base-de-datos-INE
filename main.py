@@ -571,29 +571,12 @@ def main():
                         index=len(periodos)-1 if periodos else 0
                     )
 
-                    # Filtro por edad de la madre
-                    rangos_edad = [
-                        'Todas las edades',
-                        'Menores de 20 años',
-                        '20-24 años',
-                        '25-29 años',
-                        '30-34 años',
-                        '35-39 años',
-                        '40-44 años',
-                        '45 y más años'
-                    ]
-                    edad_seleccionada = st.selectbox(
-                        "Edad de la madre:",
-                        options=rangos_edad,
-                        index=0
-                    )
+                    
 
                 # Aplicar filtros
                 df_filtrado = df[df['Provincia'].isin(provincias_seleccionadas)].copy()
                 
-                # Aplicar filtro de edad si no es 'Todas las edades'
-                if edad_seleccionada != 'Todas las edades' and 'Edad_madre' in df.columns:
-                    df_filtrado = df_filtrado[df_filtrado['Edad_madre'] == edad_seleccionada]
+                
                 
                 if df_filtrado.empty:
                     st.warning("No hay datos disponibles para los filtros seleccionados.")
