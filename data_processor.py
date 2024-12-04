@@ -339,36 +339,28 @@ class DataProcessor:
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    # Usar Anyo como período, igual que en _procesar_datos_provincia
-                    periodo = valor.get('Anyo', '')
-                    valor_numerico = valor.get('Valor')
-                    
-                    if not periodo or valor_numerico is None:
-                        logger.warning(f"Valor sin período o valor numérico: {valor}")
-                        continue
-                    
-                    # Si el valor está marcado como secreto, lo saltamos
-                    if valor.get('Secreto', False):
-                        logger.info(f"Omitiendo valor secreto para {provincia}, período {periodo}")
-                        continue
-                    
                     try:
+                        # Crear registro con las claves exactas requeridas
                         registros.append({
-                            'Provincia': provincia,
-                            'Tipo': 'Defunciones',
-                            'Periodo': str(periodo),
-                            'Valor': float(valor_numerico)
+                            'Provincia': provincia,  # Nombre de la provincia desde el dato
+                            'Tipo': 'Defunciones',  # Valor fijo
+                            'Periodo': str(valor.get('Anyo', '')),  # Usar 'Anyo' en lugar de 'Periodo'
+                            'Valor': float(valor.get('Valor', 0))  # Convertir a float
                         })
                     except (ValueError, TypeError) as e:
-                        logger.warning(f"Error al convertir valor numérico: {valor_numerico}, error: {str(e)}")
+                        logger.warning(f"Error al procesar valor para provincia {provincia}: {str(e)}")
                         continue
             
             if not registros:
                 logger.error("No se encontraron datos de defunciones válidos para procesar")
                 raise ValueError("No se encontraron datos de defunciones válidos")
             
-            # Crear DataFrame
-            df = pd.DataFrame(registros)
+            # Crear DataFrame con columnas específicas
+            df = pd.DataFrame(registros, columns=['Provincia', 'Tipo', 'Periodo', 'Valor'])
+            
+            # Verificar que todas las columnas requeridas estén presentes
+            if not all(col in df.columns for col in ['Provincia', 'Tipo', 'Periodo', 'Valor']):
+                raise ValueError("Faltan columnas requeridas en los datos de provincia")
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
