@@ -355,8 +355,8 @@ class DataProcessor:
                 if len(partes) < 2:
                     continue
                 
-                # Extraer provincia (ahora tomamos la segunda parte)
-                provincia = partes[1]
+                # Extraer provincia (primera parte del nombre)
+                provincia = partes[0]
                 
                 # Procesar valores históricos
                 for valor in valores:
