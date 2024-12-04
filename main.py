@@ -87,6 +87,13 @@ def main():
         - Tasa de nacimientos por provincia (por miles de habitantes)
         - Evolución temporal de nacimientos
         """)
+    elif categoria_seleccionada == "tasa_defunciones":
+        st.markdown("""
+        Esta aplicación muestra la tasa de defunciones por provincia, proporcionada por el Instituto Nacional de Estadística (INE).
+        Los datos incluyen:
+        - Tasa de defunciones por provincia (por miles de habitantes)
+        - Evolución temporal de defunciones
+        """)
     
     
     try:
@@ -540,7 +547,7 @@ def main():
                 }
                 df_filtrado = DataProcessor.filtrar_datos(df, filtros)
 
-            elif categoria_seleccionada == "tasa_nacimientos":
+            elif categoria_seleccionada in ["tasa_nacimientos", "tasa_defunciones"]:
                 # Verificar que el DataFrame tenga la columna Provincia
                 if 'Provincia' not in df.columns:
                     st.error("Error: El DataFrame no contiene la columna 'Provincia'")
