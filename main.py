@@ -105,7 +105,7 @@ def main():
                     st.error("Error: Faltan columnas requeridas en los datos de provincia")
                     return
             else:
-                df = DataProcessor.json_to_dataframe(datos, categoria=categoria_seleccionada)
+                df = DataProcessor.procesar_datos(datos, categoria=categoria_seleccionada)
                 
             if df.empty:
                 st.error("No hay datos disponibles para mostrar.")

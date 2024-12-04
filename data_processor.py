@@ -327,26 +327,31 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer partes del nombre
-                partes = [p.strip() for p in nombre.split('.')]
-                if len(partes) < 2:
+                # Extraer componentes del nombre
+                partes = [p.strip() for p in nombre.split(',')]
+                if len(partes) < 3:
                     continue
                 
-                # Extraer provincia
+                # Extraer provincia y otros datos
                 provincia = partes[0].strip()
+                categoria = partes[1].strip()
+                tipo = partes[2].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
-                    if not periodo or valor_numerico is None:
+                    if valor_numerico is None or valor_numerico == "":
+                        continue
+                        
+                    # Si el valor es null o está marcado como secreto, lo saltamos
+                    if valor.get('Secreto', False):
                         continue
                     
                     registros.append({
                         'Provincia': provincia,
-                        'Tipo': 'Defunciones',
-                        'Periodo': periodo,
+                        'Categoria': categoria,
+                        'Tipo': tipo,
                         'Valor': float(valor_numerico)
                     })
             
@@ -358,14 +363,17 @@ class DataProcessor:
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
-            # Ordenar por período
-            df = df.sort_values('Periodo', ascending=False)
+            # Filtrar filas con valores nulos
+            df = df.dropna(subset=['Valor'])
+            
+            # Ordenar por provincia
+            df = df.sort_values('Provincia')
             
             return df
             
         except Exception as e:
+            logger.error(f"Error al procesar datos de defunciones: {str(e)}")
             raise ValueError(f"Error al procesar datos de defunciones: {str(e)}")
 
     @staticmethod
