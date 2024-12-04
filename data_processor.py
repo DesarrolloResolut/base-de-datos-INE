@@ -327,31 +327,30 @@ class DataProcessor:
                 if not nombre or not valores:
                     continue
                 
-                # Extraer componentes del nombre
-                partes = [p.strip() for p in nombre.split(',')]
-                if len(partes) < 3:
+                # Extraer partes del nombre
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 2:
                     continue
                 
-                # Extraer provincia y otros datos
+                # Extraer provincia
                 provincia = partes[0].strip()
-                categoria = partes[1].strip()
-                tipo = partes[2].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
+                    periodo = valor.get('NombrePeriodo', '')
                     valor_numerico = valor.get('Valor')
                     
-                    if valor_numerico is None or valor_numerico == "":
+                    if not periodo or valor_numerico is None or valor_numerico == "":
                         continue
                         
-                    # Si el valor es null o está marcado como secreto, lo saltamos
+                    # Si el valor está marcado como secreto, lo saltamos
                     if valor.get('Secreto', False):
                         continue
                     
                     registros.append({
                         'Provincia': provincia,
-                        'Categoria': categoria,
-                        'Tipo': tipo,
+                        'Tipo': 'Defunciones',
+                        'Periodo': periodo,
                         'Valor': float(valor_numerico)
                     })
             
@@ -363,12 +362,13 @@ class DataProcessor:
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
             # Filtrar filas con valores nulos
             df = df.dropna(subset=['Valor'])
             
-            # Ordenar por provincia
-            df = df.sort_values('Provincia')
+            # Ordenar por período
+            df = df.sort_values('Periodo', ascending=False)
             
             return df
             
