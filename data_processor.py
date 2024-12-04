@@ -328,37 +328,36 @@ class DataProcessor:
                     logger.warning(f"Dato sin nombre o valores: {dato}")
                     continue
                 
-                # Extraer partes del nombre
-                partes = [p.strip() for p in nombre.split(',')]
+                # Extraer partes del nombre usando punto como separador
+                partes = [p.strip() for p in nombre.split('.')]
                 if len(partes) < 2:
                     logger.warning(f"Nombre sin suficientes partes: {nombre}")
                     continue
                 
-                # Extraer provincia y otros datos
+                # Extraer provincia (primer elemento antes del punto)
                 provincia = partes[0].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    # Intentar obtener el período de diferentes campos
-                    periodo = valor.get('Anyo', valor.get('NombrePeriodo', ''))
+                    # Usar Anyo como período, igual que en _procesar_datos_provincia
+                    periodo = valor.get('Anyo', '')
                     valor_numerico = valor.get('Valor')
                     
-                    if not periodo or valor_numerico is None or valor_numerico == "":
+                    if not periodo or valor_numerico is None:
                         logger.warning(f"Valor sin período o valor numérico: {valor}")
                         continue
-                        
+                    
                     # Si el valor está marcado como secreto, lo saltamos
                     if valor.get('Secreto', False):
                         logger.info(f"Omitiendo valor secreto para {provincia}, período {periodo}")
                         continue
                     
                     try:
-                        valor_float = float(valor_numerico)
                         registros.append({
                             'Provincia': provincia,
                             'Tipo': 'Defunciones',
                             'Periodo': str(periodo),
-                            'Valor': valor_float
+                            'Valor': float(valor_numerico)
                         })
                     except (ValueError, TypeError) as e:
                         logger.warning(f"Error al convertir valor numérico: {valor_numerico}, error: {str(e)}")
