@@ -325,58 +325,42 @@ class DataProcessor:
                 valores = dato.get('Data', [])
                 
                 if not nombre or not valores:
-                    logger.warning(f"Dato sin nombre o valores: {dato}")
                     continue
                 
-                # Extraer partes del nombre usando punto como separador
-                partes = [p.strip() for p in nombre.split('.')]
-                if len(partes) < 2:
-                    logger.warning(f"Nombre sin suficientes partes: {nombre}")
-                    continue
-                
-                # Extraer provincia (primer elemento antes del punto)
-                provincia = partes[0].strip()
+                # Extraer provincia del nombre
+                provincia = nombre.split('.')[0].strip()
                 
                 # Procesar valores históricos
                 for valor in valores:
-                    try:
-                        # Crear registro con las claves exactas requeridas
-                        registros.append({
-                            'Provincia': provincia,  # Nombre de la provincia desde el dato
-                            'Tipo': 'Defunciones',  # Valor fijo
-                            'Periodo': str(valor.get('Anyo', '')),  # Usar 'Anyo' en lugar de 'Periodo'
-                            'Valor': float(valor.get('Valor', 0))  # Convertir a float
-                        })
-                    except (ValueError, TypeError) as e:
-                        logger.warning(f"Error al procesar valor para provincia {provincia}: {str(e)}")
+                    periodo = valor.get('NombrePeriodo', '')
+                    valor_numerico = valor.get('Valor')
+                    
+                    if not periodo or valor_numerico is None:
                         continue
+                    
+                    registros.append({
+                        'Provincia': provincia,
+                        'Tipo': 'Defunciones',
+                        'Periodo': periodo,
+                        'Valor': float(valor_numerico)
+                    })
             
             if not registros:
-                logger.error("No se encontraron datos de defunciones válidos para procesar")
                 raise ValueError("No se encontraron datos de defunciones válidos")
             
-            # Crear DataFrame con columnas específicas
-            df = pd.DataFrame(registros, columns=['Provincia', 'Tipo', 'Periodo', 'Valor'])
-            
-            # Verificar que todas las columnas requeridas estén presentes
-            if not all(col in df.columns for col in ['Provincia', 'Tipo', 'Periodo', 'Valor']):
-                raise ValueError("Faltan columnas requeridas en los datos de provincia")
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
             
             # Convertir tipos de datos
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
             
-            # Filtrar filas con valores nulos
-            df = df.dropna(subset=['Valor', 'Periodo'])
-            
             # Ordenar por período
             df = df.sort_values('Periodo', ascending=False)
             
-            logger.info(f"Procesados {len(df)} registros de defunciones")
             return df
             
         except Exception as e:
-            logger.error(f"Error al procesar datos de defunciones: {str(e)}")
             raise ValueError(f"Error al procesar datos de defunciones: {str(e)}")
 
     @staticmethod
