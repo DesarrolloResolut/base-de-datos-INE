@@ -390,3 +390,57 @@ class DataProcessor:
             
         except Exception as e:
             raise ValueError(f"Error al procesar datos de defunciones: {str(e)}")
+
+    @staticmethod
+    def _procesar_datos_provincia(datos: Dict) -> pd.DataFrame:
+        """Procesa datos por provincia"""
+        try:
+            registros = []
+            for dato in datos:
+                nombre = dato.get('Nombre', '').strip()
+                valores = dato.get('Data', [])
+                
+                if not nombre or not valores:
+                    continue
+                
+                # Extraer partes del nombre
+                partes = [p.strip() for p in nombre.split('.')]
+                if len(partes) < 2:
+                    continue
+                
+                # Extraer información relevante
+                region = partes[0]  # Primera parte es la región/provincia
+                indicador = 'Total habitantes'  # Indicador por defecto
+                
+                # Procesar valores históricos
+                for valor in valores:
+                    periodo = valor.get('Periodo', '')
+                    valor_numerico = valor.get('Valor')
+                    
+                    if not periodo or valor_numerico is None:
+                        continue
+                    
+                    registros.append({
+                        'Region': region,
+                        'Indicador': indicador,
+                        'Periodo': periodo,
+                        'Valor': float(valor_numerico)
+                    })
+            
+            if not registros:
+                raise ValueError("No se encontraron datos de provincia válidos")
+            
+            # Crear DataFrame
+            df = pd.DataFrame(registros)
+            
+            # Convertir tipos de datos
+            df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+            df['Periodo'] = pd.to_numeric(df['Periodo'], errors='coerce')
+            
+            # Ordenar por período
+            df = df.sort_values('Periodo', ascending=False)
+            
+            return df
+            
+        except Exception as e:
+            raise ValueError(f"Error al procesar datos de provincia: {str(e)}")
