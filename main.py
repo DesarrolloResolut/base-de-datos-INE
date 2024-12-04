@@ -84,10 +84,8 @@ def main():
         st.markdown("""
         Esta aplicación muestra la tasa de nacimientos por provincia, proporcionada por el Instituto Nacional de Estadística (INE).
         Los datos incluyen:
-        - Tasa de nacimientos por provincia
+        - Tasa de nacimientos por provincia (por miles de habitantes)
         - Evolución temporal de nacimientos
-        - Distribución por edad de la madre
-        - Análisis de estacionalidad
         """)
     
     
